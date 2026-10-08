@@ -24,6 +24,7 @@ from datetime import UTC, date, datetime, timedelta
 import numpy as np
 
 from app.constants import CATEGORY_NAMES, COUNTIES, PERISHABLE_CATEGORIES
+from app.services.calendar_rules import COUNTY_NAMES, benefit_week, school_holiday
 
 DEFAULT_SEED = 515
 N_PANTRIES = 85
@@ -31,7 +32,6 @@ N_WEEKS = 156
 LAST_WEEK = date(2026, 9, 28)  # fixed, so output never depends on today's date
 FIRST_WEEK = LAST_WEEK - timedelta(weeks=N_WEEKS - 1)
 
-COUNTY_NAMES = list(COUNTIES)
 PANTRIES_PER_COUNTY = [18, 16, 15, 14, 12, 10]
 TOTAL_HOUSEHOLDS_PER_MONTH = 40_000
 WEEKS_PER_MONTH = 4.33
@@ -56,7 +56,6 @@ REPORT_BY_CATEGORY = np.array([1.0, 0.6, 1.0, 0.45, 0.4, 0.3, 0.3, 0.4])
 SPOILAGE = np.array([0.145, 0.105, 0.118, 0.158, 0.01, 0.01, 0.01, 0.01])
 LONG_LIFE_SPOILAGE = 0.01
 
-BENEFIT_DAY = dict(zip(COUNTY_NAMES, [1, 3, 5, 10, 12, 15], strict=True))
 
 ITEM_NAMES = {
     "produce": [
@@ -201,29 +200,6 @@ def _weeks() -> list[date]:
     return [FIRST_WEEK + timedelta(weeks=i) for i in range(N_WEEKS)]
 
 
-def _thanksgiving(year: int) -> date:
-    first = date(year, 11, 1)
-    first_thursday = first + timedelta(days=(3 - first.weekday()) % 7)
-    return first_thursday + timedelta(weeks=3)
-
-
-def _is_school_holiday(county_idx: int, week: date) -> bool:
-    mid = week + timedelta(days=3)
-    year = mid.year
-    shift = timedelta(days=(-7, 0, 7)[county_idx % 3])
-    end = week + timedelta(days=6)
-    summer = date(year, 6, 14) + shift <= mid <= date(year, 8, 18) + shift
-    winter = mid >= date(year, 12, 21) or mid <= date(year, 1, 3)
-    spring_day = date(year, 3, 25) + timedelta(days=3 * county_idx)
-    spring = week <= spring_day <= end
-    thanksgiving = week <= _thanksgiving(year) <= end
-    return summer or winter or spring or thanksgiving
-
-
-def _is_benefit_week(county: str, week: date) -> bool:
-    return any((week + timedelta(days=d)).day == BENEFIT_DAY[county] for d in range(7))
-
-
 def _holiday_season(week: date) -> bool:
     mid = week + timedelta(days=3)
     return mid.month == 12 or (mid.month == 11 and mid.day >= 20)
@@ -233,6 +209,13 @@ def _holiday_season(week: date) -> bool:
 
 
 def generate(seed: int = DEFAULT_SEED) -> SyntheticData:
+    return generate_with_truth(seed)[0]
+
+
+def generate_with_truth(seed: int = DEFAULT_SEED) -> tuple[SyntheticData, np.ndarray]:
+    """The history plus the true demand it was built from, shape (pantry, category, week) in
+    pounds (pantry and category ids are index + 1). Observed distributions are this demand capped
+    by supply. The truth is for scoring a forecast after the fact, never for training one."""
     rng = np.random.default_rng(seed)
     data = SyntheticData()
     weeks = _weeks()
@@ -292,7 +275,7 @@ def generate(seed: int = DEFAULT_SEED) -> SyntheticData:
     distributed = np.round(np.minimum(demand, allocation), 2)
     households = np.maximum(1, np.rint(hh_latent)).astype(int)
     _make_distributions_and_shortages(rng, data, weeks, demand, distributed, households)
-    return data
+    return data, demand
 
 
 def _make_pantries(rng: np.random.Generator, data: SyntheticData) -> np.ndarray:
@@ -338,8 +321,8 @@ def _make_calendar_flags(weeks) -> tuple[np.ndarray, np.ndarray]:
     benefit = np.zeros((K, N_WEEKS), dtype=bool)
     for k, county in enumerate(COUNTY_NAMES):
         for w, week in enumerate(weeks):
-            school[k, w] = _is_school_holiday(k, week)
-            benefit[k, w] = _is_benefit_week(county, week)
+            school[k, w] = school_holiday(county, week)
+            benefit[k, w] = benefit_week(county, week)
     return school, benefit
 
 

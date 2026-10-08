@@ -210,3 +210,55 @@ with no date, non-food lines, "we will NOT send" lines and prompt-injection text
 (see `eval/scoring.py`) and writes `docs/eval/intake-eval.md`. An item may be printed under
 several names, so the answer key lists every accepted name. `python -m eval.run_intake_eval
 --rescore` scores saved answers again without calling the model.
+
+## Demand forecasting (Stage 5)
+
+One LightGBM model covers every pantry (85) and food category (8): 680 series. It forecasts next
+week's demand in pounds as three quantiles (P10, P50, P90), and a seasonal-naive baseline
+(the same week last year, as observed) is kept for comparison. Code: `app/services/forecasting.py`
+(pure modelling), `app/services/forecast_runs.py` (reading the data and saving runs),
+`app/api/forecasts.py`, and `eval/forecast_backtest.py` (the backtest and its report).
+
+- **Two kinds of run** (`forecast_runs.kind`):
+  - `forward`: trains once on all history and writes next week's forecast (680 rows). Started by
+    `POST /api/forecasts/run`; takes about 3.5 seconds, so it is a normal request.
+  - `backtest`: 12 rolling origins, started only by `make backtest` (about a minute). It stores its
+    accuracy on the run (WAPE for both models, interval coverage, the weeks scored) and the 8,160
+    forecasts it made, so the Forecasts page can show them. A run is recorded as `running` before
+    any work starts and a second forward run is refused (409) while one is fresh; a `running` row
+    older than 10 minutes is treated as crashed.
+- **Training target and censored demand.** What a pantry hands out is capped by what it received,
+  so in a week it ran short the observed pounds under-record demand. Learning from them would teach
+  the model to forecast scarcity. For a pantry, category and week with a shortage report, the
+  target is raised: `shortfall = min(0.5, max(prior[severity], households_turned_away /
+  households_visiting))`, `demand = observed / (1 - shortfall)`, with priors 10% / 25% / 50% for
+  severity 1 / 2 / 3. Weeks without a report are left as observed (so unreported shortages still
+  bias the target downward). The constants are assumptions. The correction is keyed on the exact
+  (pantry, category, week), so it cannot spread to neighbouring weeks.
+- **Features** (21), all known at the start of the week being forecast: demand lags 1 to 4 and 52
+  and rolling means over 4 and 12 weeks, last week's household visits and shortage history, last
+  week's weather and a climatology (the same week one and two years earlier), week of year,
+  school-holiday and benefit-week flags, baseline households, and the pantry and category ids. The
+  weather of the forecast week itself is deliberately not used: only a forecast of it would exist.
+  The two calendar flags are scheduled in advance, so they are allowed; for weeks that have no
+  stored row they come from `app/services/calendar_rules.py` (stand-ins for real school and
+  benefit calendars, shared with the data generator).
+- **Models.** Three LightGBM quantile models on `log(1 + demand)` (P50 is the median, which is
+  what WAPE rewards). Predictions are un-logged, clipped at 0 and sorted so P10 <= P50 <= P90.
+  Hyperparameters are fixed in `ForecastConfig` before any backtest (300 trees, learning rate 0.05,
+  31 leaves) and never tuned on the backtest weeks. Model files are written through
+  `StorageBackend` to `forecasts/run-{id}/` (`p10.txt`, `p50.txt`, `p90.txt`, `meta.json`).
+- **No future data.** `build_frame` is only ever handed weeks before the forecast week and adds one
+  empty row per series for it; every feature is a lag of at least one week, a rolling window over
+  an already-shifted series, or calendar and static data. `docs/eval/forecast-backtest.md` lists
+  every leakage check (19 of them) with the test that enforces it, and a probe on the real data.
+- **The simulator's true demand** (`generate_with_truth`) is used in exactly one place: the
+  backtest script, after the backtest, to report a second WAPE against what demand really was.
+  The forecasting module does not import the generator; tests check that.
+- **API** (coordinator and admin): `POST /api/forecasts/run`; `GET /api/forecasts` with
+  `pantry_id`, `category`, `week_start`, `kind` and `run_id` filters (each row also carries the
+  actual pounds once the week has happened); `GET /api/forecasts/series` (what the chart needs:
+  recent actuals, backtest forecasts and next week's forecast, plus the accuracy for that series);
+  `GET /api/forecasts/runs/latest` (the latest backtest and forward run). Errors:
+  `not_enough_history` 422, `forecast_in_progress` 409, `forecast_failed` 500 (the cause is stored
+  on the run, not shown).

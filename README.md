@@ -4,7 +4,7 @@ AI food allocation for Harvest Bridge Food Bank, a hypothetical regional non-pro
 `docs/spec-5.2.md` for the use case, `CLAUDE.md` for the build contract and `docs/architecture.md`
 for design decisions.
 
-**Status:** Stage 4 of 9 (AI donation intake). The full README (features, AI evaluation results, known
+**Status:** Stage 5 of 9 (demand forecasting). The full README (features, AI evaluation results, known
 limitations) is written in Stage 8.
 
 ## Requirements
@@ -35,7 +35,8 @@ Check it works: `curl localhost:3000/api/health` returns `{"status":"ok","databa
 | `make dev` | API and web together |
 | `make api-types` | Regenerate the frontend's typed API client after changing the API |
 | `make test` | ruff + pytest, then frontend lint, typecheck and build (needs `make db`) |
-| `make eval` | Score the AI intake against the 50 golden manifests (calls Bedrock) and write `docs/eval/intake-eval.md`; the forecast backtest joins it in Stage 5 |
+| `make backtest` | Forecast backtest over the last 12 weeks (no AWS, about a minute): saves a backtest run and writes `docs/eval/forecast-backtest.md` |
+| `make eval` | Both evals: the AI intake eval (calls Bedrock, costs tokens) and then the forecast backtest |
 | `make golden` | Rebuild the golden manifests from their fixed seed |
 | `make refresh` | Weekly retrain and allocation job (Stage 6) |
 
@@ -102,6 +103,33 @@ remaining mistakes in [docs/eval/intake-eval.md](docs/eval/intake-eval.md). The 
 and the key was corrected after seeing the first result, so treat the number as a regression
 check, not a blind measurement of real manifests.
 
+## Demand forecasting
+
+Open **Forecasts** (coordinators and admins). Pick a pantry and a category to see a chart of the
+last 26 weeks, the model's forecasts for the last 12 weeks next to what actually happened, and next
+week's forecast with a shaded P10 to P90 range. **Run forecast** trains the model on all history and
+saves next week's forecast; it takes a few seconds. The accuracy table shows the latest **backtest**,
+which you produce with `make backtest`.
+
+After `make seed` the forecast tables are empty: run `make backtest` once, then **Run forecast**.
+
+### Forecast accuracy
+
+Backtest over the last 12 weeks, forecasting each week using only data from before it (full report,
+including every leakage check: [docs/eval/forecast-backtest.md](docs/eval/forecast-backtest.md)):
+
+| | LightGBM | Same week last year |
+| --- | --- | --- |
+| WAPE vs observed pounds (overall) | **10.7%** | 14.5% |
+| WAPE vs true demand (synthetic data only) | 10.2% | 14.3% |
+| P10 to P90 interval coverage (aim: 80%) | 77.2% | n/a |
+| Series (pantry and category) under 20% WAPE | 99.9% (679 of 680) | 95.4% |
+
+The correction for censored demand (shortage weeks) made no measurable difference on this data
+(10.2% with and without it, against true demand), because only about 3% of weeks have a shortage
+report. The data is synthetic, so these numbers are a regression check, not a promise about real
+food banks.
+
 ## Demo logins (local only)
 
 `make seed` creates these users. The passwords are the `DEMO_*` values in `.env`; the defaults in
@@ -142,3 +170,11 @@ generator uses a fixed seed, so the same data comes out every time. See
   "2 boxes" as one box, and resolved month-only or year-less dates incorrectly. Coordinators see
   and fix these on the review screen; prompt fixes are listed in `docs/dev-log.md`.
 - **Rejected uploads are kept** (file, model output, who rejected and when) as an audit record.
+- **The forecast uses last week's weather, not the forecast week's.** Only a weather forecast would exist
+  at forecast time, and the data has none, so it is left out. The weather and school-holiday calendar are
+  synthetic.
+- **Only reported shortages are corrected.** Pantries report some of the weeks they run short, so some
+  demand stays under-recorded. The correction constants are assumptions.
+- **Prediction intervals are slightly narrow:** the P10 to P90 range held the actual amount 77.2% of the
+  time in the backtest, not 80%.
+- **Forecasts are one week ahead.** There is no multi-week horizon yet.

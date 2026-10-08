@@ -71,7 +71,13 @@ def storage(tmp_path):
 
 @pytest.fixture
 def app(settings, engine, llm, storage):
-    return create_app(settings, engine, llm=llm, storage=storage)
+    from app.services.forecasting import ForecastConfig
+
+    # small, quick trees: the API tests check plumbing, not accuracy
+    fast = ForecastConfig(
+        n_estimators=15, num_leaves=7, min_data_in_leaf=5, num_threads=2, min_history_weeks=30
+    )
+    return create_app(settings, engine, llm=llm, storage=storage, forecast_config=fast)
 
 
 @pytest.fixture
@@ -190,3 +196,93 @@ def clean_donations(migrated_engine):
 def row_count(engine, table: str) -> int:
     with engine.connect() as conn:
         return conn.execute(text(f"SELECT count(*) FROM {table}")).scalar_one()
+
+
+FORECAST_PANTRIES = (911, 912, 913)
+FORECAST_CATEGORIES = (1, 2)  # produce, dairy
+FORECAST_WEEKS = 70
+
+
+@pytest.fixture
+def forecast_data(migrated_engine):
+    """A small committed dataset the forecast endpoints can read: 3 pantries x 2 categories x 70
+    weeks of distributions, weather and calendar rows, and two shortage reports."""
+    from datetime import date, timedelta
+
+    import numpy as np
+
+    from app.constants import COUNTIES
+    from app.models import Distribution, ShortageReport, WeeklyContext
+    from app.services.calendar_rules import benefit_week, school_holiday
+
+    last = date(2026, 9, 28)
+    weeks = [last - timedelta(weeks=FORECAST_WEEKS - 1 - k) for k in range(FORECAST_WEEKS)]
+    counties = list(COUNTIES)[:3]
+    with Session(migrated_engine) as db:
+        for i, pantry_id in enumerate(FORECAST_PANTRIES):
+            db.add(
+                Pantry(
+                    id=pantry_id,
+                    name=f"Forecast Pantry {i + 1}",
+                    county=counties[i],
+                    latitude=40.1,
+                    longitude=-83.2,
+                    cold_capacity_lbs=1000,
+                    dry_capacity_lbs=2000,
+                    baseline_households=300 + 100 * i,
+                )  # fmt: skip
+            )
+        db.flush()
+        for county in counties:
+            for k, week in enumerate(weeks):
+                db.add(
+                    WeeklyContext(
+                        county=county,
+                        week_start=week,
+                        avg_temp_f=50 + 20 * np.sin(2 * np.pi * (k - 13) / 52),
+                        precip_in=0.4,
+                        school_holiday=school_holiday(county, week),
+                        benefit_week=benefit_week(county, week),
+                    )  # fmt: skip
+                )
+        for i, pantry_id in enumerate(FORECAST_PANTRIES):
+            for category_id in FORECAST_CATEGORIES:
+                for k, week in enumerate(weeks):
+                    season = 1 + 0.3 * np.sin(2 * np.pi * k / 52)
+                    db.add(
+                        Distribution(
+                            pantry_id=pantry_id,
+                            category_id=category_id,
+                            week_start=week,
+                            lbs=round(300 * (i + 1) * (1 + 0.2 * category_id) * season, 2),
+                            households=100 * (i + 1) + k % 5,
+                        )  # fmt: skip
+                    )
+        db.add(
+            ShortageReport(
+                pantry_id=911,
+                category_id=1,
+                week_start=weeks[40],
+                severity=2,
+                households_turned_away=10,
+            )  # fmt: skip
+        )
+        db.add(
+            ShortageReport(
+                pantry_id=912,
+                category_id=2,
+                week_start=weeks[55],
+                severity=3,
+                households_turned_away=20,
+            )  # fmt: skip
+        )
+        db.commit()
+    yield SimpleNamespace(weeks=weeks, last=weeks[-1], next=weeks[-1] + timedelta(weeks=1))
+    with migrated_engine.begin() as conn:
+        conn.execute(
+            text(
+                "TRUNCATE forecasts, forecast_runs, distributions, shortage_reports, "
+                "weekly_context RESTART IDENTITY CASCADE"
+            )
+        )
+        conn.execute(text("DELETE FROM pantries WHERE id IN (911, 912, 913)"))

@@ -6,7 +6,7 @@ BACKEND := backend
 FRONTEND := frontend
 VENV := $(BACKEND)/.venv
 
-.PHONY: setup db db-down migrate seed dev test eval golden refresh check-env api-types
+.PHONY: setup db db-down migrate seed dev test eval backtest golden refresh check-env api-types
 
 check-env:
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' and fill it in."; exit 1; }
@@ -47,10 +47,15 @@ test: check-env
 	cd $(BACKEND) && .venv/bin/ruff check . && .venv/bin/pytest -q
 	cd $(FRONTEND) && npm run lint && npm run typecheck && npm run build
 
-# Calls Bedrock: scores the donation-intake golden set and writes docs/eval/intake-eval.md.
-# (The forecast backtest joins this target in Stage 5.)
+# Rolling-origin forecast backtest on the seeded data (no AWS): saves a backtest run and writes
+# docs/eval/forecast-backtest.md. Takes about a minute.
+backtest: check-env
+	cd $(BACKEND) && .venv/bin/python -m eval.forecast_backtest
+
+# Both evals. The intake eval calls Bedrock (costs tokens): docs/eval/intake-eval.md.
 eval: check-env
 	cd $(BACKEND) && .venv/bin/python -m eval.run_intake_eval
+	cd $(BACKEND) && .venv/bin/python -m eval.forecast_backtest
 
 # Rebuild the 50 golden manifests from their fixed seed (the committed files already match).
 golden:

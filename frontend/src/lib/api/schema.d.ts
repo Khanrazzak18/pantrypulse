@@ -204,6 +204,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/forecasts/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Forecast
+         * @description Train once on all history and save next week's forecast. Takes a few seconds; the slow
+         *     12-week backtest is a separate command (`make backtest`).
+         */
+        post: operations["run_forecast_api_forecasts_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecasts/runs/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Runs */
+        get: operations["latest_runs_api_forecasts_runs_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecasts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Forecasts */
+        get: operations["list_forecasts_api_forecasts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecasts/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Forecast Series
+         * @description Everything the chart needs for one pantry and category: recent actuals, the backtest
+         *     forecasts for the weeks that have happened, and next week's forecast.
+         */
+        get: operations["forecast_series_api_forecasts_series_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -324,6 +400,93 @@ export interface components {
             /** Donor Type */
             donor_type: string;
         };
+        /** ForecastRowOut */
+        ForecastRowOut: {
+            /** Run Id */
+            run_id: number;
+            /** Pantry Id */
+            pantry_id: number;
+            /** Pantry Name */
+            pantry_name: string;
+            /** Category */
+            category: string;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /** P10 Lbs */
+            p10_lbs: number;
+            /** P50 Lbs */
+            p50_lbs: number;
+            /** P90 Lbs */
+            p90_lbs: number;
+            /** Baseline Lbs */
+            baseline_lbs: number | null;
+            /** Actual Lbs */
+            actual_lbs: number | null;
+        };
+        /** ForecastRunOut */
+        ForecastRunOut: {
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string;
+            /** Model Name */
+            model_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Train Start
+             * Format: date
+             */
+            train_start: string;
+            /**
+             * Train End
+             * Format: date
+             */
+            train_end: string;
+            /**
+             * Horizon Week Start
+             * Format: date
+             */
+            horizon_week_start: string;
+            /** Backtest Start */
+            backtest_start: string | null;
+            /** Backtest End */
+            backtest_end: string | null;
+            /** Wape Lightgbm */
+            wape_lightgbm: number | null;
+            /** Wape Baseline */
+            wape_baseline: number | null;
+            /** Coverage P10 P90 */
+            coverage_p10_p90: number | null;
+            /** Rows */
+            rows: number;
+            /** Error Message */
+            error_message: string | null;
+        };
+        /** ForecastSeries */
+        ForecastSeries: {
+            /** Pantry Id */
+            pantry_id: number;
+            /** Pantry Name */
+            pantry_name: string;
+            /** Category */
+            category: string;
+            /** Points */
+            points: components["schemas"]["SeriesPoint"][];
+            accuracy: components["schemas"]["SeriesAccuracy"] | null;
+            /** Backtest Run Id */
+            backtest_run_id: number | null;
+            /** Forward Run Id */
+            forward_run_id: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -335,6 +498,11 @@ export interface components {
             status: string;
             /** Database */
             database: string;
+        };
+        /** LatestRuns */
+        LatestRuns: {
+            backtest: components["schemas"]["ForecastRunOut"] | null;
+            forward: components["schemas"]["ForecastRunOut"] | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -387,6 +555,35 @@ export interface components {
              * @default false
              */
             edited: boolean;
+        };
+        /** SeriesAccuracy */
+        SeriesAccuracy: {
+            /** Wape Lightgbm */
+            wape_lightgbm: number | null;
+            /** Wape Baseline */
+            wape_baseline: number | null;
+            /** Weeks Scored */
+            weeks_scored: number;
+        };
+        /** SeriesPoint */
+        SeriesPoint: {
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /** Actual Lbs */
+            actual_lbs: number | null;
+            /** P10 Lbs */
+            p10_lbs: number | null;
+            /** P50 Lbs */
+            p50_lbs: number | null;
+            /** P90 Lbs */
+            p90_lbs: number | null;
+            /** Baseline Lbs */
+            baseline_lbs: number | null;
+            /** Source */
+            source: string | null;
         };
         /** UserOut */
         UserOut: {
@@ -745,6 +942,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DonorOut"][];
+                };
+            };
+        };
+    };
+    run_forecast_api_forecasts_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastRunOut"];
+                };
+            };
+        };
+    };
+    latest_runs_api_forecasts_runs_latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LatestRuns"];
+                };
+            };
+        };
+    };
+    list_forecasts_api_forecasts_get: {
+        parameters: {
+            query?: {
+                pantry_id?: number | null;
+                category?: ("produce" | "dairy" | "protein" | "bakery" | "frozen" | "canned" | "dry_goods" | "beverages") | null;
+                week_start?: string | null;
+                kind?: "forward" | "backtest";
+                run_id?: number | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastRowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forecast_series_api_forecasts_series_get: {
+        parameters: {
+            query: {
+                pantry_id: number;
+                category: "produce" | "dairy" | "protein" | "bakery" | "frozen" | "canned" | "dry_goods" | "beverages";
+                history_weeks?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastSeries"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

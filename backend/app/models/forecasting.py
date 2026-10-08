@@ -7,12 +7,13 @@ from sqlalchemy import (
     ForeignKey,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.constants import RUN_STATUSES
+from app.constants import RUN_KINDS, RUN_STATUSES
 from app.models.base import MONDAY_CHECK, Base, in_list
 
 
@@ -24,6 +25,24 @@ class ForecastRun(Base):
         CheckConstraint("wape_baseline IS NULL OR wape_baseline >= 0", name="wape_base_nonneg"),
         CheckConstraint("train_start <= train_end", name="train_window_ordered"),
         CheckConstraint(MONDAY_CHECK.format(col="horizon_week_start"), name="horizon_is_monday"),
+        CheckConstraint(in_list("kind", RUN_KINDS), name="kind_valid"),
+        CheckConstraint(
+            "coverage_p10_p90 IS NULL OR coverage_p10_p90 BETWEEN 0 AND 1", name="coverage_range"
+        ),
+        CheckConstraint(
+            "backtest_start IS NULL OR " + MONDAY_CHECK.format(col="backtest_start"),
+            name="backtest_start_is_monday",
+        ),
+        # A finished backtest always carries its metrics: that is what the Forecasts page shows.
+        CheckConstraint(
+            "kind <> 'backtest' OR status <> 'completed' OR (wape_lightgbm IS NOT NULL "
+            "AND wape_baseline IS NOT NULL AND coverage_p10_p90 IS NOT NULL "
+            "AND backtest_start IS NOT NULL)",
+            name="backtest_has_metrics",
+        ),
+        CheckConstraint(
+            "status <> 'failed' OR error_message IS NOT NULL", name="failed_has_reason"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -34,6 +53,12 @@ class ForecastRun(Base):
     train_end: Mapped[date] = mapped_column(Date)
     horizon_week_start: Mapped[date] = mapped_column(Date)  # first week that was forecast
     status: Mapped[str] = mapped_column(String(20))
+    # forward = trained on all history to forecast next week; backtest = 12 rolling origins
+    kind: Mapped[str] = mapped_column(String(20), server_default="forward")
+    coverage_p10_p90: Mapped[float | None] = mapped_column(Numeric(5, 4))
+    backtest_start: Mapped[date | None] = mapped_column(Date)  # first week that was scored
+    model_key: Mapped[str | None] = mapped_column(String(300))  # where the model files live
+    error_message: Mapped[str | None] = mapped_column(Text)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -156,6 +156,14 @@ def alloc(b, **kw):
     return Allocation(**{**base, **kw})
 
 
+def run_row(**kw):
+    base = dict(
+        model_name="lightgbm", train_start=date(2023, 10, 2), train_end=date(2026, 9, 21),
+        horizon_week_start=MONDAY, status="running",
+    )  # fmt: skip
+    return ForecastRun(**{**base, **kw})
+
+
 def summary(**kw):
     base = dict(month=date(2026, 8, 1), aggregates={}, ai_draft="d", status="draft")
     return MonthlySummary(**{**base, **kw})
@@ -420,6 +428,22 @@ BAD_ROWS = {
     ),
     "summary month not the first": lambda b: summary(month=date(2026, 8, 15)),
     "duplicate summary month": lambda b: summary(month=date(2026, 9, 1)),
+    # --- forecast run kinds (Stage 5) -------------------------------------------------------
+    "forecast run kind unknown": lambda b: run_row(kind="nightly"),
+    "forecast coverage above 1": lambda b: run_row(coverage_p10_p90=1.2),
+    "forecast coverage negative": lambda b: run_row(coverage_p10_p90=-0.1),
+    "completed backtest without metrics": lambda b: run_row(
+        kind="backtest", status="completed", backtest_start=MONDAY
+    ),
+    "completed backtest without a start week": lambda b: run_row(
+        kind="backtest",
+        status="completed",
+        wape_lightgbm=0.1,
+        wape_baseline=0.2,
+        coverage_p10_p90=0.8,
+    ),  # fmt: skip
+    "backtest start not a monday": lambda b: run_row(backtest_start=TUESDAY),
+    "failed forecast run without a reason": lambda b: run_row(status="failed"),
     # --- donation review state (Stage 4) ----------------------------------------------------
     "confirmed donation without a donor": lambda b: Donation(
         source_type="pdf", status="confirmed", received_at=NOW
@@ -485,3 +509,20 @@ def test_historical_confirmed_donations_need_no_review_fields(session, b):
     session.add(row)
     session.flush()
     assert row.id is not None
+
+
+def test_a_completed_backtest_with_its_metrics_is_accepted(session, b):
+    row = run_row(
+        kind="backtest", status="completed", wape_lightgbm=0.11, wape_baseline=0.19,
+        coverage_p10_p90=0.8, backtest_start=date(2026, 7, 13), model_key="forecasts/run-1",
+    )  # fmt: skip
+    session.add(row)
+    session.flush()
+    assert row.id is not None
+
+
+def test_a_failed_run_with_a_reason_is_accepted_and_runs_default_to_forward(session, b):
+    row = run_row(status="failed", error_message="not enough history")
+    session.add(row)
+    session.flush()
+    assert row.kind == "forward"

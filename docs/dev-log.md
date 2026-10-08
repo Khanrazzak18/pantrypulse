@@ -213,3 +213,87 @@
 - Not done on purpose: no IAM changes were made by me (the AWS user was configured by the owner);
   the app database still holds the two donations I created while testing the screens, which
   `make seed` clears.
+
+## Stage 5: Demand forecasting  (2026-10-08 16:52 to 17:19 EDT)
+- Built:
+  - Backend: `app/services/forecasting.py` (censoring correction, features, seasonal-naive baseline,
+    three LightGBM quantile models, metrics, rolling-origin backtest); `forecast_runs.py` (reading
+    the panel from the database, recording runs, saving models through `StorageBackend`);
+    `POST /api/forecasts/run`, `GET /api/forecasts` (pantry, category, week, kind, run filters),
+    `GET /api/forecasts/series`, `GET /api/forecasts/runs/latest`; migration `0003` (run kind,
+    coverage, backtest start, model key, error message, and CHECK constraints); calendar rules
+    moved to `app/services/calendar_rules.py`; `generate_with_truth` added to the generator.
+  - Evaluation: `eval/forecast_backtest.py` and `make backtest` (a backtest run saved to the
+    database, plus `docs/eval/forecast-backtest.md` with a 19-row leakage table).
+  - Frontend: Forecasts page (pantry and category filters, Recharts chart of history, forecasts and
+    the P10 to P90 band, optional last-year line, accuracy table with when the backtest ran, run
+    button, loading, empty and error states, a table of the numbers) and a Forecasts link.
+- Change from the plan (as requested): `POST /api/forecasts/run` trains once and forecasts next week
+  only; the 12-origin backtest runs only from `make backtest`.
+- Tests: written first and seen failing. `make test`: ruff clean, **591 pytest passed** (123 new),
+  frontend lint, typecheck and build pass. Covered: no future data in the features (features
+  identical with or without later weeks; a week's own observations replaced with garbage do not move
+  its features; a missing week leaves a gap); lags and rolling means on a ramp; weather as last
+  week plus a climatology of earlier years; the baseline on tiny fixtures; the censoring correction
+  applying only to the exact shortage-report week (thresholds, caps, zero visits, neighbours
+  untouched, switch-off); WAPE and coverage arithmetic; P10 <= P50 <= P90; deterministic training;
+  a save/load round trip through storage; the backtest scoring the last 12 origins with each fold
+  trained only before its week; overwriting the future with garbage changing no earlier prediction;
+  the forecasting module never importing the generator or its truth; the API (filters, 401 and 403,
+  409 while a run is in progress, a stale run not blocking, 422 on too little history, a model
+  failure recorded without leaking details); constraints for the new columns; the generator's output
+  unchanged by the refactor (fingerprint pinned).
+- **Results (one `make backtest`, 12 weekly origins, 680 series, 8,160 forecasts, 55 s):**
+  - WAPE vs observed pounds: **LightGBM 10.7%, baseline 14.5%** (26% lower error).
+  - WAPE vs true demand (synthetic only): LightGBM 10.2%, baseline 14.3%.
+  - **P10 to P90 coverage: 77.2%** of observed pounds (79.2% of true demand), aim 80%; the average
+    interval is 32.5% of the P50 wide.
+  - Series under 20% WAPE: 99.9% for LightGBM (679 of 680; the exception is pantry 12 dairy at
+    20.9%), 95.4% for the baseline. Median series WAPE 10.5% against 14.2%.
+  - Stable across origins (10.2% to 11.1%) and categories (9.7% to 11.2%). In the 244 forecasts
+    for weeks with a shortage report the observed WAPE is 17.4% (observed is capped by supply there)
+    but 11.6% against true demand.
+  - Reruns give identical numbers (training is deterministic).
+- **The censoring correction did not measurably help:** 10.2% against true demand with and without
+  it, and 11.6% against 11.8% in the shortage weeks. Shortage reports cover only about 3% of
+  cells, and the model also has last week's shortage as a feature. The correction is kept (it is
+  correct in principle and costs nothing), and the report says plainly that it made no measurable
+  difference here.
+- **Leakage review:** the 19 checks and the probe on the real data are in the backtest report. I
+  injected eight leaks one at a time (lag 1 reading the week itself, rolling means including the
+  current week, the week's own weather as a feature, training rows including the forecast week,
+  backtest history including the forecast week, a 51-week baseline, an uplift on every week, a
+  climatology reading a year ahead): the first run caught seven, and the missed one (training rows
+  including the forecast week) was an equivalent mutation, protected by a second guard (the empty
+  target). I added a test that exercises the week filter on its own, and all eight are now caught.
+  Calls for your review: L7 (school-holiday and benefit flags of the forecast week are used because
+  they are scheduled in advance), L8 (`baseline_households` is a constant) and L19 (log transform
+  only).
+- **Speed (the 20 s rule):** `POST /api/forecasts/run` takes 3.5 s through the Next.js proxy and 3.5 s
+  straight to the API; the read endpoints take 7 to 50 ms. Nothing is near 20 s, so I did not
+  change the proxy. (Next.js has `experimental.proxyTimeout`, unset here; the bundled docs do not
+  describe its default.) Each backtest origin trains in about 4.5 s.
+- Problems found and fixed:
+  - The first mutation run printed nothing for every case; I did not trust that, found two patterns
+    that ruff had reformatted away, and rewrote the harness to print real pytest results.
+  - The Forecasts page showed the backtest period as ending a week early (it displayed the last
+    training week instead of the last week scored). Added `backtest_end` to the API, with a test.
+  - A test that a flat series is forecast at its level failed with the fast 20-tree test settings;
+    the cause was under-training (the full settings reproduce the level exactly), so that test now
+    uses a more converged configuration.
+  - Pandas and the probe used `pantry_id` and `category_id` as both row index and feature columns
+    (a `KeyError`), fixed in the tests and the probe.
+  - My first attempt to trim test runs from the database silently did nothing (missing `-i` on
+    `docker exec`); caught by printing the result, redone and verified.
+  - Browser checks with the pane hidden made the chart look stuck. A hidden tab pauses the page's
+    scheduled work, so this was my test setup, not the app; confirmed by fronting the tab.
+- Decisions: weather limited to last week plus a climatology (decision 1); one-week horizon (2);
+  primary metric is WAPE against observed pounds, with the true-demand WAPE secondary and only in
+  `eval/` code (3); the forward run is synchronous (changed per your instruction); log-target
+  quantile models; fixed hyperparameters; baseline uses observed (uncorrected) pounds; categories are
+  ordered produce, dairy, protein, ... in API results.
+- Known limits: the data is synthetic; the intervals are a little narrow (77.2%); only 12 origins and
+  one seed; a single series' WAPE rests on 12 numbers; no multi-week horizon; no automatic weekly
+  schedule yet (the weekly refresh job comes in Stage 7). `make seed` clears the forecast tables, so
+  run `make backtest` and **Run forecast** afterwards.
+- The app database now holds the latest backtest (run 2) and one forward run (run 7).

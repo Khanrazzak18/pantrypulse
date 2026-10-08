@@ -10,10 +10,12 @@ export const NAV_ITEMS: Record<Role, { href: string; label: string }[]> = {
   coordinator: [
     { href: "/coordinator", label: "Pantries" },
     { href: "/coordinator/donations", label: "Donations" },
+    { href: "/coordinator/forecasts", label: "Forecasts" },
   ],
   admin: [
     { href: "/coordinator", label: "Pantries" },
     { href: "/coordinator/donations", label: "Donations" },
+    { href: "/coordinator/forecasts", label: "Forecasts" },
   ],
   pantry_manager: [{ href: "/pantry", label: "My pantry" }],
 };
