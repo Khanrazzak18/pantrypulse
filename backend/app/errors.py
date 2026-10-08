@@ -32,9 +32,7 @@ class ApiError(Exception):
         self.details = details
 
 
-def error_response(
-    status_code: int, code: str, message: str, details: Any = None
-) -> JSONResponse:
+def error_response(status_code: int, code: str, message: str, details: Any = None) -> JSONResponse:
     body = {"error": {"code": code, "message": message, "details": details}}
     return JSONResponse(status_code=status_code, content=body)
 

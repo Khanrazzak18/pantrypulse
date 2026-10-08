@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     postgres_test_db: str
 
     jwt_secret: str = ""
+
+    # Demo logins for `make seed`. No defaults here on purpose: they live in .env only.
+    demo_coordinator_password: str | None = None
+    demo_admin_password: str | None = None
+    demo_pantry_manager_password: str | None = None
+
     log_level: str = "INFO"
 
     def _url(self, database: str) -> URL:

@@ -23,11 +23,11 @@ db: check-env
 db-down:
 	docker compose down
 
-migrate:
-	@echo "migrate: not implemented yet (Stage 2: Alembic migrations)"
+migrate: check-env
+	cd $(BACKEND) && .venv/bin/alembic upgrade head
 
-seed:
-	@echo "seed: not implemented yet (Stage 2: synthetic data and demo users)"
+seed: check-env
+	cd $(BACKEND) && .venv/bin/python -m scripts.seed
 
 # Runs API and web together; Ctrl-C stops both. `exec` makes each background job the
 # server process itself, so the trap kills the servers and not just a wrapper shell.
