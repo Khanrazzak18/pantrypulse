@@ -124,3 +124,9 @@ def test_generation_is_deterministic():
 )  # fmt: skip
 def test_expected_weights_follow_the_rules_in_the_prompt(category, unit, qty, stated, weight):
     assert golden.expected_weight(category, unit, qty, stated) == pytest.approx(weight, abs=0.1)
+
+
+def test_the_answer_key_is_frozen():
+    from eval import golden_key
+
+    assert golden_key.key_digest() == golden_key.frozen_digest()

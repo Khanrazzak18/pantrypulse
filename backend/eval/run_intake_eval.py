@@ -21,6 +21,7 @@ from app.ai.llm_provider import BedrockProvider
 from app.config import ROOT, get_settings
 from app.errors import ApiError
 from app.services import intake
+from eval import golden_key
 from eval.make_golden_set import GOLDEN_DIR
 from eval.scoring import FIELDS, CaseScore, aggregate, score_case
 
@@ -327,6 +328,7 @@ def main(argv: list[str] | None = None) -> None:
         "--note", action="append", default=[], help="a line for the report's scoring note"
     )
     args = parser.parse_args(argv)
+    golden_key.assert_frozen()
 
     if args.rescore:
         run, meta = load_results(args.results, load_cases())
