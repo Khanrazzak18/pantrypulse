@@ -696,10 +696,600 @@
           }
         }
       }
+    },
+    "/api/allocations/run": {
+      "post": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "Run Allocation",
+        "description": "Propose who gets which lot this week. Re-running replaces proposals nobody has decided.",
+        "operationId": "run_allocation_api_allocations_run_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationRunOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/allocations/runs/latest": {
+      "get": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "Latest Run",
+        "operationId": "latest_run_api_allocations_runs_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LatestAllocationRun"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/allocations/runs/{run_id}/reasons": {
+      "post": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "More Reasons",
+        "operationId": "more_reasons_api_allocations_runs__run_id__reasons_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationRunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/allocations": {
+      "get": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "List Allocations",
+        "operationId": "list_allocations_api_allocations_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(proposed|approved|edited|rejected)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "week_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week Start"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/allocations/bulk-approve": {
+      "post": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "Bulk Approve",
+        "operationId": "bulk_approve_api_allocations_bulk_approve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkApproveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkApproveOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/allocations/{allocation_id}/approve": {
+      "post": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "Approve",
+        "operationId": "approve_api_allocations__allocation_id__approve_post",
+        "parameters": [
+          {
+            "name": "allocation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Allocation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/allocations/{allocation_id}/edit": {
+      "post": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "Edit",
+        "operationId": "edit_api_allocations__allocation_id__edit_post",
+        "parameters": [
+          {
+            "name": "allocation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Allocation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/allocations/{allocation_id}/reject": {
+      "post": {
+        "tags": [
+          "allocations"
+        ],
+        "summary": "Reject",
+        "operationId": "reject_api_allocations__allocation_id__reject_post",
+        "parameters": [
+          {
+            "name": "allocation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Allocation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AllocationList": {
+        "properties": {
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AllocationRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "week_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week Start"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AllocationOut"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AllocationSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run",
+          "week_start",
+          "rows",
+          "summary"
+        ],
+        "title": "AllocationList"
+      },
+      "AllocationOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "integer",
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "recommended_lbs": {
+            "type": "number",
+            "title": "Recommended Lbs"
+          },
+          "final_lbs": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Lbs"
+          },
+          "delivery_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Date"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "reason_source": {
+            "type": "string",
+            "title": "Reason Source"
+          },
+          "pantry": {
+            "$ref": "#/components/schemas/PantryRef"
+          },
+          "lot": {
+            "$ref": "#/components/schemas/LotRef"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "status",
+          "recommended_lbs",
+          "final_lbs",
+          "delivery_date",
+          "reason",
+          "reason_source",
+          "pantry",
+          "lot",
+          "decided_at"
+        ],
+        "title": "AllocationOut"
+      },
+      "AllocationRunOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "forecast_run_id": {
+            "type": "integer",
+            "title": "Forecast Run Id"
+          },
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          },
+          "delivery_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Delivery Date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "lots_considered": {
+            "type": "integer",
+            "title": "Lots Considered"
+          },
+          "lots_excluded": {
+            "type": "integer",
+            "title": "Lots Excluded"
+          },
+          "shipped_lbs": {
+            "type": "number",
+            "title": "Shipped Lbs"
+          },
+          "rows": {
+            "type": "integer",
+            "title": "Rows"
+          },
+          "reasons_ai": {
+            "type": "integer",
+            "title": "Reasons Ai"
+          },
+          "reasons_template": {
+            "type": "integer",
+            "title": "Reasons Template"
+          },
+          "reason_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Model Id"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "forecast_run_id",
+          "week_start",
+          "delivery_date",
+          "created_at",
+          "lots_considered",
+          "lots_excluded",
+          "shipped_lbs",
+          "rows",
+          "reasons_ai",
+          "reasons_template",
+          "reason_model_id",
+          "duration_ms"
+        ],
+        "title": "AllocationRunOut"
+      },
+      "AllocationSummary": {
+        "properties": {
+          "proposed": {
+            "type": "integer",
+            "title": "Proposed"
+          },
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          },
+          "edited": {
+            "type": "integer",
+            "title": "Edited"
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected"
+          },
+          "proposed_lbs": {
+            "type": "number",
+            "title": "Proposed Lbs"
+          },
+          "approved_lbs": {
+            "type": "number",
+            "title": "Approved Lbs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "proposed",
+          "approved",
+          "edited",
+          "rejected",
+          "proposed_lbs",
+          "approved_lbs"
+        ],
+        "title": "AllocationSummary"
+      },
       "Body_upload_donation_api_donations_post": {
         "properties": {
           "file": {
@@ -713,6 +1303,42 @@
           "file"
         ],
         "title": "Body_upload_donation_api_donations_post"
+      },
+      "BulkApproveIn": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "BulkApproveIn"
+      },
+      "BulkApproveOut": {
+        "properties": {
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          },
+          "approved_lbs": {
+            "type": "number",
+            "title": "Approved Lbs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "approved",
+          "approved_lbs"
+        ],
+        "title": "BulkApproveOut"
       },
       "ConfirmItem": {
         "properties": {
@@ -1131,6 +1757,34 @@
         ],
         "title": "DonorOut"
       },
+      "EditIn": {
+        "properties": {
+          "lbs": {
+            "type": "number",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Lbs",
+            "description": "New amount to send, in pounds"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lbs"
+        ],
+        "title": "EditIn"
+      },
       "ForecastRowOut": {
         "properties": {
           "run_id": {
@@ -1432,6 +2086,25 @@
         ],
         "title": "HealthResponse"
       },
+      "LatestAllocationRun": {
+        "properties": {
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AllocationRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "run"
+        ],
+        "title": "LatestAllocationRun"
+      },
       "LatestRuns": {
         "properties": {
           "backtest": {
@@ -1483,6 +2156,64 @@
         ],
         "title": "LoginRequest"
       },
+      "LotRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "storage_type": {
+            "type": "string",
+            "title": "Storage Type"
+          },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
+          "remaining_lbs": {
+            "type": "number",
+            "title": "Remaining Lbs"
+          },
+          "days_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Left"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "item_name",
+          "category",
+          "storage_type",
+          "expiry_date",
+          "remaining_lbs",
+          "days_left"
+        ],
+        "title": "LotRef"
+      },
       "PantryOut": {
         "properties": {
           "id": {
@@ -1530,6 +2261,34 @@
           "baseline_households"
         ],
         "title": "PantryOut"
+      },
+      "PantryRef": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "county": {
+            "type": "string",
+            "title": "County"
+          },
+          "miles": {
+            "type": "number",
+            "title": "Miles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "county",
+          "miles"
+        ],
+        "title": "PantryRef"
       },
       "ReviewItem": {
         "properties": {

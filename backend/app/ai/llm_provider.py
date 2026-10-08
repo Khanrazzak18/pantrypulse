@@ -106,6 +106,7 @@ class LLMProvider(Protocol):
         tool_description: str,
         input_schema: dict,
         max_tokens: int = MAX_OUTPUT_TOKENS,
+        timeout_seconds: float | None = None,
     ) -> LLMResult: ...
 
 
@@ -130,24 +131,37 @@ class BedrockProvider:
     def __init__(self, settings: Settings, client=None, session_factory=None):
         self._settings = settings
         self._client = client
+        self._injected = client is not None  # tests pass a fake; it serves every timeout
+        self._timeout_clients: dict[float, object] = {}
         self._session_factory = session_factory
         self.model_id = settings.bedrock_model_id
 
-    def _get_client(self):
-        if self._client is None:  # built on first use, so the app starts without AWS access
-            factory = self._session_factory or boto3.Session
-            session = factory(
-                profile_name=self._settings.aws_profile, region_name=self._settings.aws_region
-            )
-            self._client = session.client(
-                "bedrock-runtime",
-                config=Config(
-                    connect_timeout=CONNECT_TIMEOUT_SECONDS,
-                    read_timeout=READ_TIMEOUT_SECONDS,
-                    retries={"total_max_attempts": 1},  # retries are ours (run_with_retry)
-                ),
-            )
-        return self._client
+    def _build_client(self, read_timeout: float):
+        factory = self._session_factory or boto3.Session
+        session = factory(
+            profile_name=self._settings.aws_profile, region_name=self._settings.aws_region
+        )
+        return session.client(
+            "bedrock-runtime",
+            config=Config(
+                connect_timeout=CONNECT_TIMEOUT_SECONDS,
+                read_timeout=read_timeout,
+                retries={"total_max_attempts": 1},  # retries are ours (run_with_retry)
+            ),
+        )
+
+    def _get_client(self, read_timeout: float | None = None):
+        """Built on first use, so the app starts without AWS access. A call that asks for its own
+        timeout gets its own client (one per distinct timeout)."""
+        if self._injected:
+            return self._client
+        if read_timeout is None:
+            if self._client is None:
+                self._client = self._build_client(READ_TIMEOUT_SECONDS)
+            return self._client
+        if read_timeout not in self._timeout_clients:
+            self._timeout_clients[read_timeout] = self._build_client(read_timeout)
+        return self._timeout_clients[read_timeout]
 
     def converse_tool(
         self,
@@ -158,6 +172,7 @@ class BedrockProvider:
         tool_description: str,
         input_schema: dict,
         max_tokens: int = MAX_OUTPUT_TOKENS,
+        timeout_seconds: float | None = None,
     ) -> LLMResult:
         if not self.model_id:
             raise LLMNotConfigured("BEDROCK_MODEL_ID is not set in .env")
@@ -181,7 +196,7 @@ class BedrockProvider:
         }
         start = time.perf_counter()
         try:
-            response = self._get_client().converse(**request)
+            response = self._get_client(timeout_seconds).converse(**request)
         except Exception as exc:
             latency_ms = int((time.perf_counter() - start) * 1000)
             error = self._translate(exc)

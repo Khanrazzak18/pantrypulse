@@ -297,3 +297,77 @@
   schedule yet (the weekly refresh job comes in Stage 7). `make seed` clears the forecast tables, so
   run `make backtest` and **Run forecast** afterwards.
 - The app database now holds the latest backtest (run 2) and one forward run (run 7).
+- **Leakage review by the project owner (recorded after Stage 5 was committed):** reviewed the three
+  judgement calls flagged in `docs/eval/forecast-backtest.md` and **agreed with all three**:
+  - **L7:** using the school-holiday and benefit-week flags of the forecast week is acceptable, because
+    both are scheduled in advance and so are known at forecast time.
+  - **L8:** treating `baseline_households` as a constant is acceptable.
+  - **L19:** the log(1 + demand) target transform is acceptable: it has no parameters, so no
+    statistic from the test weeks reaches training.
+  No change to the forecasting code or the backtest was needed as a result.
+
+## Stage 6: Expiry-aware allocation  (2026-10-08 17:22 to 17:55 EDT)
+- Built:
+  - Optimizer `app/services/optimizer.py` (OR-Tools GLOP): tiered demand reward (1.0 per lb to P50,
+    0.5 from P50 to P90), urgency bonus for food close to expiry, small distance penalty; lot supply,
+    cold and dry capacity and P90 constraints. 23 lots x 85 pantries (about 2,600 variables) solve in
+    milliseconds.
+  - Current stock: `add_current_inventory` in the generator (own seed, so the pinned history
+    fingerprint is unchanged), loaded by `make seed` (24 lots, 435,495 lb for the forecast week).
+  - Migration `0004`: run and allocation columns, CHECK constraints (including `decision_fields`),
+    audit-log field check and indexes. `allocation_runs` now records week, delivery date, counts,
+    reasons by source, model id, tokens and duration.
+  - `app/services/allocation_runs.py` (run, approve, edit, reject, bulk approve, write more reasons),
+    `allocation_reasons.py` (templates, one batched Bedrock call, validation), the API in
+    `app/api/allocations.py`, per-call timeouts in the Bedrock provider.
+  - Frontend: Allocations page (status tabs, county and search filters, grouped by pantry, inline edit
+    with validation, approve all shown with a confirm dialog, write more AI reasons, AI/Template tags,
+    loading, empty and error states), nav link, helpers in `src/lib/allocations.ts`.
+  - `eval/allocation_sim.py`, `make simulate`, `docs/eval/allocation-sim.md`.
+- Tests written first: optimizer (supply, capacity and P90 never exceeded on random inputs; soonest
+  expiring first; nearer pantry first under shortage), current inventory, constraints and migration,
+  reasons (validation and fallbacks), the API (permissions, edits logged, rejected lots re-offered,
+  over-allocation refused, re-run behaviour, bulk all-or-nothing, reasons fallback, 20 second bound),
+  and the simulation on a hand-checkable fixture. Full suite: 736 passed.
+- **Your additions:** the plain statement that this data supports the stockout comparison but cannot
+  test the spoilage target (spoilage is drawn per lot independent of allocation), and what a pilot
+  would measure, is in `docs/eval/allocation-sim.md` and the README.
+- **Stockout result (needs your attention):** the simulation does **not** show the 30% stockout
+  reduction. Primary setup (Wednesday and Friday deliveries): shortage pantry-weeks 31.3% for the
+  manual stand-in against 33.2% for the optimizer (+6%). The optimizer is better with one delivery
+  a week (38.9% vs 57.4%) and worse than a manual rule that remembers what it already sent (18.0%).
+  62% of the optimizer's short cells were weeks when true demand exceeded P90, which the design
+  never ships beyond. My first prototype (single weekly shipment, all of a week's lots
+  available at once) showed 31% vs 43%; that setup let a Thursday arrival ship on Wednesday and
+  gave the optimizer a clearer win, so I did not use it as primary. I did not tune the optimizer to
+  the simulation; the P50 to P90 band reward (0.5) was the one setting chosen after comparing 0, 0.3,
+  0.6 and 0.9 on this data, and that is stated in the report.
+- Speed: `POST /api/allocations/run` took 7.6 s (5 AI reasons accepted) and 9.3 s (40 of 40 accepted)
+  with real Bedrock through the Next.js proxy; reads and decisions are tens of milliseconds. Nothing
+  near 20 s.
+- Problems found and fixed:
+  - A literal "P50 only" objective made shortages worse (65.6% vs 43.2% in the prototype), which led
+    to the tiered reward you approved.
+  - The first real Bedrock run kept only 5 of 40 reasons: the model invented "surplus" figures and
+    differences. The validator rejected them correctly. The prompt now bans arithmetic and the facts
+    carry a `coverage` phrase; 40 of 40 passed on the next run.
+  - A NULL slipped past the `decision_fields` CHECK; added `final_lbs IS NOT NULL` and fixed the
+    migration.
+  - An empty-string slice replacement corrupted `llm_provider.py` (16.9 MB); restored from git and
+    re-edited with exact-once assertions.
+  - My first simulation used one Wednesday delivery, so Thursday and Friday arrivals expired before
+    the next run and both policies looked terrible (99.9% vs 82.9%). Added a Friday re-run (as the app
+    allows) and show all three schedules in the report.
+  - A first version of the report said the optimizer "was not tuned"; that was not true (see above) and
+    was corrected before commit.
+  - Decimal coordinates broke the haversine in the API (a 500); converted to float, with a test.
+- Decisions: nine as approved (tiered reward; AI reasons for 40 rows with a "write more" endpoint;
+  seeded current stock; delivery date rule; re-run replaces undecided rows; edit means approved with
+  a different amount; capacity and forecast netting of approved rows; simulation design; `ortools`
+  dependency). Additions of mine: a second simulated delivery on Friday and the manual-rule variants in
+  the report; rejected AI reasons are logged (pantry and text, no other data).
+- Known limits: the optimizer never ships beyond P90; pantry capacity is a weekly intake limit, not a
+  live storage level; straight-line distance; the simulation's manual rule is an assumption; a run
+  makes one Bedrock call (about 5,400 tokens); no weekly schedule yet (Stage 7).
+- The app database was reseeded at the end (current stock present, no allocation runs). Run
+  `make backtest` (done), **Run forecast**, then **Run allocation**.

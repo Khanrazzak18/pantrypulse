@@ -280,14 +280,252 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/allocations/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Allocation
+         * @description Propose who gets which lot this week. Re-running replaces proposals nobody has decided.
+         */
+        post: operations["run_allocation_api_allocations_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/allocations/runs/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Run */
+        get: operations["latest_run_api_allocations_runs_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/allocations/runs/{run_id}/reasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** More Reasons */
+        post: operations["more_reasons_api_allocations_runs__run_id__reasons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Allocations */
+        get: operations["list_allocations_api_allocations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/allocations/bulk-approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Approve */
+        post: operations["bulk_approve_api_allocations_bulk_approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/allocations/{allocation_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approve_api_allocations__allocation_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/allocations/{allocation_id}/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit */
+        post: operations["edit_api_allocations__allocation_id__edit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/allocations/{allocation_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["reject_api_allocations__allocation_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AllocationList */
+        AllocationList: {
+            run: components["schemas"]["AllocationRunOut"] | null;
+            /** Week Start */
+            week_start: string | null;
+            /** Rows */
+            rows: components["schemas"]["AllocationOut"][];
+            summary: components["schemas"]["AllocationSummary"];
+        };
+        /** AllocationOut */
+        AllocationOut: {
+            /** Id */
+            id: number;
+            /** Run Id */
+            run_id: number;
+            /** Status */
+            status: string;
+            /** Recommended Lbs */
+            recommended_lbs: number;
+            /** Final Lbs */
+            final_lbs: number | null;
+            /** Delivery Date */
+            delivery_date: string | null;
+            /** Reason */
+            reason: string;
+            /** Reason Source */
+            reason_source: string;
+            pantry: components["schemas"]["PantryRef"];
+            lot: components["schemas"]["LotRef"];
+            /** Decided At */
+            decided_at: string | null;
+        };
+        /** AllocationRunOut */
+        AllocationRunOut: {
+            /** Id */
+            id: number;
+            /** Status */
+            status: string;
+            /** Forecast Run Id */
+            forecast_run_id: number;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /**
+             * Delivery Date
+             * Format: date
+             */
+            delivery_date: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Lots Considered */
+            lots_considered: number;
+            /** Lots Excluded */
+            lots_excluded: number;
+            /** Shipped Lbs */
+            shipped_lbs: number;
+            /** Rows */
+            rows: number;
+            /** Reasons Ai */
+            reasons_ai: number;
+            /** Reasons Template */
+            reasons_template: number;
+            /** Reason Model Id */
+            reason_model_id: string | null;
+            /** Duration Ms */
+            duration_ms: number | null;
+        };
+        /** AllocationSummary */
+        AllocationSummary: {
+            /** Proposed */
+            proposed: number;
+            /** Approved */
+            approved: number;
+            /** Edited */
+            edited: number;
+            /** Rejected */
+            rejected: number;
+            /** Proposed Lbs */
+            proposed_lbs: number;
+            /** Approved Lbs */
+            approved_lbs: number;
+        };
         /** Body_upload_donation_api_donations_post */
         Body_upload_donation_api_donations_post: {
             /** File */
             file: string;
+        };
+        /** BulkApproveIn */
+        BulkApproveIn: {
+            /** Ids */
+            ids: number[];
+        };
+        /** BulkApproveOut */
+        BulkApproveOut: {
+            /** Approved */
+            approved: number;
+            /** Approved Lbs */
+            approved_lbs: number;
         };
         /** ConfirmItem */
         ConfirmItem: {
@@ -400,6 +638,16 @@ export interface components {
             /** Donor Type */
             donor_type: string;
         };
+        /** EditIn */
+        EditIn: {
+            /**
+             * Lbs
+             * @description New amount to send, in pounds
+             */
+            lbs: number;
+            /** Note */
+            note?: string | null;
+        };
         /** ForecastRowOut */
         ForecastRowOut: {
             /** Run Id */
@@ -499,6 +747,10 @@ export interface components {
             /** Database */
             database: string;
         };
+        /** LatestAllocationRun */
+        LatestAllocationRun: {
+            run: components["schemas"]["AllocationRunOut"] | null;
+        };
         /** LatestRuns */
         LatestRuns: {
             backtest: components["schemas"]["ForecastRunOut"] | null;
@@ -510,6 +762,23 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** LotRef */
+        LotRef: {
+            /** Id */
+            id: number;
+            /** Item Name */
+            item_name: string;
+            /** Category */
+            category: string;
+            /** Storage Type */
+            storage_type: string;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Remaining Lbs */
+            remaining_lbs: number;
+            /** Days Left */
+            days_left: number | null;
         };
         /** PantryOut */
         PantryOut: {
@@ -529,6 +798,17 @@ export interface components {
             dry_capacity_lbs: number;
             /** Baseline Households */
             baseline_households: number;
+        };
+        /** PantryRef */
+        PantryRef: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** County */
+            county: string;
+            /** Miles */
+            miles: number;
         };
         /** ReviewItem */
         ReviewItem: {
@@ -1042,6 +1322,239 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForecastSeries"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_allocation_api_allocations_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationRunOut"];
+                };
+            };
+        };
+    };
+    latest_run_api_allocations_runs_latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LatestAllocationRun"];
+                };
+            };
+        };
+    };
+    more_reasons_api_allocations_runs__run_id__reasons_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationRunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_allocations_api_allocations_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                week_start?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_approve_api_allocations_bulk_approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkApproveOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_api_allocations__allocation_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                allocation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_api_allocations__allocation_id__edit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                allocation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_api_allocations__allocation_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                allocation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationOut"];
                 };
             };
             /** @description Validation Error */

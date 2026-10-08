@@ -1,3 +1,4 @@
+from datetime import UTC, date, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -77,7 +78,9 @@ def app(settings, engine, llm, storage):
     fast = ForecastConfig(
         n_estimators=15, num_leaves=7, min_data_in_leaf=5, num_threads=2, min_history_weeks=30
     )
-    return create_app(settings, engine, llm=llm, storage=storage, forecast_config=fast)
+    created = create_app(settings, engine, llm=llm, storage=storage, forecast_config=fast)
+    created.state.today = lambda: date(2026, 10, 6)  # a Tuesday inside the forecast week
+    return created
 
 
 @pytest.fixture
@@ -286,3 +289,108 @@ def forecast_data(migrated_engine):
             )
         )
         conn.execute(text("DELETE FROM pantries WHERE id IN (911, 912, 913)"))
+
+
+ALLOC_PANTRIES = (921, 922, 923)
+ALLOC_WEEK = date(2026, 10, 5)  # the forecast week (a Monday)
+
+
+@pytest.fixture
+def allocation_world(migrated_engine, people):
+    """A tiny world to allocate in: three pantries, a completed forward forecast for the week of
+    2026-10-05, and five lots. `today` is fixed at 2026-10-06 by the app fixture."""
+    from datetime import date as d
+
+    from app.models import (
+        Donation,
+        DonationItem,
+        Donor,
+        Forecast,
+        ForecastRun,
+        InventoryLot,
+    )
+
+    wants = {  # (pantry, category): (p50, p90); categories 1 produce, 2 dairy, 6 canned
+        (921, 1): (600, 700), (921, 2): (300, 350), (921, 6): (400, 450),
+        (922, 1): (300, 350), (922, 2): (150, 180), (922, 6): (200, 230),
+        (923, 1): (100, 120), (923, 2): (80, 100), (923, 6): (100, 120),
+    }  # fmt: skip
+    coords = {921: (40.1, -83.1), 922: (40.3, -82.8), 923: (39.8, -83.2)}
+    lot_specs = [  # key, category, storage, lbs, expiry
+        ("A", 1, "refrigerated", 500, d(2026, 10, 9)),
+        ("B", 1, "refrigerated", 800, d(2026, 10, 20)),
+        ("C", 2, "refrigerated", 400, d(2026, 10, 12)),
+        ("D", 6, "ambient", 2000, d(2027, 6, 1)),
+        ("E", 1, "refrigerated", 300, d(2026, 10, 3)),  # already expired on the delivery date
+    ]
+    lots = {}
+    with Session(migrated_engine) as db:
+        for pid in ALLOC_PANTRIES:
+            lat, lon = coords[pid]
+            db.add(
+                Pantry(
+                    id=pid,
+                    name=f"Alloc Pantry {pid - 920}",
+                    county="Ashford",
+                    latitude=lat,
+                    longitude=lon,
+                    cold_capacity_lbs=150 if pid == 923 else 5000,
+                    dry_capacity_lbs=8000,
+                    baseline_households=300,
+                )  # fmt: skip
+            )
+        donor = Donor(name="Alloc Donor", donor_type="grocery")
+        db.add(donor)
+        db.flush()
+        donation = Donation(
+            donor_id=donor.id, source_type="historical", status="confirmed",
+            received_at=datetime(2026, 10, 3, 10, 0, tzinfo=UTC),
+        )  # fmt: skip
+        db.add(donation)
+        db.flush()
+        for key, category_id, storage, lbs, expiry in lot_specs:
+            item = DonationItem(
+                donation_id=donation.id, name=f"Lot {key} food", category_id=category_id,
+                quantity=1, unit="case", estimated_weight_lbs=lbs, expiry_date=expiry,
+                storage_type=storage,
+            )  # fmt: skip
+            db.add(item)
+            db.flush()
+            lot = InventoryLot(
+                donation_item_id=item.id, category_id=category_id, storage_type=storage,
+                received_lbs=lbs, remaining_lbs=lbs, expired_lbs=0, received_date=d(2026, 10, 3),
+                expiry_date=expiry, status="available",
+            )  # fmt: skip
+            db.add(lot)
+            db.flush()
+            lots[key] = lot.id
+        run = ForecastRun(
+            model_name="lightgbm", kind="forward", status="completed", train_start=d(2023, 10, 2),
+            train_end=d(2026, 9, 28), horizon_week_start=ALLOC_WEEK, model_key="forecasts/run-x",
+        )  # fmt: skip
+        db.add(run)
+        db.flush()
+        for (pid, cid), (p50, p90) in wants.items():
+            db.add(
+                Forecast(
+                    forecast_run_id=run.id,
+                    pantry_id=pid,
+                    category_id=cid,
+                    week_start=ALLOC_WEEK,
+                    p10_lbs=p50 * 0.8,
+                    p50_lbs=p50,
+                    p90_lbs=p90,
+                    baseline_lbs=p50,
+                )  # fmt: skip
+            )
+        db.commit()
+        forecast_run_id = run.id
+    yield SimpleNamespace(lots=lots, wants=wants, forecast_run_id=forecast_run_id, week=ALLOC_WEEK)
+    with migrated_engine.begin() as conn:
+        conn.execute(
+            text(
+                "TRUNCATE allocation_edits, allocations, allocation_runs, forecasts, forecast_runs, "
+                "inventory_lots, donation_items, donations, donors RESTART IDENTITY CASCADE"
+            )
+        )
+        conn.execute(text("DELETE FROM pantries WHERE id IN (921, 922, 923)"))

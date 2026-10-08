@@ -6,7 +6,7 @@ BACKEND := backend
 FRONTEND := frontend
 VENV := $(BACKEND)/.venv
 
-.PHONY: setup db db-down migrate seed dev test eval backtest golden refresh check-env api-types
+.PHONY: setup db db-down migrate seed dev test eval backtest golden refresh check-env api-types simulate
 
 check-env:
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' and fill it in."; exit 1; }
@@ -52,6 +52,10 @@ test: check-env
 backtest: check-env
 	cd $(BACKEND) && .venv/bin/python -m eval.forecast_backtest
 
+# Replays the last 12 weeks under a manual rule and the optimizer: docs/eval/allocation-sim.md.
+simulate: check-env
+	cd $(BACKEND) && .venv/bin/python -m eval.allocation_sim
+
 # Both evals. The intake eval calls Bedrock (costs tokens): docs/eval/intake-eval.md.
 eval: check-env
 	cd $(BACKEND) && .venv/bin/python -m eval.run_intake_eval
@@ -62,4 +66,4 @@ golden:
 	cd $(BACKEND) && .venv/bin/python -m eval.make_golden_set
 
 refresh:
-	@echo "refresh: not implemented yet (Stage 6: weekly retrain + allocation job)"
+	@echo "refresh: not implemented yet (Stage 7: weekly retrain + allocation job)"

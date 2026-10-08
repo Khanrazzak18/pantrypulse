@@ -1,6 +1,6 @@
 """Every table rejects bad data at the database level, not just in Python."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -66,7 +66,12 @@ def b(session):
         received_lbs=400, remaining_lbs=400, expired_lbs=0, received_date=date(2026, 10, 1),
         expiry_date=date(2026, 10, 5), status="available",
     )  # fmt: skip
-    session.add(lot)
+    lot2 = InventoryLot(
+        donation_item_id=item.id, category_id=protein.id, storage_type="refrigerated",
+        received_lbs=200, remaining_lbs=200, expired_lbs=0, received_date=date(2026, 10, 1),
+        expiry_date=date(2026, 10, 6), status="available",
+    )  # fmt: skip
+    session.add_all([lot, lot2])
     session.add(Distribution(
         pantry_id=pantry.id, category_id=protein.id, week_start=MONDAY, lbs=900, households=120
     ))  # fmt: skip
@@ -89,7 +94,10 @@ def b(session):
         forecast_run_id=run.id, pantry_id=pantry.id, category_id=protein.id,
         week_start=MONDAY, p10_lbs=700, p50_lbs=900, p90_lbs=1200,
     ))  # fmt: skip
-    alloc_run = AllocationRun(forecast_run_id=run.id, created_by=coordinator.id, status="draft")
+    alloc_run = AllocationRun(
+        forecast_run_id=run.id, created_by=coordinator.id, status="draft", week_start=MONDAY,
+        delivery_date=MONDAY + timedelta(days=2),
+    )  # fmt: skip
     session.add(alloc_run)
     session.flush()
     allocation = Allocation(
@@ -104,7 +112,7 @@ def b(session):
     session.flush()
     return SimpleNamespace(
         protein=protein, pantry=pantry, donor=donor, coordinator=coordinator, manager=manager,
-        donation=donation, item=item, lot=lot, run=run, alloc_run=alloc_run,
+        donation=donation, item=item, lot=lot, lot2=lot2, run=run, alloc_run=alloc_run,
         allocation=allocation,
     )  # fmt: skip
 
@@ -150,7 +158,7 @@ def pantry(**kw):
 
 def alloc(b, **kw):
     base = dict(
-        allocation_run_id=b.alloc_run.id, lot_id=b.lot.id, pantry_id=b.pantry.id,
+        allocation_run_id=b.alloc_run.id, lot_id=b.lot2.id, pantry_id=b.pantry.id,
         recommended_lbs=50, reason="r", status="proposed",
     )  # fmt: skip
     return Allocation(**{**base, **kw})
@@ -247,8 +255,11 @@ BAD_ROWS = {
         b, status="maybe", decided_by=b.coordinator.id, decided_at=NOW
     ),
     "allocation run status unknown": lambda b: AllocationRun(
-        forecast_run_id=b.run.id, status="weird"
-    ),
+        forecast_run_id=b.run.id,
+        status="weird",
+        week_start=MONDAY,
+        delivery_date=MONDAY,
+    ),  # fmt: skip
     "forecast run status unknown": lambda b: ForecastRun(
         model_name="lightgbm",
         train_start=date(2023, 1, 2),
@@ -428,6 +439,60 @@ BAD_ROWS = {
     ),
     "summary month not the first": lambda b: summary(month=date(2026, 8, 15)),
     "duplicate summary month": lambda b: summary(month=date(2026, 9, 1)),
+    # --- allocation decisions and runs (Stage 6) --------------------------------------------
+    "approved allocation without a delivery date": lambda b: alloc(
+        b, status="approved", decided_by=b.coordinator.id, decided_at=NOW, final_lbs=50
+    ),
+    "edited allocation without final lbs": lambda b: alloc(
+        b,
+        status="edited",
+        decided_by=b.coordinator.id,
+        decided_at=NOW,
+        delivery_date=MONDAY,
+    ),  # fmt: skip
+    "approved allocation with zero final lbs": lambda b: alloc(
+        b,
+        status="approved",
+        decided_by=b.coordinator.id,
+        decided_at=NOW,
+        final_lbs=0,
+        delivery_date=MONDAY,
+    ),  # fmt: skip
+    "rejected allocation with final lbs": lambda b: alloc(
+        b, status="rejected", decided_by=b.coordinator.id, decided_at=NOW, final_lbs=10
+    ),
+    "proposed allocation with a delivery date": lambda b: alloc(b, delivery_date=MONDAY),
+    "same lot and pantry twice in one run": lambda b: alloc(b, lot_id=b.lot.id),
+    "allocation reason source unknown": lambda b: alloc(b, reason_source="robot"),
+    "allocation edit field unknown": lambda b: AllocationEdit(
+        allocation_id=b.allocation.id,
+        user_id=b.coordinator.id,
+        field="colour",
+        old_value="a",
+        new_value="b",
+    ),  # fmt: skip
+    "allocation run week not a monday": lambda b: AllocationRun(
+        forecast_run_id=b.run.id, status="draft", week_start=TUESDAY, delivery_date=TUESDAY
+    ),
+    "delivery before the week starts": lambda b: AllocationRun(
+        forecast_run_id=b.run.id,
+        status="draft",
+        week_start=MONDAY,
+        delivery_date=MONDAY - timedelta(days=1),
+    ),  # fmt: skip
+    "delivery after the week ends": lambda b: AllocationRun(
+        forecast_run_id=b.run.id,
+        status="draft",
+        week_start=MONDAY,
+        delivery_date=MONDAY + timedelta(days=7),
+    ),  # fmt: skip
+    "allocation run with a negative count": lambda b: AllocationRun(
+        forecast_run_id=b.run.id,
+        status="draft",
+        week_start=MONDAY,
+        delivery_date=MONDAY,
+        lots_considered=-1,
+    ),  # fmt: skip
     # --- forecast run kinds (Stage 5) -------------------------------------------------------
     "forecast run kind unknown": lambda b: run_row(kind="nightly"),
     "forecast coverage above 1": lambda b: run_row(coverage_p10_p90=1.2),
@@ -471,7 +536,10 @@ def test_database_rejects_bad_data(session, b, make_row):
 
 def test_decided_allocation_is_accepted(session, b):
     """The mirror of the rejection cases: a properly decided allocation goes in."""
-    row = alloc(b, status="approved", decided_by=b.coordinator.id, decided_at=NOW, final_lbs=50)
+    row = alloc(
+        b, status="approved", decided_by=b.coordinator.id, decided_at=NOW, final_lbs=50,
+        delivery_date=MONDAY + timedelta(days=2),
+    )  # fmt: skip
     session.add(row)
     session.flush()
     assert row.id is not None
@@ -526,3 +594,28 @@ def test_a_failed_run_with_a_reason_is_accepted_and_runs_default_to_forward(sess
     session.add(row)
     session.flush()
     assert row.kind == "forward"
+
+
+def test_a_rejected_allocation_keeps_no_final_quantity(session, b):
+    row = alloc(b, status="rejected", decided_by=b.coordinator.id, decided_at=NOW)
+    session.add(row)
+    session.flush()
+    assert row.final_lbs is None
+
+
+def test_edits_can_log_quantity_note_and_status_changes(session, b):
+    for field in ("final_lbs", "note", "status"):
+        session.add(
+            AllocationEdit(
+                allocation_id=b.allocation.id,
+                user_id=b.coordinator.id,
+                field=field,
+                old_value="a",
+                new_value="b",
+            )  # fmt: skip
+        )
+    session.flush()
+
+
+def test_allocations_default_to_a_template_reason(session, b):
+    assert b.allocation.reason_source == "template"

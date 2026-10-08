@@ -262,3 +262,44 @@ week's demand in pounds as three quantiles (P10, P50, P90), and a seasonal-naive
   `GET /api/forecasts/runs/latest` (the latest backtest and forward run). Errors:
   `not_enough_history` 422, `forecast_in_progress` 409, `forecast_failed` 500 (the cause is stored
   on the run, not shown).
+
+## Expiry-aware allocation (Stage 6)
+
+- **The optimizer** (`app/services/optimizer.py`) is a linear program solved with OR-Tools GLOP.
+  Variable: pounds of lot `l` sent to pantry `p` for the forecast week. Constraints: each lot ships
+  at most what remains; a pantry's refrigerated and frozen intake is at most its cold capacity and
+  its ambient intake at most its dry capacity; each pantry and category receives at most its P90.
+  Objective, in order of weight: demand met (1.0 per lb up to P50, 0.5 per lb from P50 to P90), an
+  urgency bonus of 0.20 x max(0, 1 - days left / 10) per lb, and a distance penalty of 0.0005 per
+  lb per mile from the warehouse. The credit for the P50 to P90 band exists because aiming at P50
+  alone leaves a pantry short about half the time. Lots that expire before the delivery date are
+  excluded and reported; shipments are rounded down to hundredths and anything under 1 lb is
+  dropped. About 2,600 variables solve in milliseconds.
+- **Delivery date** is `min(max(forecast week start, today), that week's Friday)`.
+- **Inputs on a re-run.** Forecasts and each pantry's cold and dry capacity are net of rows already
+  approved for the week; lots' `remaining_lbs` already has approved pounds taken out. Proposed rows
+  from an earlier run of the same week are deleted first; decided rows stay.
+- **Deciding.** Approve, edit (status `edited`, the new amount) and reject lock the lots involved in
+  id order, then the rows, so concurrent requests cannot over-allocate a lot or deadlock. Bulk
+  approve is all-or-nothing and checks each lot's total. Conflicts return 409 `allocation_decided`,
+  `lot_short` or `lot_expired`; a bad amount is a 422 `validation_error`. Status changes, amount
+  changes and notes are written to `allocation_edits` (`field` is `status`, `final_lbs` or `note`).
+  The database also enforces the shape of a decision (`decision_fields`): proposed rows carry no
+  final amount, approved or edited rows carry a positive amount and a delivery date.
+- **Reasons** (`app/services/allocation_reasons.py`): every row first gets a template reason. One
+  Bedrock Converse call (forced tool use, 10 second timeout, no retry) rewrites the 40 largest rows;
+  at about 35 output tokens a row, all ~700 rows would take minutes, which would break the 20 second
+  limit. The model is given facts and a plain-words `coverage` field and must not calculate; a
+  reason is kept only if it names the pantry, is one line of at most 160 characters, and every
+  number in it appears in that row's facts. Tokens, duration and counts are stored on the run.
+- **API** (coordinator and admin; pantry managers get 403): `POST /api/allocations/run`,
+  `GET /api/allocations` (rows for the latest run's week, optional `status`, with a summary),
+  `GET /api/allocations/runs/latest`, `POST /api/allocations/{id}/approve|reject|edit`,
+  `POST /api/allocations/bulk-approve`, `POST /api/allocations/runs/{id}/reasons`. Errors:
+  `no_forecast` and `no_inventory` (422), `optimizer_failed` (500).
+- **Current stock.** The generator (`add_current_inventory`, its own fixed seed so the pinned
+  history does not change) adds about two dozen available lots sized to demand, perishables
+  expiring 6 to 13 days after the forecast Monday. `make seed` loads them as confirmed donations.
+- **Simulation** (`eval/allocation_sim.py`): replays the last 12 backtest weeks; the report states
+  that spoilage cannot be tested on this data.
+

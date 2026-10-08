@@ -22,13 +22,21 @@ class FakeLLM:
         return self
 
     def converse_tool(self, *, system, content, tool_name, tool_description, input_schema,
-                      max_tokens=4096):  # fmt: skip
+                      max_tokens=4096, timeout_seconds=None):  # fmt: skip
         self.calls.append(
-            {"system": system, "content": content, "tool_name": tool_name, "schema": input_schema}
+            {
+                "system": system,
+                "content": content,
+                "tool_name": tool_name,
+                "schema": input_schema,
+                "timeout_seconds": timeout_seconds,
+            }  # fmt: skip
         )
         if not self.outputs:
             raise AssertionError("FakeLLM was called more times than it was scripted for")
         out = self.outputs.pop(0)
+        if callable(out):  # a function of the call, for replies that depend on what was sent
+            out = out(self.calls[-1])
         if isinstance(out, Exception):
             raise out
         if isinstance(out, LLMResult):

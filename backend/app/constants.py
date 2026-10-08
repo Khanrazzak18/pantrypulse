@@ -25,6 +25,8 @@ RUN_STATUSES = ("running", "completed", "failed")
 RUN_KINDS = ("forward", "backtest")
 ALLOCATION_RUN_STATUSES = ("draft", "completed")
 ALLOCATION_STATUSES = ("proposed", "approved", "edited", "rejected")
+REASON_SOURCES = ("ai", "template")
+EDIT_FIELDS = ("final_lbs", "note", "status")
 SUMMARY_STATUSES = ("draft", "approved")
 
 # Six fictional counties around a notional region, with their centre points (lat, lon).

@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
+from datetime import date
 
 from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
 from app.ai.llm_provider import BedrockProvider, LLMProvider
-from app.api import auth, donations, donors, forecasts, health, pantries
+from app.api import allocations, auth, donations, donors, forecasts, health, pantries
 from app.config import Settings, get_settings
 from app.db import make_engine
 from app.errors import register_exception_handlers
@@ -44,6 +45,7 @@ def create_app(
     app.state.llm = llm or BedrockProvider(settings)
     app.state.storage = storage or LocalStorage(settings.storage_path)
     app.state.forecast_config = forecast_config or ForecastConfig()
+    app.state.today = date.today  # tests pin this to a fixed day
     register_exception_handlers(app)
     register_request_middleware(app)
     app.include_router(health.router)
@@ -52,4 +54,5 @@ def create_app(
     app.include_router(donations.router)
     app.include_router(donors.router)
     app.include_router(forecasts.router)
+    app.include_router(allocations.router)
     return app

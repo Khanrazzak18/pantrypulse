@@ -36,9 +36,10 @@ Check it works: `curl localhost:3000/api/health` returns `{"status":"ok","databa
 | `make api-types` | Regenerate the frontend's typed API client after changing the API |
 | `make test` | ruff + pytest, then frontend lint, typecheck and build (needs `make db`) |
 | `make backtest` | Forecast backtest over the last 12 weeks (no AWS, about a minute): saves a backtest run and writes `docs/eval/forecast-backtest.md` |
+| `make simulate` | Replay the last 12 weeks under a manual rule and the optimizer (no AWS, a few seconds; run `make backtest` first): writes `docs/eval/allocation-sim.md` |
 | `make eval` | Both evals: the AI intake eval (calls Bedrock, costs tokens) and then the forecast backtest |
 | `make golden` | Rebuild the golden manifests from their fixed seed |
-| `make refresh` | Weekly retrain and allocation job (Stage 6) |
+| `make refresh` | Weekly retrain and allocation job (Stage 7) |
 
 Ports are set only in `.env`. Secrets never go in git; AWS access uses the CLI profile in
 `AWS_PROFILE`, not access keys.
@@ -111,7 +112,7 @@ week's forecast with a shaded P10 to P90 range. **Run forecast** trains the mode
 saves next week's forecast; it takes a few seconds. The accuracy table shows the latest **backtest**,
 which you produce with `make backtest`.
 
-After `make seed` the forecast tables are empty: run `make backtest` once, then **Run forecast**.
+After `make seed` the forecast tables are empty: run `make backtest` once, then **Run forecast**, then **Run allocation**.
 
 ### Forecast accuracy
 
@@ -129,6 +130,60 @@ The correction for censored demand (shortage weeks) made no measurable differenc
 (10.2% with and without it, against true demand), because only about 3% of weeks have a shortage
 report. The data is synthetic, so these numbers are a regression check, not a promise about real
 food banks.
+
+## Expiry-aware allocation
+
+Open **Allocations** (coordinators and admins). **Run allocation** proposes which lot goes to which
+pantry for the forecast week, soonest-expiring food first, and nothing is sent until a coordinator
+approves it. Rows are grouped by pantry; each can be **approved**, **edited** (a new amount, with an
+optional note) or **rejected**, and **Approve all shown** (with a confirmation) approves whatever the
+current filters show. Every decision is saved to `allocation_edits` with who, when, the old value and
+the new one.
+
+How it works (details in `docs/architecture.md`):
+
+- A linear program (Google OR-Tools GLOP) chooses how many pounds of each lot go to each pantry. It
+  earns full credit for meeting the forecast up to P50 and half credit between P50 and P90, adds a
+  bonus for shipping food that is close to expiry, and subtracts a small penalty for distance from
+  the warehouse. A lot cannot ship more than it has, a pantry cannot receive more than its cold or
+  dry storage allows, and no pantry gets more than its P90 forecast in a category. Food that would
+  expire before the delivery date is left out and counted.
+- One batched Bedrock call writes a one-line reason for the 40 largest rows (10 second limit, no
+  retry); every other row, and every row if the call fails, gets a template reason. Each row is
+  tagged **AI** or **Template**. A reason is accepted only if it names the pantry and every number
+  in it comes from that row's facts. **Write more AI reasons** fills in more rows on request.
+- Approving a row takes its pounds out of the lot, so a second approval cannot over-allocate it;
+  rejecting leaves the lot untouched, so it is offered again next time. Running again replaces
+  proposals nobody has decided and keeps the decided ones (their pounds are netted out).
+- `make seed` also creates about two dozen lots of current stock so there is something to allocate.
+  Lots you confirm through donation intake join the same pool.
+
+A run takes about 8 to 10 seconds with real Bedrock (the optimizer itself solves in milliseconds).
+
+### Simulation: what it supports and what it cannot
+
+`make simulate` replays the last 12 weeks of the synthetic data twice, once with a stand-in for
+today's manual routine and once with the optimizer, and scores both against the true demand
+(full report with the assumptions: [docs/eval/allocation-sim.md](docs/eval/allocation-sim.md)).
+
+**This synthetic data can test the stockout target but cannot test the spoilage target.** The data
+generator draws spoilage for each lot independently of how the food is allocated, so no allocation
+decision can change the spoilage in the history, and the 12% baseline is a property of the
+generator's settings. The simulation's spoilage figures only count food that expires in the
+warehouse or is sent beyond need; they are not evidence for or against reducing spoilage from 12%
+to under 8%.
+
+To test spoilage for real, a pilot would need to measure, for a period before and a period during
+the optimizer's use, lot-level pounds received, shipped, distributed and discarded by date, with
+the cause of every discard (warehouse expiry, pantry expiry, damage); a comparison that controls for
+what was donated (pilot against comparison pantries in the same weeks, or a stepped rollout); and
+pantry reports of food that expired after delivery.
+
+On stockouts the simulation is **not conclusive**. With two deliveries a week (the primary setup)
+pantry-weeks with a shortage were 31.3% for the manual stand-in and 33.2% for the optimizer; the
+optimizer was better with one delivery a week (38.9% against 57.4%) and worse than a coordinator who
+keeps track of what has already been sent (18.0%). The result depends on how good the manual process
+is assumed to be, which nobody has measured, so the 30% stockout target is not shown by this data.
 
 ## Demo logins (local only)
 
@@ -178,3 +233,14 @@ generator uses a fixed seed, so the same data comes out every time. See
 - **Prediction intervals are slightly narrow:** the P10 to P90 range held the actual amount 77.2% of the
   time in the backtest, not 80%.
 - **Forecasts are one week ahead.** There is no multi-week horizon yet.
+- **Allocation is only as good as its forecast and stock data.** The optimizer never sends more than
+  a pantry's P90 forecast, so a week when demand exceeds P90 leaves that pantry short even if stock is
+  available. Pantry cold and dry capacity are treated as each week's intake limit, not as live
+  storage levels, and travel is straight-line distance from one warehouse.
+- **Reasons are checked, not trusted.** A reason written by the model is rejected (and the template
+  kept) if it names a number that is not one of the row's facts. In a first real run the model
+  computed its own "surplus" figures and 35 of 40 reasons were rejected; the prompt now forbids
+  arithmetic and gives the comparison in words, after which 40 of 40 passed. Expect an occasional
+  template row.
+- **The simulation does not establish the 12% to 8% spoilage target or the 30% stockout target**
+  (see above).

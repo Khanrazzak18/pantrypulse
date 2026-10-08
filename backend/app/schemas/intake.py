@@ -68,7 +68,7 @@ class DonationExtraction(BaseModel):
         return value or None
 
 
-def _inline_refs(schema: dict) -> dict:
+def inline_refs(schema: dict) -> dict:
     """Resolve $ref/$defs and drop titles and defaults: every model reads plain schemas best."""
     defs = schema.get("$defs", {})
 
@@ -87,4 +87,4 @@ def _inline_refs(schema: dict) -> dict:
 
 
 def tool_input_schema() -> dict:
-    return _inline_refs(DonationExtraction.model_json_schema())
+    return inline_refs(DonationExtraction.model_json_schema())

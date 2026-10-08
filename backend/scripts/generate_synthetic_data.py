@@ -173,6 +173,11 @@ class SyntheticData:
     inventory_lots: list[dict] = field(default_factory=list)
     distributions: list[dict] = field(default_factory=list)
     shortage_reports: list[dict] = field(default_factory=list)
+    # Stock on hand at the start of the forecast week. Not part of the 3-year history (and so not
+    # in `tables()` or the fingerprint); `add_current_inventory` fills these in.
+    current_donations: list[dict] = field(default_factory=list)
+    current_donation_items: list[dict] = field(default_factory=list)
+    current_lots: list[dict] = field(default_factory=list)
 
     def tables(self) -> dict[str, list[dict]]:
         """Tables in foreign-key order, ready to insert."""
@@ -185,6 +190,14 @@ class SyntheticData:
             "inventory_lots": self.inventory_lots,
             "distributions": self.distributions,
             "shortage_reports": self.shortage_reports,
+        }
+
+    def current_tables(self) -> dict[str, list[dict]]:
+        """The current-inventory tables, in foreign-key order. Empty until it is added."""
+        return {
+            "donations": self.current_donations,
+            "donation_items": self.current_donation_items,
+            "inventory_lots": self.current_lots,
         }
 
 
@@ -531,3 +544,116 @@ if __name__ == "__main__":
         print(f"  {name:18s} {len(rows):>8,}")
     for key, value in summarize(result).items():
         print(f"  {key:28s} {value:6.2f}")
+
+
+# --- stock on hand for the forecast week ------------------------------------------------------
+
+CURRENT_INVENTORY_SEED = 6161
+
+
+def add_current_inventory(data: SyntheticData, seed: int = CURRENT_INVENTORY_SEED) -> SyntheticData:
+    """Add the lots on hand at the start of the week after the history, so there is stock to
+    allocate. Sized like the history's weekly supply: the average pounds handed out per category
+    over the last four weeks times that category's supply ratio. Fresh food arrived one to three
+    days before the forecast Monday and expires 6 to 13 days after it. The history is untouched.
+    """
+    rng = np.random.default_rng(seed)
+    last_week = max(d["week_start"] for d in data.distributions)
+    monday = last_week + timedelta(weeks=1)
+    recent = sorted({d["week_start"] for d in data.distributions})[-4:]
+    weekly = dict.fromkeys(range(1, C + 1), 0.0)
+    for d in data.distributions:
+        if d["week_start"] in recent:
+            weekly[d["category_id"]] += d["lbs"] / len(recent)
+
+    by_type = {t: [i + 1 for i, (_, k) in enumerate(DONORS) if k == t] for t in DONOR_AFFINITY}
+    types = list(DONOR_AFFINITY)
+    next_donation = max(d["id"] for d in data.donations) + 1
+    next_lot = max(lot["id"] for lot in data.inventory_lots) + 1
+
+    lots: list[dict] = []
+    pending: dict[tuple[int, date], list[int]] = {}
+    for c, cat in enumerate(CATEGORY_NAMES):
+        perishable = bool(PERISHABLE[c])
+        total = weekly[c + 1] * SUPPLY_RATIO[c] * float(rng.lognormal(0, 0.05))
+        n_lots = int(rng.integers(3, 7) if perishable else rng.integers(1, 4))
+        for share in rng.dirichlet(np.full(n_lots, 2.0)):
+            lbs = max(1.0, round(float(share * total), 2))
+            storage = _storage_type(rng, cat)
+            received = monday - timedelta(days=int(rng.integers(1, 4)))
+            if perishable and storage != "frozen":
+                days_left = int(rng.integers(6, 14))
+            elif perishable:
+                days_left = int(rng.integers(90, 181))
+            else:
+                days_left = int(rng.integers(120, 541))
+            affinity = np.array([DONOR_AFFINITY[t][c] for t in types], dtype=float)
+            kind = types[int(rng.choice(len(types), p=affinity / affinity.sum()))]
+            donor_id = int(rng.choice(by_type[kind]))
+            unit, lbs_per_unit = UNITS[cat]
+            lot_id = next_lot + len(lots)
+            lots.append(
+                {
+                    "id": lot_id,
+                    "donation_item_id": lot_id,
+                    "category_id": c + 1,
+                    "storage_type": storage,
+                    "received_lbs": lbs,
+                    "remaining_lbs": lbs,  # nothing has been sent out yet
+                    "expired_lbs": 0.0,
+                    "received_date": received,
+                    "expiry_date": monday + timedelta(days=days_left),
+                    "status": "available",
+                    "_donor_id": donor_id,
+                    "_item": {
+                        "name": ITEM_NAMES[cat][int(rng.integers(0, len(ITEM_NAMES[cat])))],
+                        "unit": unit,
+                        "quantity": max(0.01, round(lbs / lbs_per_unit, 2)),
+                    },
+                }
+            )
+            pending.setdefault((donor_id, received), []).append(lot_id)
+
+    donations, items = [], []
+    for (donor_id, received), lot_ids in sorted(pending.items()):
+        for start in range(0, len(lot_ids), 4):
+            donation_id = next_donation + len(donations)
+            donations.append(
+                {
+                    "id": donation_id,
+                    "donor_id": donor_id,
+                    "source_type": "historical",
+                    "file_key": None,
+                    "original_filename": "seeded-current-inventory",
+                    "status": "confirmed",
+                    "raw_llm_output": None,
+                    "model_id": None,
+                    "latency_ms": None,
+                    "received_at": datetime(
+                        received.year, received.month, received.day, 10, 0, tzinfo=UTC
+                    ),
+                    "created_by": None,
+                }
+            )
+            for lot_id in lot_ids[start : start + 4]:
+                lot = next(x for x in lots if x["id"] == lot_id)
+                items.append(
+                    {
+                        "id": lot_id,
+                        "donation_id": donation_id,
+                        "name": lot["_item"]["name"],
+                        "category_id": lot["category_id"],
+                        "quantity": lot["_item"]["quantity"],
+                        "unit": lot["_item"]["unit"],
+                        "estimated_weight_lbs": lot["received_lbs"],
+                        "expiry_date": lot["expiry_date"],
+                        "storage_type": lot["storage_type"],
+                        "confidence": {},
+                        "edited": False,
+                    }
+                )
+    for lot in lots:
+        lot.pop("_donor_id")
+        lot.pop("_item")
+    data.current_donations, data.current_donation_items, data.current_lots = donations, items, lots
+    return data

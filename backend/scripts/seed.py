@@ -14,7 +14,12 @@ from app.auth.passwords import hash_password
 from app.config import Settings, get_settings
 from app.db import make_engine
 from app.models import Base
-from scripts.generate_synthetic_data import DEFAULT_SEED, generate, summarize
+from scripts.generate_synthetic_data import (
+    DEFAULT_SEED,
+    add_current_inventory,
+    generate,
+    summarize,
+)
 
 DEMO_EMAILS = {
     "coordinator": "coordinator@harvestbridge.example.org",
@@ -95,6 +100,8 @@ def load(engine: Engine, data, passwords: dict[str, str]) -> None:
     with engine.begin() as conn:
         for name, rows in data.tables().items():
             _insert(conn, name, rows)
+        for name, rows in data.current_tables().items():  # stock on hand for the forecast week
+            _insert(conn, name, rows)
         users = [
             {
                 "email": DEMO_EMAILS[role],
@@ -117,7 +124,7 @@ def main() -> None:
     engine = make_engine(settings.database_url)
     try:
         assert_safe_target(engine, settings)
-        data = generate(DEFAULT_SEED)
+        data = add_current_inventory(generate(DEFAULT_SEED))
         load(engine, data, passwords)
         with engine.connect() as conn:
             print("\nRow counts:")
@@ -126,6 +133,10 @@ def main() -> None:
                 print(f"  {name:20s} {count:>9,}")
     finally:
         engine.dispose()
+    print(
+        f"\nStock on hand for the forecast week: {len(data.current_lots)} lots, "
+        f"{sum(lot['received_lbs'] for lot in data.current_lots):,.0f} lb available to allocate."
+    )
     print("\nBaseline (synthetic history):")
     for key, value in summarize(data).items():
         print(f"  {key:28s} {value:6.2f}")
