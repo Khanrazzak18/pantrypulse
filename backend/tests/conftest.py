@@ -88,6 +88,8 @@ def client(app):
     # raise_server_exceptions=False so 500s come back as real responses
     with TestClient(app, raise_server_exceptions=False) as c:
         yield c
+    with app.state.engine.begin() as conn:  # failed logins are counted in the database
+        conn.execute(text("TRUNCATE login_throttle"))
 
 
 def alembic_config(url) -> Config:

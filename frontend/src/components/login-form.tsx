@@ -99,6 +99,7 @@ export function LoginForm({ next }: { next: string | null }) {
           name="email"
           type="email"
           autoComplete="email"
+          maxLength={254}
           inputMode="email"
           value={values.email}
           readOnly={submitting}
@@ -125,6 +126,7 @@ export function LoginForm({ next }: { next: string | null }) {
           name="password"
           type="password"
           autoComplete="current-password"
+          maxLength={200}
           value={values.password}
           readOnly={submitting}
           onChange={(e) => update("password", e.target.value)}

@@ -59,7 +59,7 @@ pantrypulse/
 │   ├── spec-5.2.md          # the use case, pasted verbatim
 │   ├── dev-log.md           # one entry per stage (see "Dev log" below)
 │   ├── architecture.md
-│   └── eval/                # intake-eval.md, forecast-backtest.md
+│   └── eval/                # intake-eval.md, forecast-backtest.md, allocation-sim.md
 ├── backend/
 │   ├── pyproject.toml
 │   ├── alembic/ , alembic.ini
@@ -67,19 +67,19 @@ pantrypulse/
 │   │   ├── main.py, config.py, db.py, logging.py, errors.py
 │   │   ├── models/          # SQLAlchemy models
 │   │   ├── schemas/         # Pydantic request/response models
-│   │   ├── api/             # one router per area: auth, donations, forecasts, allocations, pantry, dashboard, admin
-│   │   ├── services/        # intake, forecasting, optimizer, reporting
+│   │   ├── api/             # one router per area: auth, donations, donors, pantries, forecasts, allocations, pantry_portal, dashboard, admin, health
+│   │   ├── services/        # intake, forecasting, forecast_runs, optimizer, allocation_runs, allocation_reasons, dashboard, summaries, number_check
 │   │   ├── ai/              # llm_provider.py (Bedrock), prompts/
-│   │   ├── auth/            # jwt, password hashing, role dependencies
+│   │   ├── auth/            # jwt, password hashing, role dependencies, login lockout (throttle)
 │   │   ├── storage/         # StorageBackend, LocalStorage, S3Storage stub
 │   │   └── jobs/            # weekly_refresh.py
-│   ├── scripts/             # generate_synthetic_data.py, seed.py
-│   ├── eval/                # golden/ manifests + expected.json, run_intake_eval.py
+│   ├── scripts/             # generate_synthetic_data.py, seed.py, refresh.py, export_openapi.py
+│   ├── eval/                # golden/ manifests + expected.json (+ KEY.sha256), run_intake_eval.py, forecast_backtest.py, allocation_sim.py
 │   └── tests/
 └── frontend/
     ├── package.json
     └── src/
-        ├── app/             # login, coordinator/intake, coordinator/allocations, forecasts, pantry, dashboard
+        ├── app/             # login, coordinator (pantries, donations, forecasts, allocations), pantry, admin/dashboard
         ├── components/
         └── lib/api/         # client generated from FastAPI's OpenAPI schema (openapi-typescript)
 ```

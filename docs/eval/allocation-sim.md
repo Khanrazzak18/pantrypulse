@@ -1,7 +1,7 @@
 # Allocation simulation
 
-- Run: 2026-10-08 17:50
-- Window: 12 weeks, 2026-07-13 to 2026-09-28 (the weeks of backtest run 1); food goes out on Wednesday and Friday
+- Run: 2026-10-08 18:24
+- Window: 12 weeks, 2026-07-13 to 2026-09-28 (the weeks of backtest run 4); food goes out on Wednesday and Friday
 - Stock: 330 lots, 5,585,070 lb usable, arriving on their real received dates; the warehouse starts empty and unshipped stock carries over
 - Pantries: 85; true demand comes from the data generator and is used only to score the result (and by the manual rule, below)
 

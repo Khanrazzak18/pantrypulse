@@ -1,62 +1,92 @@
 # PantryPulse
 
-AI food allocation for Harvest Bridge Food Bank, a hypothetical regional non-profit. See
-`docs/spec-5.2.md` for the use case, `CLAUDE.md` for the build contract and `docs/architecture.md`
-for design decisions.
+AI food allocation for **Harvest Bridge Food Bank**, a hypothetical regional non-profit with 85
+partner pantries in six counties. Built as Assignment 5.3 (AIML-515). The use case is in
+[docs/spec-5.2.md](docs/spec-5.2.md), the build rules in [CLAUDE.md](CLAUDE.md), design decisions in
+[docs/architecture.md](docs/architecture.md) and the build history in [docs/dev-log.md](docs/dev-log.md).
 
-**Status:** Stage 5 of 9 (demand forecasting). The full README (features, AI evaluation results, known
-limitations) is written in Stage 8.
+## The problem
 
-## Requirements
+About 12% of perishable donations spoil before they reach a pantry, 1 in 4 pantries runs out of
+protein or fresh produce before the end of each week, and three coordinators spend about 12 hours a
+week re-typing donation manifests and deciding who gets what from spreadsheets and memory.
+PantryPulse reads manifests with an AI model, forecasts each pantry's demand, proposes an
+expiry-aware allocation, and leaves every decision to a person.
 
-Docker, Node 20+, Python 3.12+, make, and (for AI intake) an AWS account with Bedrock access.
+## Features
 
-## Quick start
+| # | Feature | Who | Where |
+| --- | --- | --- | --- |
+| 1 | **AI donation intake.** Upload an email, PDF or photo; Amazon Bedrock extracts items, quantities and expiry dates; a coordinator edits (low-confidence fields highlighted) and confirms before anything becomes inventory. | Coordinator, admin | Donations |
+| 2 | **Demand forecast.** Weekly P10/P50/P90 per pantry and category (LightGBM, compared with a same-week-last-year baseline), corrected for demand hidden by past shortages. | Coordinator, admin | Forecasts |
+| 3 | **Expiry-aware allocation.** An OR-Tools linear program assigns lots to pantries (soonest-expiring first, within storage capacity); reasons in plain English; approve, edit or reject each row, every edit logged. | Coordinator, admin | Allocations |
+| 4 | **Pantry portal.** Mobile-first list of incoming deliveries and a 30-second shortage report that feeds the next forecast. | Pantry manager | My pantry |
+| 5 | **Impact dashboard.** Spoilage, stockouts, pounds distributed, households served, a date filter, an AI-drafted monthly grant summary that an admin edits and approves, and the weekly refresh. | Admin | Dashboard |
+
+Out of scope: the Phase 2 "Ask PantryPulse" assistant.
+
+## Architecture
+
+```
+Browser ──> Next.js (:3000) ──/api/* proxy──> FastAPI (:8000) ──> PostgreSQL 16 (:5433)
+                                                   │
+                                                   ├──> Amazon Bedrock (Claude): intake, allocation reasons, monthly summary
+                                                   └──> StorageBackend (LocalStorage now, S3 later): uploaded manifests, model files
+```
+
+| Layer | Local build |
+| --- | --- |
+| Frontend | Next.js (App Router, TypeScript strict), Tailwind CSS, Recharts, a typed client generated from the API's OpenAPI schema |
+| API | FastAPI, Pydantic v2, SQLAlchemy 2, Alembic; one error envelope `{"error": {"code", "message", "details"}}` |
+| Database | PostgreSQL 16 in Docker, with foreign keys and CHECK constraints |
+| AI | Amazon Bedrock Converse API (forced tool use, validated output, one retry on bad JSON or timeouts) |
+| Forecasting and optimization | LightGBM, pandas, Google OR-Tools (GLOP) |
+| Auth | JWT in an httpOnly cookie, argon2 hashes, three roles, database-backed login lockout |
+
+The API keeps no state in memory (every counter and cache lives in the database), writes files only
+through `StorageBackend`, and treats model output as untrusted: nothing a model writes reaches the
+database without a person confirming it.
+
+```
+pantrypulse/
+├── CLAUDE.md  README.md  Makefile  docker-compose.yml  .env.example
+├── docs/            spec, architecture, dev-log, eval/ (intake, forecast backtest, allocation simulation)
+├── backend/
+│   ├── app/         api/ (one router per area), models/, schemas/, services/, ai/, auth/, storage/, jobs/
+│   ├── alembic/     migrations
+│   ├── scripts/     synthetic data generator, seed, refresh, OpenAPI export
+│   ├── eval/        golden manifests and the three evaluations
+│   └── tests/
+└── frontend/src/    app/ (pages), components/, lib/ (helpers and the generated API client)
+```
+
+## Setup from a fresh clone
+
+Requirements: Docker, Node 20+, Python 3.12+, make. AWS access to Amazon Bedrock is needed only for
+the AI features (intake, allocation reasons, monthly summary, `make eval`); everything else runs
+without it, and allocation falls back to template reasons.
 
 ```bash
-cp .env.example .env     # then fill in POSTGRES_PASSWORD and JWT_SECRET (the DEMO_* lines can stay as they are)
-make setup               # backend/.venv + frontend dependencies
-make db                  # Postgres 16 in Docker (creates pantrypulse and pantrypulse_test)
+cp .env.example .env     # then set POSTGRES_PASSWORD and JWT_SECRET (see below); leave the rest
+make setup               # backend/.venv and frontend dependencies
+make db                  # Postgres 16 in Docker (creates the app and test databases)
 make migrate             # create the tables
-make seed                # synthetic history + demo users
+make seed                # three years of synthetic history, current stock, demo users
+make backtest            # forecast backtest (about a minute); the Forecasts page reads it
 make dev                 # API on :8000, web on :3000 (Ctrl-C stops both)
 ```
 
-Check it works: `curl localhost:3000/api/health` returns `{"status":"ok","database":"ok"}`.
+Then open http://localhost:3000, log in (see Demo logins), open **Forecasts** and click **Run
+forecast**, then **Allocations** and click **Run allocation**. `curl localhost:3000/api/health`
+returns `{"status":"ok","database":"ok"}` when the stack is up.
 
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `make setup` | Install backend and frontend dependencies |
-| `make db` | Start Postgres in Docker |
-| `make migrate` | Apply Alembic migrations to the app database |
-| `make seed` | Reload the synthetic history and demo users (destructive for the app database) |
-| `make dev` | API and web together |
-| `make api-types` | Regenerate the frontend's typed API client after changing the API |
-| `make test` | ruff + pytest, then frontend lint, typecheck and build (needs `make db`) |
-| `make backtest` | Forecast backtest over the last 12 weeks (no AWS, about a minute): saves a backtest run and writes `docs/eval/forecast-backtest.md` |
-| `make simulate` | Replay the last 12 weeks under a manual rule and the optimizer (no AWS, a few seconds; run `make backtest` first): writes `docs/eval/allocation-sim.md` |
-| `make eval` | Both evals: the AI intake eval (calls Bedrock, costs tokens) and then the forecast backtest |
-| `make golden` | Rebuild the golden manifests from their fixed seed |
-| `make refresh` | Weekly job: calls `POST /api/admin/jobs/weekly-refresh` as the demo admin (needs `make dev` running): trains the forward forecast, then reruns allocation (about 14 s) |
-
-Ports are set only in `.env`. Secrets never go in git; AWS access uses the CLI profile in
-`AWS_PROFILE`, not access keys.
-
-## AI donation intake and Bedrock setup
-
-Coordinators and admins upload an email, PDF or photo of a donation manifest at
-**Donations**. Amazon Bedrock reads it, and you review and edit the items (fields the AI was
-unsure about, under 80% confidence, are highlighted) before **Confirm** turns them into
-inventory lots. **Reject** adds nothing.
+Generate the JWT secret with `openssl rand -hex 32`. To use AI features:
 
 1. Credentials come from an AWS CLI profile, never from `.env` keys:
-   `aws configure --profile pantrypulse`, then set `AWS_PROFILE=pantrypulse` and
+   `aws configure --profile pantrypulse`, then keep `AWS_PROFILE=pantrypulse` and
    `AWS_REGION=us-east-1` in `.env`.
-2. Set `BEDROCK_MODEL_ID` in `.env` to an inference profile ID (it starts with `us.`). The default
-   in `.env.example` is `us.anthropic.claude-haiku-4-5-20251001-v1:0`. (Claude Haiku 5.5 was listed
-   but not available to this account, so Haiku 4.5 is used.)
+2. `BEDROCK_MODEL_ID` must be an inference profile ID (it starts with `us.`). The default is
+   `us.anthropic.claude-haiku-4-5-20251001-v1:0`.
 3. The first time an account uses an Anthropic model, open it once in the Bedrock console
    playground and submit the one-time use-case form.
 4. Give the AWS user permission to call the model. **Minimum IAM policy** (replace
@@ -91,76 +121,105 @@ The second statement is only for finding model IDs and can be left out. Switchin
 changing both the model ID in `.env` and the resources above. `AmazonBedrockFullAccess` also
 works but grants far more than the app needs.
 
-Tests never call Bedrock (they use a scripted fake, and a guard fails any test that tries to
-create an AWS client). Only the running app and `make eval` use the real service.
+Tests never call Bedrock (they use a scripted fake and a guard fails any test that tries to create
+an AWS client). Only the running app and `make eval` use the real service. The local file store
+needs no AWS permissions; a production S3 store would additionally need `s3:GetObject`,
+`s3:PutObject` and `s3:DeleteObject` on one bucket.
 
-### AI evaluation results
+## Environment variables
 
-`make eval` scores the model on 50 synthetic manifests (30 emails, 15 PDFs, 5 photos). Latest run
-with `us.anthropic.claude-haiku-4-5-20251001-v1:0`: **98.7% field-level accuracy** (target 95%),
-all 287 items found, 224,218 tokens in total. The first scoring of the same answers was 92.9%
-because the answer key accepted only one name per food; see the scoring note and the list of
-remaining mistakes in [docs/eval/intake-eval.md](docs/eval/intake-eval.md). The set is synthetic
-and the key was corrected after seeing the first result, so treat the number as a regression
-check, not a blind measurement of real manifests.
+All live in `.env` (see `.env.example`, which has a comment for each). Ports are defined only there.
 
-## Demand forecasting
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `WEB_PORT` | yes | 3000 | Port of the web app |
+| `API_PORT` | yes | 8000 | Port of the API (the web app proxies `/api/*` to it) |
+| `POSTGRES_PORT` | yes | 5433 | Host port of Postgres |
+| `POSTGRES_USER` | yes | pantrypulse | Database user |
+| `POSTGRES_PASSWORD` | yes | none | Database password |
+| `POSTGRES_HOST` | no | localhost | Database host |
+| `POSTGRES_DB` | yes | pantrypulse | The app database |
+| `POSTGRES_TEST_DB` | yes | pantrypulse_test | The database `make test` empties and refills |
+| `JWT_SECRET` | yes | none | Signs login cookies; at least 32 characters |
+| `SESSION_HOURS` | no | 8 | How long a login lasts |
+| `COOKIE_SECURE` | no | false | Mark the cookie Secure (set true over https) |
+| `DEMO_COORDINATOR_PASSWORD`, `DEMO_ADMIN_PASSWORD`, `DEMO_PANTRY_MANAGER_PASSWORD` | for `make seed` | demo values | Passwords of the demo users |
+| `AWS_PROFILE` | for AI features | pantrypulse | AWS CLI profile used for Bedrock |
+| `AWS_REGION` | for AI features | us-east-1 | Bedrock region |
+| `BEDROCK_MODEL_ID` | for AI features | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Model or inference profile |
+| `STORAGE_DIR` | no | backend/var/uploads | Where uploads are kept (relative to the repo root) |
+| `LOG_LEVEL` | no | INFO | Log verbosity |
 
-Open **Forecasts** (coordinators and admins). Pick a pantry and a category to see a chart of the
-last 26 weeks, the model's forecasts for the last 12 weeks next to what actually happened, and next
-week's forecast with a shaded P10 to P90 range. **Run forecast** trains the model on all history and
-saves next week's forecast; it takes a few seconds. The accuracy table shows the latest **backtest**,
-which you produce with `make backtest`.
+## Demo logins (local only)
 
-After `make seed` the forecast tables are empty: run `make backtest` once, then **Run forecast**, then **Run allocation**.
+`make seed` creates these users. The passwords are the `DEMO_*` values in `.env`; the defaults from
+`.env.example` are below. They are demo credentials for local development, not real secrets.
+Log in at http://localhost:3000/login. Five wrong passwords for one email lock it for 15 minutes.
 
-### Forecast accuracy
+| Role | Email | Password variable | Default |
+| --- | --- | --- | --- |
+| Coordinator | `coordinator@harvestbridge.example.org` | `DEMO_COORDINATOR_PASSWORD` | `demo-coordinator-pw` |
+| Admin | `admin@harvestbridge.example.org` | `DEMO_ADMIN_PASSWORD` | `demo-admin-pw` |
+| Pantry manager (Pantry 14) | `manager14@harvestbridge.example.org` | `DEMO_PANTRY_MANAGER_PASSWORD` | `demo-manager-pw` |
 
-Backtest over the last 12 weeks, forecasting each week using only data from before it (full report,
-including every leakage check: [docs/eval/forecast-backtest.md](docs/eval/forecast-backtest.md)):
+An admin can do everything a coordinator can, plus the dashboard, the monthly summary and the weekly
+refresh. A pantry manager sees only their own pantry.
 
-| | LightGBM | Same week last year |
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `make setup` | Install backend and frontend dependencies |
+| `make db` / `make db-down` | Start or stop Postgres in Docker |
+| `make migrate` | Apply Alembic migrations to the app database |
+| `make seed` | Reload the synthetic history, current stock and demo users (destroys the app database's contents) |
+| `make dev` | API and web together |
+| `make api-types` | Regenerate the frontend's typed API client after changing the API |
+| `make test` | ruff and pytest, then frontend lint, typecheck and production build (needs `make db`) |
+| `make backtest` | Forecast backtest over the last 12 weeks (no AWS, about a minute); writes `docs/eval/forecast-backtest.md` |
+| `make simulate` | Replay the last 12 weeks under a manual rule and the optimizer (run `make backtest` first); writes `docs/eval/allocation-sim.md` |
+| `make eval` | The intake eval (calls Bedrock, costs about 245,000 tokens) and then the backtest |
+| `make golden` | Rebuild the golden manifests from their fixed seed |
+| `make refresh` | Weekly job over HTTP (needs `make dev`): trains the forward forecast, then reruns allocation, about 14 s |
+
+## Testing
+
+`make test` runs ruff and the backend suite (833+ tests against the separate test database), then
+frontend lint, typecheck and the production build. It never calls AWS. Tests are written before the
+code they check; the suites cover constraints and migrations, auth and lockout, intake, forecasting
+and its leakage checks, the optimizer, allocation workflow, the pantry portal, dashboard numbers,
+summaries, error envelopes and input validation.
+
+## Using the app, by role
+
+- **Coordinator:** *Donations* (upload, review, confirm), *Forecasts* (Run forecast), *Allocations*
+  (Run allocation, then approve, edit or reject; "Approve all shown" asks for confirmation).
+- **Pantry manager:** *My pantry* shows approved deliveries and the shortage form. A second report
+  for the same category and week updates the first.
+- **Admin:** *Dashboard* (date filter, charts, monthly summary: draft with AI, edit, approve) and
+  **Run weekly refresh**.
+
+Every page shows loading, empty and error states, works from 375 px wide, and every API error uses
+the same envelope.
+
+## AI evaluation results
+
+| Evaluation | Result | Report |
 | --- | --- | --- |
-| WAPE vs observed pounds (overall) | **10.7%** | 14.5% |
-| WAPE vs true demand (synthetic data only) | 10.2% | 14.3% |
-| P10 to P90 interval coverage (aim: 80%) | 77.2% | n/a |
-| Series (pantry and category) under 20% WAPE | 99.9% (679 of 680) | 95.4% |
+| Intake extraction, 50 synthetic manifests | **99.5%** field accuracy (1,999 of 2,009; target 95%) on the Stage 8 prompt and a frozen answer key. Earlier: 92.9% on the first scoring, 98.7% after the key was corrected. | [intake-eval.md](docs/eval/intake-eval.md) |
+| Forecast backtest, last 12 weeks | **WAPE 10.7%** vs 14.5% for the same-week-last-year baseline (target 20%); interval coverage 77.2% (aim 80%) | [forecast-backtest.md](docs/eval/forecast-backtest.md) |
+| Allocation simulation | Stockouts **not conclusive**; spoilage **cannot be tested** on this data | [allocation-sim.md](docs/eval/allocation-sim.md) |
 
-The correction for censored demand (shortage weeks) made no measurable difference on this data
-(10.2% with and without it, against true demand), because only about 3% of weeks have a shortage
-report. The data is synthetic, so these numbers are a regression check, not a promise about real
-food banks.
+**Intake.** The 99.5% is not a blind result: the key was frozen and committed before the prompt was
+changed (`make eval` refuses to run if it differs), but the prompt fixes cure mistakes seen on the
+same synthetic set, so read it as "the known mistakes are fixed". Remaining mistakes are listed in
+the report.
 
-## Expiry-aware allocation
+**Forecast.** The correction for censored demand made no measurable difference on this data (10.2%
+against true demand with and without it), because only about 3% of weeks have a shortage report.
+The report lists every leakage check and the test behind it.
 
-Open **Allocations** (coordinators and admins). **Run allocation** proposes which lot goes to which
-pantry for the forecast week, soonest-expiring food first, and nothing is sent until a coordinator
-approves it. Rows are grouped by pantry; each can be **approved**, **edited** (a new amount, with an
-optional note) or **rejected**, and **Approve all shown** (with a confirmation) approves whatever the
-current filters show. Every decision is saved to `allocation_edits` with who, when, the old value and
-the new one.
-
-How it works (details in `docs/architecture.md`):
-
-- A linear program (Google OR-Tools GLOP) chooses how many pounds of each lot go to each pantry. It
-  earns full credit for meeting the forecast up to P50 and half credit between P50 and P90, adds a
-  bonus for shipping food that is close to expiry, and subtracts a small penalty for distance from
-  the warehouse. A lot cannot ship more than it has, a pantry cannot receive more than its cold or
-  dry storage allows, and no pantry gets more than its P90 forecast in a category. Food that would
-  expire before the delivery date is left out and counted.
-- One batched Bedrock call writes a one-line reason for the 40 largest rows (10 second limit, no
-  retry); every other row, and every row if the call fails, gets a template reason. Each row is
-  tagged **AI** or **Template**. A reason is accepted only if it names the pantry and every number
-  in it comes from that row's facts. **Write more AI reasons** fills in more rows on request.
-- Approving a row takes its pounds out of the lot, so a second approval cannot over-allocate it;
-  rejecting leaves the lot untouched, so it is offered again next time. Running again replaces
-  proposals nobody has decided and keeps the decided ones (their pounds are netted out).
-- `make seed` also creates about two dozen lots of current stock so there is something to allocate.
-  Lots you confirm through donation intake join the same pool.
-
-A run takes about 8 to 10 seconds with real Bedrock (the optimizer itself solves in milliseconds).
-
-### Simulation: what it supports and what it cannot
+**Allocation simulation: what it supports and what it cannot.**
 
 `make simulate` replays the last 12 weeks of the synthetic data twice, once with a stand-in for
 today's manual routine and once with the optimizer, and scores both against the true demand
@@ -185,95 +244,33 @@ optimizer was better with one delivery a week (38.9% against 57.4%) and worse th
 keeps track of what has already been sent (18.0%). The result depends on how good the manual process
 is assumed to be, which nobody has measured, so the 30% stockout target is not shown by this data.
 
-## Pantry portal
-
-Pantry managers land on **My pantry**, built for a phone (it works at 375 px wide). It lists the
-deliveries approved for their own pantry (category, pounds, delivery date, use-by date; the last
-week's are tucked away) and a shortage form: tap what ran short, tap how bad it was, send. A second
-report for the same category in the same week updates the first. Reports are saved against the
-current Monday-to-Sunday week and feed the next forecast run (the forecast reads them for weeks once
-those weeks have distributions). A manager can only ever see and report for their own pantry.
-
-## Impact dashboard (admins)
-
-**Dashboard** shows perishable spoilage %, pantry-weeks with a shortage, pounds distributed and
-households served, over time and by category, with a date-range filter (presets plus from/to dates)
-and the current date and time in the header. Households are counted once per pantry-week, not once
-per category row. Spoilage is expired pounds over received pounds of perishable lots, by the week
-the lots arrived.
-
-**Monthly summary.** Pick a month and **Draft with AI**: one Bedrock call, shown only that month's
-(and the previous month's) totals, never raw records. Every number in the draft must be one of the
-numbers it was given (the same check as allocation reasons); otherwise the draft is thrown away and
-the error is shown, and you can retry or write the text yourself. The admin edits the text and
-approves it; an approved summary is final. The check catches invented numbers, not a wrong label
-on a real one (a first draft called pounds "items"), which is why a person approves every summary.
-
-**Run weekly refresh** (button, or `make refresh`) trains the forward forecast and reruns allocation
-in one request, about 14 seconds with real Bedrock. If the allocation step fails, the new forecast
-is kept and the error says so.
-
-## Demo logins (local only)
-
-`make seed` creates these users. The passwords are the `DEMO_*` values in `.env`; the defaults in
-`.env.example` are below. They are demo credentials for local development, not real secrets.
-Log in at http://localhost:3000/login.
-
-| Role | Email | Password variable | Default |
-| --- | --- | --- | --- |
-| Coordinator | `coordinator@harvestbridge.example.org` | `DEMO_COORDINATOR_PASSWORD` | `demo-coordinator-pw` |
-| Admin | `admin@harvestbridge.example.org` | `DEMO_ADMIN_PASSWORD` | `demo-admin-pw` |
-| Pantry manager (Pantry 14) | `manager14@harvestbridge.example.org` | `DEMO_PANTRY_MANAGER_PASSWORD` | `demo-manager-pw` |
-
-`make seed` fails with a clear message if any of these variables is missing from `.env`.
-
-## About the data
-
-All data is synthetic. Harvest Bridge Food Bank is hypothetical, the six counties are fictional,
-and **the weather, school holidays and benefit-payment weeks are generated, not real**. The
-generator uses a fixed seed, so the same data comes out every time. See
-`docs/architecture.md` for how it works and the baseline it produces.
-
 ## Known limitations
 
-- **Logout does not revoke a copied session.** The API is stateless: a session is a signed token
-  in an httpOnly cookie. Logging out clears the cookie in the browser, but a token someone had
-  already copied stays valid until it expires (8 hours). Deactivating a user does take effect
-  immediately, because the user is looked up on every request. Revoking tokens on logout would
+- **Logout does not revoke a copied session.** A session is a signed token in an httpOnly cookie that
+  stays valid for 8 hours; deactivating a user takes effect immediately. Revoking on logout would
   need a `token_version` column or a sessions table.
-- **No login lockout or rate limiting yet.** Failed logins return one generic message, but they
-  are not counted or throttled. This is planned for Stage 8 (it needs a database-backed counter,
-  since the API keeps no in-memory state).
-- **AI reading takes a few seconds and happens inside the upload request.** A normal manifest takes
-  5 to 30 seconds; with a retry the worst case is about 95 seconds. There is no background queue.
-- **Uploads are buffered by the web framework before the 10 MB check**, so a very large file is
-  still received before it is refused. A production proxy should enforce its own request limit.
-- **The AI makes some predictable mistakes.** In the eval it sometimes called fresh apples and
-  carrots ambient (the prompt has no default storage rule), called UHT milk refrigerated, weighed
-  "2 boxes" as one box, and resolved month-only or year-less dates incorrectly. Coordinators see
-  and fix these on the review screen; prompt fixes are listed in `docs/dev-log.md`.
-- **Rejected uploads are kept** (file, model output, who rejected and when) as an audit record.
-- **The forecast uses last week's weather, not the forecast week's.** Only a weather forecast would exist
-  at forecast time, and the data has none, so it is left out. The weather and school-holiday calendar are
-  synthetic.
-- **Only reported shortages are corrected.** Pantries report some of the weeks they run short, so some
-  demand stays under-recorded. The correction constants are assumptions.
-- **Prediction intervals are slightly narrow:** the P10 to P90 range held the actual amount 77.2% of the
-  time in the backtest, not 80%.
-- **Forecasts are one week ahead.** There is no multi-week horizon yet.
-- **Allocation is only as good as its forecast and stock data.** The optimizer never sends more than
-  a pantry's P90 forecast, so a week when demand exceeds P90 leaves that pantry short even if stock is
-  available. Pantry cold and dry capacity are treated as each week's intake limit, not as live
-  storage levels, and travel is straight-line distance from one warehouse.
-- **Reasons are checked, not trusted.** A reason written by the model is rejected (and the template
-  kept) if it names a number that is not one of the row's facts. In a first real run the model
-  computed its own "surplus" figures and 35 of 40 reasons were rejected; the prompt now forbids
-  arithmetic and gives the comparison in words, after which 40 of 40 passed. Expect an occasional
-  template row.
-- **The simulation does not establish the 12% to 8% spoilage target or the 30% stockout target**
-  (see above).
-- **Weekly refresh is a button and a command, not a schedule.** Nothing runs it automatically;
-  production would use EventBridge calling the same endpoint. `make refresh` logs in as the demo admin.
-- **The dashboard's history is synthetic**, and the current week's shortage reports only enter the
-  stockout figures once that week has distribution rows. Deliveries are planned dates, not confirmed
-  receipts: there is no "received" button yet.
+- **Login lockout trusts a header for the address.** Five failures for one email, or 20 from one
+  address, in 15 minutes lock that email or address for 15 minutes (counted in the database). Behind
+  the Next.js proxy the address comes from `X-Forwarded-For`, which a caller can forge, so the
+  per-email limit is the real protection; a production proxy should set the header itself.
+- **AI work runs inside the request.** A manifest takes 5 to 30 seconds (worst case about 95 with a
+  retry); there is no background queue. Uploads are buffered by the web framework before the 10 MB
+  check, so a production proxy should enforce its own limit.
+- **The model makes mistakes the checks cannot see.** Intake leaves a few wrong dates and weights
+  (highlighted when it was unsure); allocation reasons and monthly summaries are checked for invented
+  numbers but not for a wrong label on a real number (a first summary draft called pounds "items").
+  That is why a person approves every allocation and every summary.
+- **Forecast limits.** One week ahead only; last week's weather rather than the forecast week's (no
+  weather forecast exists in the data); only reported shortages are corrected and the correction
+  constants are assumptions; intervals are slightly narrow (77.2% coverage).
+- **Allocation limits.** The optimizer never sends more than a pantry's P90 forecast, so a week when
+  demand exceeds P90 leaves that pantry short even with stock in hand (62% of its simulated
+  shortages). Pantry capacity is a weekly intake limit, not live storage, and distance is
+  straight-line from one warehouse.
+- **The simulation does not establish the 12% to 8% spoilage target or the 30% stockout target.**
+- **Nothing runs the weekly refresh on a schedule.** Production would use EventBridge calling the
+  same endpoint; `make refresh` logs in as the demo admin.
+- **Deliveries are planned dates, not confirmed receipts**, and rejected uploads are kept as an audit
+  record.
+- **All data is synthetic.** Harvest Bridge and its six counties are fictional, and the weather,
+  school holidays and benefit weeks are generated from a fixed seed.

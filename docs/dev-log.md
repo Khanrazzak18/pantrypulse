@@ -306,7 +306,7 @@
     statistic from the test weeks reaches training.
   No change to the forecasting code or the backtest was needed as a result.
 
-## Stage 6: Expiry-aware allocation  (2026-10-08 17:22 to 17:55 EDT)
+## Stage 6: Expiry-aware allocation  (2026-10-08 17:16 to 17:53 EDT; end = commit time, start = previous commit)
 - Built:
   - Optimizer `app/services/optimizer.py` (OR-Tools GLOP): tiered demand reward (1.0 per lb to P50,
     0.5 from P50 to P90), urgency bonus for food close to expiry, small distance penalty; lot supply,
@@ -372,7 +372,7 @@
 - The app database was reseeded at the end (current stock present, no allocation runs). Run
   `make backtest` (done), **Run forecast**, then **Run allocation**.
 
-## Stage 7: Pantry portal and impact dashboard  (2026-10-08 18:05 to 18:50 EDT)
+## Stage 7: Pantry portal and impact dashboard  (2026-10-08 17:53 to 18:12 EDT; end = commit time, start = previous commit)
 - Built:
   - Pantry portal: `/api/pantry/deliveries`, `/api/pantry/shortage-reports` (update on duplicate via
     `ON CONFLICT`, migration `0005`), mobile-first page with delivery cards and a three-tap shortage form.
@@ -402,3 +402,39 @@
 - Known limits: no schedule runs the refresh; deliveries are planned, not confirmed; the dashboard
   summary prompt change is untested against the real model; the demo summary for September 2026 in
   the dev database was approved during the browser check and can be ignored.
+
+## Stage 8: Quality pass  (2026-10-08 18:12 to 18:33 EDT; end = commit time, start = previous commit)
+- Built:
+  - **Form validation audit.** Login, intake upload, intake review, allocation edit, shortage report,
+    summary editor and dashboard date range all had inline client messages and Pydantic checks except
+    two gaps: the dashboard range had no client check for more than 260 weeks (added) and the login
+    inputs had no length limits (added). `test_input_validation.py` (22 tests) covers bad dates,
+    over-long ranges, bad id lists, bad filters, bad bodies and an over-long summary, each a 422 in
+    the error envelope with nothing saved.
+  - **Responsive pass.** Navigation collapses into a menu below 768 px, every control is at least 44 px
+    tall below 1024 px (global CSS rule, nav links sized separately), tables already scroll in their
+    container or become cards. Checked with a script on every page at 375, 768 and 1280 px: no
+    horizontal overflow anywhere; the first 768 px run found five nav links at 32 px, fixed.
+  - **Login lockout** (migration `0006`, `app/auth/throttle.py`): database-backed counter per email and
+    per address, 5 and 20 failures in 15 minutes lock for 15 minutes, 429 with `Retry-After`, hashed
+    keys, unknown emails counted the same. 12 tests including "a second app instance sees the lock".
+  - **Intake prompt fixes** from the Stage 4 follow-up list (default storage by food, milk, weight per
+    unit, month-only and year-less dates). The golden key was frozen first and committed alone
+    (`76cc202`, `KEY.sha256`, enforced by `make eval` and a test).
+  - **Organisation:** README rewritten (problem, features, architecture, setup, every environment
+    variable, demo logins, commands, testing, all three evaluations, minimum IAM policy, limitations);
+    `.env.example` has a comment on every variable; CLAUDE.md folder tree updated to the real names;
+    dead code removed (`summaries.has_data`, four `.gitkeep` files); `test_error_envelope.py` checks
+    every route in the OpenAPI schema returns the envelope for logged-out and wrong-role callers.
+- **Intake eval, one run (blind to the key, not to the failure modes):** 99.5% (1,999 of 2,009 fields),
+  against 92.9% on the first scoring and 98.7% after the key was corrected. All 287 items found,
+  244,848 tokens. Remaining ten wrong fields: four month-only dates read as the 1st, one "5/27/28"
+  misread, two weights, two storage types (fresh ground beef as frozen, apples as ambient) and one name. The caveats are in the report: the fixes target mistakes
+  seen on this same synthetic set.
+- Tests: 840 passed (`make test`), frontend lint, typecheck and build pass.
+- Problems found and fixed: nav links 32 px at tablet width; shared test fixture left throttle rows
+  that would lock later tests (cleared in the `client` fixture); the Stage 6 and 7 headings carried
+  invented start and end times, now replaced by commit times.
+- Decisions: lockout limits (5 per email, 20 per address, 15 and 15 minutes); the address comes from
+  `X-Forwarded-For` with a documented caveat; CLAUDE.md's tree was edited to match the code instead of
+  renaming pages.

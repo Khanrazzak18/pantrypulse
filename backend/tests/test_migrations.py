@@ -7,7 +7,7 @@ from tests.conftest import alembic_config
 EXPECTED_TABLES = {
     "users", "pantries", "categories", "donors", "donations", "donation_items",
     "inventory_lots", "distributions", "shortage_reports", "weekly_context", "forecast_runs",
-    "forecasts", "allocation_runs", "allocations", "allocation_edits", "monthly_summaries",
+    "forecasts", "allocation_runs", "allocations", "allocation_edits", "monthly_summaries", "login_throttle",
 }  # fmt: skip
 
 

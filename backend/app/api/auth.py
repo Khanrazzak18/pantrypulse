@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth import throttle
 from app.auth.dependencies import COOKIE_NAME, current_user, get_db
 from app.auth.passwords import hash_password, verify_password
 from app.auth.tokens import create_token
@@ -16,6 +17,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 # Verified against when the email is unknown, so unknown and known emails cost the same time.
 _DUMMY_HASH = hash_password("a-password-nobody-has")
+
+
+def _client_address(request: Request) -> str:
+    """The caller's address. Behind the Next.js proxy the real one is the first X-Forwarded-For
+    entry; a caller can forge that header, which is why the per-email limit is the main defence."""
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    return forwarded or (request.client.host if request.client else "unknown")
 
 
 def user_out(db: Session, user: User) -> UserOut:
@@ -35,6 +43,19 @@ def login(
     body: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)
 ) -> UserOut:
     settings = request.app.state.settings
+    keys = [("email", body.email), ("ip", _client_address(request))]
+    wait = throttle.seconds_locked(db, keys)
+    if wait:
+        logger.warning("login_locked", extra={"retry_after": wait})
+        minutes = max(1, -(-wait // 60))
+        raise ApiError(
+            429,
+            "too_many_attempts",
+            f"Too many failed attempts. Try again in {minutes} minute"
+            f"{'s' if minutes != 1 else ''}.",
+            {"retry_after_seconds": wait},
+            headers={"Retry-After": str(wait)},
+        )
     user = db.scalar(select(User).where(User.email == body.email))
     password_ok = verify_password(body.password, user.password_hash if user else _DUMMY_HASH)
 
@@ -49,8 +70,10 @@ def login(
     if reason:
         # The reason is logged; the email and password never are. The client sees one message.
         logger.warning("login_failed", extra={"reason": reason})
+        throttle.record_failure(db, keys)
         raise ApiError(401, "invalid_credentials", "Incorrect email or password.")
 
+    throttle.clear(db, "email", body.email)
     token = create_token(user.id, settings.jwt_secret, settings.session_hours)
     response.set_cookie(
         COOKIE_NAME,

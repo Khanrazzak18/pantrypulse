@@ -325,3 +325,13 @@ week's demand in pounds as three quantiles (P10, P50, P90), and a seasonal-naive
   forecast, then allocation. A forecast failure returns that error and runs nothing else; an
   allocation failure returns `refresh_partial` with the saved forecast run id.
 
+## Login lockout (Stage 8)
+
+`app/auth/throttle.py` counts failed logins in the `login_throttle` table (migration `0006`), keyed
+by SHA-256 of `email:<address>` and `ip:<address>`, so no email or address is stored. Five failures
+for an email or 20 for an address inside 15 minutes set `locked_until` 15 minutes ahead; a locked
+key refuses even the right password with 429 `too_many_attempts` and a `Retry-After` header. Unknown
+emails are counted like known ones. A success clears the email's counter; old failures age out of
+the window. Rows are updated under `SELECT ... FOR UPDATE`, so concurrent attempts cannot undercount
+and every API instance sees the same counts.
+

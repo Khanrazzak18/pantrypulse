@@ -1,13 +1,13 @@
 # Donation intake eval
 
-- Run: 2026-10-08 16:23
+- Run: 2026-10-08 18:21
 - Model: `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Amazon Bedrock Converse, forced tool call, temperature 0)
 - Golden set: 50 synthetic manifests (30 email, 15 pdf, 5 image)
 - Target: field-level accuracy of at least 95%
 
 ## Result
 
-**Field-level accuracy: 98.7%** (1,982 of 2,009 expected fields correct): **PASS**
+**Field-level accuracy: 99.5%** (1,999 of 2,009 expected fields correct): **PASS**
 
 | Measure | Value |
 | --- | --- |
@@ -21,39 +21,44 @@
 
 | Field | Correct | Accuracy |
 | --- | --- | --- |
-| name | 287 of 287 | 100.0% |
-| category | 285 of 287 | 99.3% |
+| name | 286 of 287 | 99.7% |
+| category | 287 of 287 | 100.0% |
 | quantity | 287 of 287 | 100.0% |
 | unit | 287 of 287 | 100.0% |
-| estimated_weight_lbs | 282 of 287 | 98.3% |
-| expiry_date | 281 of 287 | 97.9% |
-| storage_type | 273 of 287 | 95.1% |
+| estimated_weight_lbs | 285 of 287 | 99.3% |
+| expiry_date | 282 of 287 | 98.3% |
+| storage_type | 285 of 287 | 99.3% |
 
 ## Accuracy by format
 
 | Format | Correct | Accuracy |
 | --- | --- | --- |
-| email | 1012 of 1022 | 99.0% |
-| pdf | 841 of 854 | 98.5% |
-| image | 129 of 133 | 97.0% |
+| email | 1020 of 1022 | 99.8% |
+| pdf | 849 of 854 | 99.4% |
+| image | 130 of 133 | 97.7% |
 
 ## Token usage and time
 
 | Measure | Value |
 | --- | --- |
-| Input tokens | 170,445 |
-| Output tokens | 53,773 |
-| Total tokens | 224,218 |
-| Average per manifest | 3,408 in / 1,075 out |
+| Input tokens | 191,145 |
+| Output tokens | 53,703 |
+| Total tokens | 244,848 |
+| Average per manifest | 3,822 in / 1,074 out |
 | Average model latency | 5.3 s |
 | Wall-clock time for the run | 70 s |
 
 Token counts include answers that were rejected and retried.
 
-## Scoring note
+## Results history
 
-The first scoring of this run gave 92.9% (1,867 of 2,009 fields; 142 wrong). Most of that gap came from the answer key, not the model: it accepted only one name per food, so 'UHT milk', 'Popsicles', 'Oatmeal' and 'Romaine hearts' (the names printed in the manifests) counted as missed or misnamed items. The key now accepts every name a manifest may use for the same food. That turned 115 of the 142 wrong fields into correct ones and also revealed 7 real mistakes that the missed-item scoring had hidden.
-This report scores the same saved model answers against the corrected key: 27 wrong fields remain, all listed under Mistakes. No model was called again and the prompt was not changed. The key was corrected after seeing the first result, so this is not a blind score. The golden set is synthetic and was written with the same rules as the prompt.
+| Run | Prompt | Answer key | Accuracy |
+| --- | --- | --- | --- |
+| 1 (Stage 4) | first | first key | 92.9% (1,867 of 2,009) |
+| 1, rescored | first | corrected after seeing run 1 | 98.7% (1,982 of 2,009) |
+| 2 (Stage 8) | with the Stage 8 fixes | frozen (`eval/golden/KEY.sha256`) | see Result above |
+
+How much to trust run 2: the key was frozen and committed before the prompt changed, and `make eval` refuses to run if it differs, so nobody could help the score by editing answers. It is still not a blind test. The prompt fixes (default storage by food, milk, weights per unit, month-only and year-less dates) were written to cure mistakes seen on this same set in run 1, using different example foods, and the set is synthetic and was written with the same rules as the prompt. Read it as 'the known mistakes are fixed', not as accuracy on real manifests. It is one run at temperature 0; a different run could differ by a field or two.
 
 ## How a field is scored
 
@@ -67,29 +72,13 @@ to follow the typical case weights written in the prompt.
 
 ## Mistakes
 
-- **001** (email) 'Tortillas': estimated_weight_lbs: expected `36`, got `18.0`
-- **001** (email) '2% milk': category: expected `dairy`, got `beverages`
-- **005** (email) 'Gala apples': storage_type: expected `refrigerated`, got `ambient`
-- **010** (email) 'Gala apples': storage_type: expected `refrigerated`, got `ambient`
-- **014** (email) 'Rice': expiry_date: expected `2028-05-27`, got `2028-05-31`
-- **015** (email) 'Gala apples': storage_type: expected `refrigerated`, got `ambient`
-- **015** (email) 'Chicken thighs': storage_type: expected `refrigerated`, got `frozen`
-- **019** (email) 'Gala apples': storage_type: expected `refrigerated`, got `ambient`
-- **023** (email) 'Gala apples': storage_type: expected `refrigerated`, got `ambient`
-- **028** (email) 'Large eggs': estimated_weight_lbs: expected `480`, got `30.0`
-- **032** (pdf) 'Carrots': storage_type: expected `refrigerated`, got `ambient`
-- **034** (pdf) 'Gala apples': storage_type: expected `refrigerated`, got `ambient`
-- **035** (pdf) 'Frozen pizza': expiry_date: expected `2027-06-02`, got `2026-06-02`
-- **036** (pdf) 'Ground beef': storage_type: expected `refrigerated`, got `frozen`
-- **038** (pdf) 'Shelf-stable milk': storage_type: expected `ambient`, got `refrigerated`
+- **005** (email) 'Frozen meals': expiry_date: expected `2027-06-30`, got `2027-06-01`
+- **009** (email) 'Tomato soup': estimated_weight_lbs: expected `44.0`, got `88.0`
+- **038** (pdf) 'Ground beef': storage_type: expected `refrigerated`, got `frozen`
 - **039** (pdf) 'Gala apples': storage_type: expected `refrigerated`, got `ambient`
-- **039** (pdf) '2% milk': category: expected `dairy`, got `beverages`
-- **040** (pdf) 'Shelf-stable milk': estimated_weight_lbs: expected `468`, got `154.8`
-- **041** (pdf) 'Shelf-stable milk': estimated_weight_lbs: expected `380.0`, got `494.0`; storage_type: expected `ambient`, got `refrigerated`
-- **041** (pdf) 'Frozen chicken breast': expiry_date: expected `2027-06-02`, got `2026-06-02`
-- **042** (pdf) 'Shelf-stable milk': storage_type: expected `ambient`, got `refrigerated`
-- **045** (pdf) 'Shelf-stable milk': estimated_weight_lbs: expected `300.0`, got `390.0`
+- **040** (pdf) 'Frozen mixed vegetables': name: expected `Frozen mixed vegetables`, got `Vegetable mix`
+- **041** (pdf) 'Shelf-stable milk': estimated_weight_lbs: expected `380.0`, got `494.0`
+- **044** (pdf) 'Black beans': expiry_date: expected `2029-01-31`, got `2029-01-01`
 - **046** (image) 'Frozen pizza': expiry_date: expected `2027-08-31`, got `2027-08-01`
 - **046** (image) 'Sports drink': expiry_date: expected `2027-08-31`, got `2027-08-01`
-- **049** (image) 'Carrots': storage_type: expected `refrigerated`, got `ambient`
 - **050** (image) 'Rolled oats': expiry_date: expected `2028-05-27`, got `2028-05-31`

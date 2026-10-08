@@ -24,21 +24,35 @@ _HTTP_CODES = {
 
 
 class ApiError(Exception):
-    def __init__(self, status_code: int, code: str, message: str, details: Any = None):
+    def __init__(
+        self,
+        status_code: int,
+        code: str,
+        message: str,
+        details: Any = None,
+        headers: dict[str, str] | None = None,
+    ):
         super().__init__(message)
         self.status_code = status_code
         self.code = code
         self.message = message
         self.details = details
+        self.headers = headers
 
 
-def error_response(status_code: int, code: str, message: str, details: Any = None) -> JSONResponse:
+def error_response(
+    status_code: int,
+    code: str,
+    message: str,
+    details: Any = None,
+    headers: dict[str, str] | None = None,
+) -> JSONResponse:
     body = {"error": {"code": code, "message": message, "details": details}}
-    return JSONResponse(status_code=status_code, content=body)
+    return JSONResponse(status_code=status_code, content=body, headers=headers)
 
 
 async def _api_error_handler(_: Request, exc: ApiError) -> JSONResponse:
-    return error_response(exc.status_code, exc.code, exc.message, exc.details)
+    return error_response(exc.status_code, exc.code, exc.message, exc.details, exc.headers)
 
 
 async def _http_error_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:

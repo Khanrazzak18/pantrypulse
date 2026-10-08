@@ -92,9 +92,14 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
   const [reload, setReload] = useState(0);
 
   const key = `${start}|${end}|${reload}`;
-  const rangeError = start > end ? "The start date must not be after the end date." : null;
+  const rangeError =
+    start > end
+      ? "The start date must not be after the end date."
+      : (Date.parse(end) - Date.parse(start)) / 86_400_000 > 260 * 7
+        ? "Choose a range of at most 260 weeks (5 years)."
+        : null;
   useEffect(() => {
-    if (start > end) return;
+    if (rangeError) return;
     let cancelled = false;
     apiFetch<Metrics>(`/api/dashboard/metrics?start=${start}&end=${end}`)
       .then((metrics) => !cancelled && setLoaded({ key, metrics }))
@@ -102,7 +107,7 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
     return () => {
       cancelled = true;
     };
-  }, [key, start, end]);
+  }, [key, start, end, rangeError]);
 
   const current = loaded.key === key;
   const loading = !rangeError && !current;

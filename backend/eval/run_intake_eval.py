@@ -225,6 +225,24 @@ def render_report(
         "Token counts include answers that were rejected and retried.",
         "",
         *(["## Scoring note", "", *notes, ""] if notes else []),
+        "## Results history",
+        "",
+        "| Run | Prompt | Answer key | Accuracy |",
+        "| --- | --- | --- | --- |",
+        "| 1 (Stage 4) | first | first key | 92.9% (1,867 of 2,009) |",
+        "| 1, rescored | first | corrected after seeing run 1 | 98.7% (1,982 of 2,009) |",
+        "| 2 (Stage 8) | with the Stage 8 fixes | frozen (`eval/golden/KEY.sha256`) | "
+        "see Result above |",
+        "",
+        "How much to trust run 2: the key was frozen and committed before the prompt changed, and "
+        "`make eval` refuses to run if it differs, so nobody could help the score by editing "
+        "answers. It is still not a blind test. The prompt fixes (default storage by food, milk, "
+        "weights per unit, month-only and year-less dates) were written to cure mistakes seen on "
+        "this same set in run 1, using different example foods, and the set is synthetic and was "
+        "written with the same rules as the prompt. Read it as 'the known mistakes are fixed', "
+        "not as accuracy on real manifests. It is one run at temperature 0; a different run could "
+        "differ by a field or two.",
+        "",
         "## How a field is scored",
         "",
         "Each expected item has 7 fields. A field is correct if the model's matching item agrees:",

@@ -85,10 +85,6 @@ def monthly_aggregates(db: Session, month: str) -> dict:
     return current
 
 
-def has_data(aggregates: dict) -> bool:
-    return _has_data(aggregates)
-
-
 def _flatten(value, out: set[float]) -> None:
     if isinstance(value, bool) or value is None:
         return
