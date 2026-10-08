@@ -184,7 +184,7 @@ refresh. A pantry manager sees only their own pantry.
 
 ## Testing
 
-`make test` runs ruff and the backend suite (833+ tests against the separate test database), then
+`make test` runs ruff and the backend suite (840 tests against the separate test database), then
 frontend lint, typecheck and the production build. It never calls AWS. Tests are written before the
 code they check; the suites cover constraints and migrations, auth and lockout, intake, forecasting
 and its leakage checks, the optimizer, allocation workflow, the pantry portal, dashboard numbers,

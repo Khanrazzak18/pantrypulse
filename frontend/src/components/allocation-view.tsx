@@ -129,7 +129,7 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
     });
 
   const summary = data.summary;
-  const noRun = run === null && data.rows.length === 0;
+  const noRun = run === null && data.rows.length === 0 && busy !== "run";
 
   return (
     <div className="space-y-5">

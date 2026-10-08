@@ -403,7 +403,7 @@
   summary prompt change is untested against the real model; the demo summary for September 2026 in
   the dev database was approved during the browser check and can be ignored.
 
-## Stage 8: Quality pass  (2026-10-08 18:12 to 18:33 EDT; end = commit time, start = previous commit)
+## Stage 8: Quality pass  (2026-10-08 18:12 to 18:29 EDT; end = commit time, start = previous commit)
 - Built:
   - **Form validation audit.** Login, intake upload, intake review, allocation edit, shortage report,
     summary editor and dashboard date range all had inline client messages and Pydantic checks except
@@ -438,3 +438,26 @@
 - Decisions: lockout limits (5 per email, 20 per address, 15 and 15 minutes); the address comes from
   `X-Forwarded-For` with a documented caveat; CLAUDE.md's tree was edited to match the code instead of
   renaming pages.
+
+## Stage 9: Final verification  (2026-10-08 18:29 to 18:35 EDT; end = commit time, start = previous commit)
+- Procedure (README, from nothing): stopped both servers, `docker compose down -v` (the database volume
+  was deleted), `make db`, `make migrate` (6 migrations), `make seed`, `make backtest`, `make test`,
+  `make dev`. Then in the browser: logged out redirect with `next`, empty-form validation, coordinator
+  login through the form, **Run forecast** (3.8 s), a real manifest uploaded, reviewed and confirmed
+  (6 lots, 1,828 lb), **Run allocation** (720 shipments, 9.2 s), admin dashboard with charts, a real AI
+  summary draft, **Run weekly refresh** (12.8 s), pantry manager portal at 375 px with deliveries, a
+  shortage report and its update (201 then 200 `updated: true`), and 403 for the manager on the
+  dashboard and allocations.
+- Tests: `make test` on the clean database: 840 passed; frontend lint, typecheck and build pass.
+- Console and API checks: API log for the whole session: 0 errors, 0 warnings. Browser console: no new
+  errors from the app. The only errors were `ws://localhost:3000/_next/hmr` failures and four 404s
+  logged while the servers were stopped or restarting (the open dashboard tab refetching), and two
+  deliberate 403s from my permission probes.
+- Problems found and fixed:
+  - After **Run allocation** the page flashed "Nothing to review yet" under the "Calculating" button while
+    it reloaded 720 rows. Root cause: the empty state ignored that a run was in progress. Fix: hidden
+    while a run is in flight.
+  - The new summary prompt was verified against the real model: thousands separators and "pounds" are
+    now used (the Stage 7 draft called pounds "items").
+- Not fixed: the Stage 8 prompt still reads month-only dates as the 1st in four cases (see the intake
+  report).
