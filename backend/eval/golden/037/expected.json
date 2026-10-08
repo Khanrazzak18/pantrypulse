@@ -1,0 +1,119 @@
+{
+  "id": "037",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Daily Bread Bakery",
+  "tags": [
+    "frozen_protein",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Rice",
+      "accepted_names": [
+        "long-grain rice",
+        "Rice"
+      ],
+      "category": "dry_goods",
+      "quantity": 180,
+      "unit": "kg",
+      "estimated_weight_lbs": 396.8,
+      "expiry_date": "2028-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 50,
+      "unit": "lb",
+      "estimated_weight_lbs": 50,
+      "expiry_date": "2027-06-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Black beans",
+      "accepted_names": [
+        "Black beans",
+        "canned black beans",
+        "black beans, canned"
+      ],
+      "category": "canned",
+      "quantity": 16,
+      "unit": "case",
+      "estimated_weight_lbs": 448,
+      "expiry_date": "2028-03-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Peanut butter",
+      "accepted_names": [
+        "Peanut butter"
+      ],
+      "category": "dry_goods",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 216.0,
+      "expiry_date": "2027-12-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Romaine lettuce",
+      "accepted_names": [
+        "Romaine lettuce",
+        "romaine hearts"
+      ],
+      "category": "produce",
+      "quantity": 16,
+      "unit": "case",
+      "estimated_weight_lbs": 480,
+      "expiry_date": "2026-10-09",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 18,
+      "unit": "box",
+      "estimated_weight_lbs": 324,
+      "expiry_date": "2026-10-08",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 5,
+      "unit": "case",
+      "estimated_weight_lbs": 120,
+      "expiry_date": "2026-11-05",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Peaches",
+      "accepted_names": [
+        "Peaches",
+        "canned peaches",
+        "peaches in juice (canned)"
+      ],
+      "category": "canned",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 168,
+      "expiry_date": "2028-09-30",
+      "storage_type": "ambient"
+    }
+  ]
+}

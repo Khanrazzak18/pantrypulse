@@ -1,0 +1,92 @@
+{
+  "id": "003",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Rotary Club Drive",
+  "tags": [
+    "frozen_protein",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 108.0,
+      "expiry_date": "2026-10-10",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Spaghetti",
+      "accepted_names": [
+        "Spaghetti",
+        "pasta, spaghetti"
+      ],
+      "category": "dry_goods",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 80.0,
+      "expiry_date": "2027-12-29",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 160,
+      "unit": "kg",
+      "estimated_weight_lbs": 352.7,
+      "expiry_date": "2027-07-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 270.0,
+      "expiry_date": "2026-10-23",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 19,
+      "unit": "box",
+      "estimated_weight_lbs": 342,
+      "expiry_date": "2026-10-10",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 675,
+      "unit": "lb",
+      "estimated_weight_lbs": 675,
+      "expiry_date": "2027-10-31",
+      "storage_type": "frozen"
+    }
+  ]
+}

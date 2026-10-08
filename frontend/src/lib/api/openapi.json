@@ -168,10 +168,714 @@
           }
         }
       }
+    },
+    "/api/donations": {
+      "post": {
+        "tags": [
+          "donations"
+        ],
+        "summary": "Upload Donation",
+        "description": "Check the file, have the model read it, store it, and create a donation to review.\n\nNothing is saved unless the whole thing succeeds, and no inventory is created here:\nitems only become inventory when a coordinator confirms them.",
+        "operationId": "upload_donation_api_donations_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_donation_api_donations_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "donations"
+        ],
+        "summary": "List Donations",
+        "operationId": "list_donations_api_donations_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending_review",
+                    "confirmed",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DonationSummary"
+                  },
+                  "title": "Response List Donations Api Donations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/donations/{donation_id}": {
+      "get": {
+        "tags": [
+          "donations"
+        ],
+        "summary": "Get Donation",
+        "operationId": "get_donation_api_donations__donation_id__get",
+        "parameters": [
+          {
+            "name": "donation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Donation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/donations/{donation_id}/confirm": {
+      "post": {
+        "tags": [
+          "donations"
+        ],
+        "summary": "Confirm Donation",
+        "description": "Create the donation's items and one inventory lot per item from the coordinator's rows.",
+        "operationId": "confirm_donation_api_donations__donation_id__confirm_post",
+        "parameters": [
+          {
+            "name": "donation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Donation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/donations/{donation_id}/reject": {
+      "post": {
+        "tags": [
+          "donations"
+        ],
+        "summary": "Reject Donation",
+        "description": "Add nothing to inventory. The upload stays on record as rejected.",
+        "operationId": "reject_donation_api_donations__donation_id__reject_post",
+        "parameters": [
+          {
+            "name": "donation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Donation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/donors": {
+      "get": {
+        "tags": [
+          "donors"
+        ],
+        "summary": "List Donors",
+        "operationId": "list_donors_api_donors_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DonorOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Donors Api Donors Get"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Body_upload_donation_api_donations_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_donation_api_donations_post"
+      },
+      "ConfirmItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "produce",
+              "dairy",
+              "protein",
+              "bakery",
+              "frozen",
+              "canned",
+              "dry_goods",
+              "beverages"
+            ],
+            "title": "Category"
+          },
+          "quantity": {
+            "type": "number",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Unit"
+          },
+          "estimated_weight_lbs": {
+            "type": "number",
+            "maximum": 100000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Estimated Weight Lbs"
+          },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
+          "storage_type": {
+            "type": "string",
+            "enum": [
+              "ambient",
+              "refrigerated",
+              "frozen"
+            ],
+            "title": "Storage Type"
+          },
+          "source_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "quantity",
+          "unit",
+          "estimated_weight_lbs",
+          "storage_type"
+        ],
+        "title": "ConfirmItem"
+      },
+      "ConfirmRequest": {
+        "properties": {
+          "donor_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Donor Id"
+          },
+          "donor_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Donor Name"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConfirmItem"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ConfirmRequest"
+      },
+      "DonationDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source_type": {
+            "type": "string",
+            "title": "Source Type"
+          },
+          "original_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Filename"
+          },
+          "donor_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Donor Id"
+          },
+          "donor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Donor Name"
+          },
+          "suggested_donor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Donor Name"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count"
+          },
+          "total_lbs": {
+            "type": "number",
+            "title": "Total Lbs"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "source_type",
+          "original_filename",
+          "donor_id",
+          "donor_name",
+          "suggested_donor_name",
+          "item_count",
+          "total_lbs",
+          "received_at",
+          "reviewed_at",
+          "items",
+          "notes",
+          "model_id",
+          "latency_ms",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "DonationDetail"
+      },
+      "DonationSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source_type": {
+            "type": "string",
+            "title": "Source Type"
+          },
+          "original_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Filename"
+          },
+          "donor_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Donor Id"
+          },
+          "donor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Donor Name"
+          },
+          "suggested_donor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Donor Name"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count"
+          },
+          "total_lbs": {
+            "type": "number",
+            "title": "Total Lbs"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "source_type",
+          "original_filename",
+          "donor_id",
+          "donor_name",
+          "suggested_donor_name",
+          "item_count",
+          "total_lbs",
+          "received_at",
+          "reviewed_at"
+        ],
+        "title": "DonationSummary"
+      },
+      "DonorOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "donor_type": {
+            "type": "string",
+            "title": "Donor Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "donor_type"
+        ],
+        "title": "DonorOut"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -271,6 +975,70 @@
           "baseline_households"
         ],
         "title": "PantryOut"
+      },
+      "ReviewItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "estimated_weight_lbs": {
+            "type": "number",
+            "title": "Estimated Weight Lbs"
+          },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
+          "storage_type": {
+            "type": "string",
+            "title": "Storage Type"
+          },
+          "confidence": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Confidence"
+          },
+          "edited": {
+            "type": "boolean",
+            "title": "Edited",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "quantity",
+          "unit",
+          "estimated_weight_lbs",
+          "expiry_date",
+          "storage_type",
+          "confidence"
+        ],
+        "title": "ReviewItem"
       },
       "UserOut": {
         "properties": {

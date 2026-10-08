@@ -1,0 +1,51 @@
+{
+  "id": "020",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Oakline Grocers",
+  "tags": [
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Green beans",
+      "accepted_names": [
+        "Green beans",
+        "canned green beans",
+        "green beans (canned)"
+      ],
+      "category": "canned",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 644,
+      "expiry_date": "2028-06-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bagels",
+      "accepted_names": [
+        "Bagels"
+      ],
+      "category": "bakery",
+      "quantity": 14,
+      "unit": "box",
+      "estimated_weight_lbs": 252,
+      "expiry_date": "2026-10-10",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 324.0,
+      "expiry_date": "2027-06-30",
+      "storage_type": "ambient"
+    }
+  ]
+}

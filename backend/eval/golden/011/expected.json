@@ -1,0 +1,65 @@
+{
+  "id": "011",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "St. Mark's Church Drive",
+  "tags": [
+    "frozen_protein",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Chicken thighs",
+      "accepted_names": [
+        "Chicken thighs",
+        "boneless chicken thighs"
+      ],
+      "category": "protein",
+      "quantity": 625,
+      "unit": "lb",
+      "estimated_weight_lbs": 625,
+      "expiry_date": "2026-10-08",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 54.0,
+      "expiry_date": "2026-10-13",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 26,
+      "unit": "bag",
+      "estimated_weight_lbs": 1300.0,
+      "expiry_date": "2026-10-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 575,
+      "unit": "lb",
+      "estimated_weight_lbs": 575,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    }
+  ]
+}

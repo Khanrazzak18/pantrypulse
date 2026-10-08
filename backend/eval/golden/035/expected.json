@@ -1,0 +1,145 @@
+{
+  "id": "035",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Harbor Foods",
+  "tags": [
+    "frozen_meal",
+    "frozen_produce",
+    "frozen_protein",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen pizza",
+      "accepted_names": [
+        "Frozen pizza",
+        "pizzas, frozen"
+      ],
+      "category": "frozen",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 360.0,
+      "expiry_date": "2027-06-02",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 15,
+      "unit": "case",
+      "estimated_weight_lbs": 450,
+      "expiry_date": "2026-11-01",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 19,
+      "unit": "case",
+      "estimated_weight_lbs": 570,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Rice",
+      "accepted_names": [
+        "long-grain rice",
+        "Rice"
+      ],
+      "category": "dry_goods",
+      "quantity": 38,
+      "unit": "bag",
+      "estimated_weight_lbs": 950.0,
+      "expiry_date": "2028-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen meals",
+      "accepted_names": [
+        "Frozen meals",
+        "frozen entrees"
+      ],
+      "category": "frozen",
+      "quantity": 24,
+      "unit": "case",
+      "estimated_weight_lbs": 720,
+      "expiry_date": "2027-06-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 21,
+      "unit": "case",
+      "estimated_weight_lbs": 1050.0,
+      "expiry_date": "2027-11-29",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Ground beef",
+      "accepted_names": [
+        "Ground beef",
+        "beef, ground"
+      ],
+      "category": "protein",
+      "quantity": 725,
+      "unit": "lb",
+      "estimated_weight_lbs": 725,
+      "expiry_date": "2026-10-08",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Tomato soup",
+      "accepted_names": [
+        "Tomato soup",
+        "soup, tomato"
+      ],
+      "category": "canned",
+      "quantity": 16,
+      "unit": "case",
+      "estimated_weight_lbs": 448.0,
+      "expiry_date": "2028-04-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Sports drink",
+      "accepted_names": [
+        "Sports drink"
+      ],
+      "category": "beverages",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 520,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Peaches",
+      "accepted_names": [
+        "Peaches",
+        "canned peaches",
+        "peaches in juice (canned)"
+      ],
+      "category": "canned",
+      "quantity": 22,
+      "unit": "case",
+      "estimated_weight_lbs": 616,
+      "expiry_date": "2028-12-31",
+      "storage_type": "ambient"
+    }
+  ]
+}

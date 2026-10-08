@@ -1,0 +1,89 @@
+{
+  "id": "039",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Metro Wholesale Foods",
+  "tags": [
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Russet potatoes",
+      "accepted_names": [
+        "Russet potatoes",
+        "potatoes, russet"
+      ],
+      "category": "produce",
+      "quantity": 1,
+      "unit": "pallet",
+      "estimated_weight_lbs": 900.0,
+      "expiry_date": "2026-11-04",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Greek yogurt",
+      "accepted_names": [
+        "Greek yogurt",
+        "yogurt, greek"
+      ],
+      "category": "dairy",
+      "quantity": 14,
+      "unit": "case",
+      "estimated_weight_lbs": 336.0,
+      "expiry_date": "2026-10-18",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Gala apples",
+      "accepted_names": [
+        "Gala apples",
+        "apples (gala)"
+      ],
+      "category": "produce",
+      "quantity": 225,
+      "unit": "lb",
+      "estimated_weight_lbs": 225,
+      "expiry_date": "2026-10-24",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 5,
+      "unit": "box",
+      "estimated_weight_lbs": 90,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 45,
+      "unit": "gallon",
+      "estimated_weight_lbs": 387.0,
+      "expiry_date": "2026-10-10",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Bananas",
+      "accepted_names": [
+        "Bananas"
+      ],
+      "category": "produce",
+      "quantity": 11,
+      "unit": "case",
+      "estimated_weight_lbs": 330,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    }
+  ]
+}

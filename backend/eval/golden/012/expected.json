@@ -1,0 +1,103 @@
+{
+  "id": "012",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "month_year_date",
+    "not_donated"
+  ],
+  "items": [
+    {
+      "name": "Ground beef",
+      "accepted_names": [
+        "Ground beef",
+        "beef, ground"
+      ],
+      "category": "protein",
+      "quantity": 575,
+      "unit": "lb",
+      "estimated_weight_lbs": 575,
+      "expiry_date": "2026-10-09",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Spaghetti",
+      "accepted_names": [
+        "Spaghetti",
+        "pasta, spaghetti"
+      ],
+      "category": "dry_goods",
+      "quantity": 21,
+      "unit": "case",
+      "estimated_weight_lbs": 630,
+      "expiry_date": "2027-09-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Sports drink",
+      "accepted_names": [
+        "Sports drink"
+      ],
+      "category": "beverages",
+      "quantity": 10,
+      "unit": "case",
+      "estimated_weight_lbs": 260,
+      "expiry_date": "2027-08-01",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Black beans",
+      "accepted_names": [
+        "Black beans",
+        "canned black beans",
+        "black beans, canned"
+      ],
+      "category": "canned",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 56,
+      "expiry_date": "2028-04-27",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Tomato soup",
+      "accepted_names": [
+        "Tomato soup",
+        "soup, tomato"
+      ],
+      "category": "canned",
+      "quantity": 15,
+      "unit": "case",
+      "estimated_weight_lbs": 420,
+      "expiry_date": "2028-12-23",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bananas",
+      "accepted_names": [
+        "Bananas"
+      ],
+      "category": "produce",
+      "quantity": 775,
+      "unit": "lb",
+      "estimated_weight_lbs": 775,
+      "expiry_date": "2026-10-12",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Greek yogurt",
+      "accepted_names": [
+        "Greek yogurt",
+        "yogurt, greek"
+      ],
+      "category": "dairy",
+      "quantity": 11,
+      "unit": "case",
+      "estimated_weight_lbs": 264,
+      "expiry_date": "2026-10-23",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

@@ -106,10 +106,224 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/donations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Donations */
+        get: operations["list_donations_api_donations_get"];
+        put?: never;
+        /**
+         * Upload Donation
+         * @description Check the file, have the model read it, store it, and create a donation to review.
+         *
+         *     Nothing is saved unless the whole thing succeeds, and no inventory is created here:
+         *     items only become inventory when a coordinator confirms them.
+         */
+        post: operations["upload_donation_api_donations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/donations/{donation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Donation */
+        get: operations["get_donation_api_donations__donation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/donations/{donation_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Donation
+         * @description Create the donation's items and one inventory lot per item from the coordinator's rows.
+         */
+        post: operations["confirm_donation_api_donations__donation_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/donations/{donation_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Donation
+         * @description Add nothing to inventory. The upload stays on record as rejected.
+         */
+        post: operations["reject_donation_api_donations__donation_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/donors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Donors */
+        get: operations["list_donors_api_donors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Body_upload_donation_api_donations_post */
+        Body_upload_donation_api_donations_post: {
+            /** File */
+            file: string;
+        };
+        /** ConfirmItem */
+        ConfirmItem: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "produce" | "dairy" | "protein" | "bakery" | "frozen" | "canned" | "dry_goods" | "beverages";
+            /** Quantity */
+            quantity: number;
+            /** Unit */
+            unit: string;
+            /** Estimated Weight Lbs */
+            estimated_weight_lbs: number;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /**
+             * Storage Type
+             * @enum {string}
+             */
+            storage_type: "ambient" | "refrigerated" | "frozen";
+            /** Source Index */
+            source_index?: number | null;
+        };
+        /** ConfirmRequest */
+        ConfirmRequest: {
+            /** Donor Id */
+            donor_id?: number | null;
+            /** Donor Name */
+            donor_name?: string | null;
+            /** Items */
+            items: components["schemas"]["ConfirmItem"][];
+        };
+        /** DonationDetail */
+        DonationDetail: {
+            /** Id */
+            id: number;
+            /** Status */
+            status: string;
+            /** Source Type */
+            source_type: string;
+            /** Original Filename */
+            original_filename: string | null;
+            /** Donor Id */
+            donor_id: number | null;
+            /** Donor Name */
+            donor_name: string | null;
+            /** Suggested Donor Name */
+            suggested_donor_name: string | null;
+            /** Item Count */
+            item_count: number;
+            /** Total Lbs */
+            total_lbs: number;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Items */
+            items: components["schemas"]["ReviewItem"][];
+            /** Notes */
+            notes: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+        };
+        /** DonationSummary */
+        DonationSummary: {
+            /** Id */
+            id: number;
+            /** Status */
+            status: string;
+            /** Source Type */
+            source_type: string;
+            /** Original Filename */
+            original_filename: string | null;
+            /** Donor Id */
+            donor_id: number | null;
+            /** Donor Name */
+            donor_name: string | null;
+            /** Suggested Donor Name */
+            suggested_donor_name: string | null;
+            /** Item Count */
+            item_count: number;
+            /** Total Lbs */
+            total_lbs: number;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Reviewed At */
+            reviewed_at: string | null;
+        };
+        /** DonorOut */
+        DonorOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Donor Type */
+            donor_type: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -147,6 +361,32 @@ export interface components {
             dry_capacity_lbs: number;
             /** Baseline Households */
             baseline_households: number;
+        };
+        /** ReviewItem */
+        ReviewItem: {
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Quantity */
+            quantity: number;
+            /** Unit */
+            unit: string;
+            /** Estimated Weight Lbs */
+            estimated_weight_lbs: number;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Storage Type */
+            storage_type: string;
+            /** Confidence */
+            confidence: {
+                [key: string]: number;
+            };
+            /**
+             * Edited
+             * @default false
+             */
+            edited: boolean;
         };
         /** UserOut */
         UserOut: {
@@ -323,6 +563,188 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_donations_api_donations_get: {
+        parameters: {
+            query?: {
+                status?: ("pending_review" | "confirmed" | "rejected") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonationSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_donation_api_donations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_donation_api_donations_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_donation_api_donations__donation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                donation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_donation_api_donations__donation_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                donation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_donation_api_donations__donation_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                donation_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_donors_api_donors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonorOut"][];
                 };
             };
         };

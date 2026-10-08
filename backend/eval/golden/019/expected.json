@@ -1,0 +1,106 @@
+{
+  "id": "019",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Rotary Club Drive",
+  "tags": [
+    "frozen_produce",
+    "month_year_date",
+    "no_date",
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Spaghetti",
+      "accepted_names": [
+        "Spaghetti",
+        "pasta, spaghetti"
+      ],
+      "category": "dry_goods",
+      "quantity": 18,
+      "unit": "case",
+      "estimated_weight_lbs": 540,
+      "expiry_date": "2027-10-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 690,
+      "expiry_date": "2027-06-02",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Rolled oats",
+      "accepted_names": [
+        "Rolled oats",
+        "oatmeal"
+      ],
+      "category": "dry_goods",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 270,
+      "expiry_date": "2028-03-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Gala apples",
+      "accepted_names": [
+        "Gala apples",
+        "apples (gala)"
+      ],
+      "category": "produce",
+      "quantity": 21,
+      "unit": "case",
+      "estimated_weight_lbs": 840.0,
+      "expiry_date": "2026-10-16",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Bottled water",
+      "accepted_names": [
+        "Bottled water",
+        "water, bottled"
+      ],
+      "category": "beverages",
+      "quantity": 3,
+      "unit": "pallet",
+      "estimated_weight_lbs": 3000,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 600,
+      "expiry_date": "2027-09-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 600,
+      "unit": "lb",
+      "estimated_weight_lbs": 600,
+      "expiry_date": "2026-10-21",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

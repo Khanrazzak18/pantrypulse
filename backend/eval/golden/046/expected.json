@@ -1,0 +1,64 @@
+{
+  "id": "046",
+  "format": "image",
+  "file": "manifest.jpg",
+  "received_date": "2026-10-05",
+  "donor_name": "Metro Wholesale Foods",
+  "tags": [
+    "frozen_meal",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen pizza",
+      "accepted_names": [
+        "Frozen pizza",
+        "pizzas, frozen"
+      ],
+      "category": "frozen",
+      "quantity": 15,
+      "unit": "case",
+      "estimated_weight_lbs": 600.0,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Bagels",
+      "accepted_names": [
+        "Bagels"
+      ],
+      "category": "bakery",
+      "quantity": 9,
+      "unit": "box",
+      "estimated_weight_lbs": 162,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Pork loin",
+      "accepted_names": [
+        "Pork loin",
+        "pork loin roasts"
+      ],
+      "category": "protein",
+      "quantity": 180,
+      "unit": "kg",
+      "estimated_weight_lbs": 396.8,
+      "expiry_date": "2026-10-09",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Sports drink",
+      "accepted_names": [
+        "Sports drink"
+      ],
+      "category": "beverages",
+      "quantity": 8,
+      "unit": "case",
+      "estimated_weight_lbs": 160.0,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    }
+  ]
+}

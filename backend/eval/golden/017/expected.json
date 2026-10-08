@@ -1,0 +1,65 @@
+{
+  "id": "017",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Metro Wholesale Foods",
+  "tags": [
+    "frozen_meal",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Rolled oats",
+      "accepted_names": [
+        "Rolled oats",
+        "oatmeal"
+      ],
+      "category": "dry_goods",
+      "quantity": 22,
+      "unit": "case",
+      "estimated_weight_lbs": 660,
+      "expiry_date": "2028-01-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Rice",
+      "accepted_names": [
+        "long-grain rice",
+        "Rice"
+      ],
+      "category": "dry_goods",
+      "quantity": 9,
+      "unit": "bag",
+      "estimated_weight_lbs": 225.0,
+      "expiry_date": "2028-06-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen pizza",
+      "accepted_names": [
+        "Frozen pizza",
+        "pizzas, frozen"
+      ],
+      "category": "frozen",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 90,
+      "expiry_date": "2027-08-01",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 5,
+      "unit": "case",
+      "estimated_weight_lbs": 200.0,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    }
+  ]
+}

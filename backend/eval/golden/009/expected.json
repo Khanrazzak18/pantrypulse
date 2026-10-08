@@ -1,0 +1,91 @@
+{
+  "id": "009",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Stoneridge Dairy",
+  "tags": [
+    "month_year_date",
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 8,
+      "unit": "case",
+      "estimated_weight_lbs": 240,
+      "expiry_date": "2026-10-19",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Tomato soup",
+      "accepted_names": [
+        "Tomato soup",
+        "soup, tomato"
+      ],
+      "category": "canned",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 44.0,
+      "expiry_date": "2028-10-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 12,
+      "unit": "box",
+      "estimated_weight_lbs": 216,
+      "expiry_date": "2026-10-11",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Russet potatoes",
+      "accepted_names": [
+        "Russet potatoes",
+        "potatoes, russet"
+      ],
+      "category": "produce",
+      "quantity": 2,
+      "unit": "pallet",
+      "estimated_weight_lbs": 2000,
+      "expiry_date": "2026-11-04",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 7,
+      "unit": "case",
+      "estimated_weight_lbs": 210,
+      "expiry_date": "2027-09-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Rolled oats",
+      "accepted_names": [
+        "Rolled oats",
+        "oatmeal"
+      ],
+      "category": "dry_goods",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 180,
+      "expiry_date": "2027-12-29",
+      "storage_type": "ambient"
+    }
+  ]
+}

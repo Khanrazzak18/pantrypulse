@@ -151,3 +151,62 @@ redirect before render for visitors with no cookie at all. These guards decide w
 API enforces the rules. The `next` value is only honoured for same-site paths (`lib/safe-next.ts`).
 The browser's API types are generated from the app's OpenAPI document (`make api-types`); a test
 fails if the committed `openapi.json` no longer matches the API.
+
+## AI donation intake (Stage 4)
+
+```
+upload (pdf/png/jpg/webp/txt/eml, <= 10 MB)
+  -> checks: extension, real file content, size, text length   (nothing is sent to the model yet)
+  -> Bedrock Converse: forced tool call `record_donation_items`, schema generated from Pydantic
+  -> Pydantic validation; one retry (shared budget) if the answer is unusable
+  -> StorageBackend.put(file) + a `pending_review` donation holding the raw output as JSONB
+  -> coordinator reviews and edits; Confirm creates donation_items + one inventory_lot per item
+     (Reject creates nothing)
+```
+
+- **Provider** (`app/ai/llm_provider.py`): boto3 `bedrock-runtime` built lazily from the
+  `AWS_PROFILE` profile (no keys in `.env`), 5 s connect and 45 s read timeouts, temperature 0.
+  The running app always uses real Bedrock; tests inject a scripted fake and a guard fails any
+  test that creates a boto3 session. Each call logs model, latency, input and output tokens and
+  outcome, never the manifest.
+- **Retry policy** (`run_with_retry`): timeouts, throttling, 5xx errors and unusable answers
+  share one budget of two attempts with backoff. The second attempt is told why the first was
+  rejected. Access, validation and configuration errors are not retried.
+- **Structured output**: the model must call one tool whose input schema is
+  `DonationExtraction.model_json_schema()` (references inlined). Each item has name, category,
+  quantity, unit, estimated weight in lb, expiry date, storage type and a 0 to 1 confidence per
+  field. The prompt (`app/ai/prompts/extract_donation.md`) states the category rule from this
+  document, how weights and dates are worked out, and that the manifest is untrusted data.
+  Text is wrapped in `<manifest>` tags and a closing tag inside it is neutralised.
+- **Rule 9** (model output never writes without confirmation): extraction stores only the raw
+  output on a `pending_review` donation (`raw_llm_output` = tool input, parsed result, token usage
+  and attempts). The review screen reads items from that JSONB. `donation_items` and
+  `inventory_lots` are created only by Confirm, from the rows the coordinator submitted, in one
+  transaction. A row is marked `edited` if it differs from what the model returned or was added by
+  hand; untouched rows keep the model's confidence.
+- **Failure leaves nothing behind**: an invalid file, an unusable answer, a timeout or a storage
+  failure saves no donation and no file. The browser keeps the chosen file for "Try again".
+- **Reject** adds nothing to inventory. The donation, its file and the model output stay as an
+  audit record with status `rejected`, `reviewed_by` and `reviewed_at`.
+- **Size limits**: 10 MB per upload, inclusive. Bedrock's inline limits are smaller, so images
+  over 3.75 MB are shrunk to JPEG for the model (the original is what is stored) and PDFs over
+  4.5 MB are refused with a readable message. Text over 100,000 characters is refused.
+- **Review rules**: an item that expires before today blocks Confirm; a perishable with no
+  expiry date only shows a warning. A donor is chosen from existing donors or created by name
+  (matched case-insensitively), and is required to confirm.
+- **Errors** use the usual envelope. Codes: `unsupported_file_type` 415, `invalid_file_content`
+  415, `file_too_large` 413, `file_too_large_for_ai` 413, `empty_file` 422, `no_items_found` 422,
+  `ai_invalid_output` 502, `ai_unavailable` 502, `ai_timeout` 504, `ai_busy` 503,
+  `ai_not_configured` 503, `donation_not_pending` 409. AWS error details are logged, never shown.
+
+### Intake eval
+
+`backend/eval/golden/` holds 50 synthetic manifests (30 `.eml`, 15 `.pdf`, 5 photo-style
+`.jpg`/`.png`), each with an `expected.json`. They are generated from a fixed seed by
+`eval/make_golden_set.py`, and cover the hard cases: frozen protein, frozen meals and frozen
+vegetables, kilograms, pallets, relative dates ("use within 5 days"), month-only dates, items
+with no date, non-food lines, "we will NOT send" lines and prompt-injection text.
+`make eval` runs them through the same code as the upload endpoint, scores seven fields per item
+(see `eval/scoring.py`) and writes `docs/eval/intake-eval.md`. An item may be printed under
+several names, so the answer key lists every accepted name. `python -m eval.run_intake_eval
+--rescore` scores saved answers again without calling the model.

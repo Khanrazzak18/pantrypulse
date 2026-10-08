@@ -1,0 +1,68 @@
+{
+  "id": "029",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Harbor Foods",
+  "tags": [
+    "frozen_meal",
+    "frozen_protein",
+    "month_year_date",
+    "no_date",
+    "not_donated"
+  ],
+  "items": [
+    {
+      "name": "Bottled water",
+      "accepted_names": [
+        "Bottled water",
+        "water, bottled"
+      ],
+      "category": "beverages",
+      "quantity": 5,
+      "unit": "case",
+      "estimated_weight_lbs": 100.0,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen pizza",
+      "accepted_names": [
+        "Frozen pizza",
+        "pizzas, frozen"
+      ],
+      "category": "frozen",
+      "quantity": 15,
+      "unit": "case",
+      "estimated_weight_lbs": 450.0,
+      "expiry_date": "2027-04-03",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 16,
+      "unit": "case",
+      "estimated_weight_lbs": 416,
+      "expiry_date": "2027-06-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 11,
+      "unit": "case",
+      "estimated_weight_lbs": 550.0,
+      "expiry_date": "2027-09-30",
+      "storage_type": "frozen"
+    }
+  ]
+}

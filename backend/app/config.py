@@ -24,6 +24,12 @@ class Settings(BaseSettings):
 
     jwt_secret: str = ""
     session_hours: int = 8
+    aws_profile: str | None = (
+        None  # credentials come from this AWS CLI profile, never from .env keys
+    )
+    aws_region: str = "us-east-1"
+    bedrock_model_id: str = ""  # an inference profile ID such as us.anthropic.claude-haiku-4-5-...
+    storage_dir: str = "backend/var/uploads"  # relative paths are resolved from the repo root
     cookie_secure: bool = False  # set COOKIE_SECURE=true when served over https
 
     # Demo logins for `make seed`. No defaults here on purpose: they live in .env only.
@@ -42,6 +48,11 @@ class Settings(BaseSettings):
             port=self.postgres_port,
             database=database,
         )
+
+    @property
+    def storage_path(self) -> Path:
+        path = Path(self.storage_dir)
+        return path if path.is_absolute() else ROOT / path
 
     @property
     def database_url(self) -> URL:

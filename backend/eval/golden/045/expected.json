@@ -1,0 +1,119 @@
+{
+  "id": "045",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Cornerstone Co-op",
+  "tags": [
+    "frozen_meal",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 15,
+      "unit": "case",
+      "estimated_weight_lbs": 300.0,
+      "expiry_date": "2027-06-02",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Spaghetti",
+      "accepted_names": [
+        "Spaghetti",
+        "pasta, spaghetti"
+      ],
+      "category": "dry_goods",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 180,
+      "expiry_date": "2028-09-24",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen meals",
+      "accepted_names": [
+        "Frozen meals",
+        "frozen entrees"
+      ],
+      "category": "frozen",
+      "quantity": 10,
+      "unit": "case",
+      "estimated_weight_lbs": 300,
+      "expiry_date": "2027-06-02",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 14,
+      "unit": "box",
+      "estimated_weight_lbs": 252,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Chicken thighs",
+      "accepted_names": [
+        "Chicken thighs",
+        "boneless chicken thighs"
+      ],
+      "category": "protein",
+      "quantity": 375,
+      "unit": "lb",
+      "estimated_weight_lbs": 375,
+      "expiry_date": "2026-10-11",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Pork loin",
+      "accepted_names": [
+        "Pork loin",
+        "pork loin roasts"
+      ],
+      "category": "protein",
+      "quantity": 120,
+      "unit": "kg",
+      "estimated_weight_lbs": 264.6,
+      "expiry_date": "2026-10-10",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Peaches",
+      "accepted_names": [
+        "Peaches",
+        "canned peaches",
+        "peaches in juice (canned)"
+      ],
+      "category": "canned",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 56,
+      "expiry_date": "2028-09-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Romaine lettuce",
+      "accepted_names": [
+        "Romaine lettuce",
+        "romaine hearts"
+      ],
+      "category": "produce",
+      "quantity": 21,
+      "unit": "case",
+      "estimated_weight_lbs": 630.0,
+      "expiry_date": "2026-10-12",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

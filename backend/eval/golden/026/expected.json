@@ -1,0 +1,92 @@
+{
+  "id": "026",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "no_date"
+  ],
+  "items": [
+    {
+      "name": "Peaches",
+      "accepted_names": [
+        "Peaches",
+        "canned peaches",
+        "peaches in juice (canned)"
+      ],
+      "category": "canned",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 440.0,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 40,
+      "unit": "bag",
+      "estimated_weight_lbs": 2000.0,
+      "expiry_date": "2026-10-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Corn",
+      "accepted_names": [
+        "Corn",
+        "canned corn",
+        "corn, canned"
+      ],
+      "category": "canned",
+      "quantity": 4,
+      "unit": "case",
+      "estimated_weight_lbs": 112,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 690,
+      "expiry_date": "2027-06-02",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Cheddar cheese",
+      "accepted_names": [
+        "Cheddar cheese",
+        "cheddar blocks"
+      ],
+      "category": "dairy",
+      "quantity": 225,
+      "unit": "lb",
+      "estimated_weight_lbs": 225,
+      "expiry_date": "2026-10-23",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 600,
+      "unit": "lb",
+      "estimated_weight_lbs": 600,
+      "expiry_date": "2026-12-03",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

@@ -4,14 +4,18 @@ from types import SimpleNamespace
 import pytest
 from alembic.config import Config
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from alembic import command
+from app.ai import llm_provider
 from app.auth.passwords import hash_password
 from app.config import Settings
 from app.db import make_engine
 from app.main import create_app
 from app.models import Pantry, User
+from app.storage import LocalStorage
+from tests.fakes import FakeLLM
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -28,9 +32,46 @@ def engine(settings, migrated_engine):
     engine.dispose()
 
 
+@pytest.fixture(autouse=True, scope="session")
+def no_aws_calls():
+    """Tests never talk to AWS. Any attempt to build a boto3 session or client fails loudly."""
+    import boto3
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("a test tried to create a boto3 session or client")
+
+    original = (boto3.Session, boto3.client, boto3.setup_default_session)
+    boto3.Session = boto3.client = boto3.setup_default_session = refuse
+    yield
+    boto3.Session, boto3.client, boto3.setup_default_session = original
+
+
 @pytest.fixture
-def app(settings, engine):
-    return create_app(settings, engine)
+def sleeps(monkeypatch):
+    """Retry backoff sleeps are recorded, not waited for."""
+    recorded: list[float] = []
+    monkeypatch.setattr(llm_provider, "_sleep", recorded.append)
+    return recorded
+
+
+@pytest.fixture(autouse=True)
+def _no_real_sleep(sleeps):
+    return sleeps
+
+
+@pytest.fixture
+def llm():
+    return FakeLLM()
+
+
+@pytest.fixture
+def storage(tmp_path):
+    return LocalStorage(tmp_path / "uploads")
+
+
+@pytest.fixture
+def app(settings, engine, llm, storage):
+    return create_app(settings, engine, llm=llm, storage=storage)
 
 
 @pytest.fixture
@@ -115,6 +156,9 @@ def people(migrated_engine, password_hash):
         )
         db.commit()
     yield emails
+    # Donations point at users (created_by, reviewed_by), so they have to go first.
+    with migrated_engine.begin() as conn:
+        conn.execute(text(WIPE_DONATIONS))
     with Session(migrated_engine) as db:
         db.query(User).filter(User.email.in_(vars(emails).values())).delete()
         db.query(Pantry).filter(Pantry.id.in_([PANTRY_A, PANTRY_B])).delete()
@@ -123,3 +167,26 @@ def people(migrated_engine, password_hash):
 
 def login(client, email, password=PASSWORD):
     return client.post("/api/auth/login", json={"email": email, "password": password})
+
+
+WIPE_DONATIONS = (
+    "TRUNCATE inventory_lots, donation_items, donations, donors RESTART IDENTITY CASCADE"
+)
+
+
+@pytest.fixture
+def clean_donations(migrated_engine):
+    """Empty the donation-related tables before and after a test (they are committed by the API)."""
+
+    def wipe():
+        with migrated_engine.begin() as conn:
+            conn.execute(text(WIPE_DONATIONS))
+
+    wipe()
+    yield
+    wipe()
+
+
+def row_count(engine, table: str) -> int:
+    with engine.connect() as conn:
+        return conn.execute(text(f"SELECT count(*) FROM {table}")).scalar_one()

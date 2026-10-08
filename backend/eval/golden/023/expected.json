@@ -1,0 +1,106 @@
+{
+  "id": "023",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Metro Wholesale Foods",
+  "tags": [
+    "frozen_meal",
+    "month_year_date",
+    "no_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen pizza",
+      "accepted_names": [
+        "Frozen pizza",
+        "pizzas, frozen"
+      ],
+      "category": "frozen",
+      "quantity": 17,
+      "unit": "case",
+      "estimated_weight_lbs": 510,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 216.0,
+      "expiry_date": "2027-09-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 25,
+      "unit": "gallon",
+      "estimated_weight_lbs": 215.0,
+      "expiry_date": "2026-10-11",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Green beans",
+      "accepted_names": [
+        "Green beans",
+        "canned green beans",
+        "green beans (canned)"
+      ],
+      "category": "canned",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 44.0,
+      "expiry_date": "2029-03-23",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 15,
+      "unit": "box",
+      "estimated_weight_lbs": 270,
+      "expiry_date": "2026-10-10",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bottled water",
+      "accepted_names": [
+        "Bottled water",
+        "water, bottled"
+      ],
+      "category": "beverages",
+      "quantity": 4,
+      "unit": "case",
+      "estimated_weight_lbs": 144.0,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Gala apples",
+      "accepted_names": [
+        "Gala apples",
+        "apples (gala)"
+      ],
+      "category": "produce",
+      "quantity": 24,
+      "unit": "case",
+      "estimated_weight_lbs": 720,
+      "expiry_date": "2026-10-22",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

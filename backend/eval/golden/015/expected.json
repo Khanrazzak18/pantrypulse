@@ -1,0 +1,90 @@
+{
+  "id": "015",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Millbrook Farm",
+  "tags": [
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Gala apples",
+      "accepted_names": [
+        "Gala apples",
+        "apples (gala)"
+      ],
+      "category": "produce",
+      "quantity": 500,
+      "unit": "lb",
+      "estimated_weight_lbs": 500,
+      "expiry_date": "2026-10-15",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 10,
+      "unit": "case",
+      "estimated_weight_lbs": 300.0,
+      "expiry_date": "2027-11-29",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 8,
+      "unit": "case",
+      "estimated_weight_lbs": 144.0,
+      "expiry_date": "2026-10-14",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 270,
+      "expiry_date": "2026-10-25",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Flour",
+      "accepted_names": [
+        "Flour",
+        "all-purpose flour"
+      ],
+      "category": "dry_goods",
+      "quantity": 400,
+      "unit": "lb",
+      "estimated_weight_lbs": 400,
+      "expiry_date": "2027-09-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Chicken thighs",
+      "accepted_names": [
+        "Chicken thighs",
+        "boneless chicken thighs"
+      ],
+      "category": "protein",
+      "quantity": 575,
+      "unit": "lb",
+      "estimated_weight_lbs": 575,
+      "expiry_date": "2026-10-08",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

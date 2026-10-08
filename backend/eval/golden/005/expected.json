@@ -1,0 +1,91 @@
+{
+  "id": "005",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Greenfield Market",
+  "tags": [
+    "frozen_meal",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 22,
+      "unit": "case",
+      "estimated_weight_lbs": 396.0,
+      "expiry_date": "2026-10-14",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Rolled oats",
+      "accepted_names": [
+        "Rolled oats",
+        "oatmeal"
+      ],
+      "category": "dry_goods",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 180,
+      "expiry_date": "2027-08-01",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 10,
+      "unit": "case",
+      "estimated_weight_lbs": 240.0,
+      "expiry_date": "2027-11-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Gala apples",
+      "accepted_names": [
+        "Gala apples",
+        "apples (gala)"
+      ],
+      "category": "produce",
+      "quantity": 325,
+      "unit": "lb",
+      "estimated_weight_lbs": 325,
+      "expiry_date": "2026-10-22",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Frozen meals",
+      "accepted_names": [
+        "Frozen meals",
+        "frozen entrees"
+      ],
+      "category": "frozen",
+      "quantity": 19,
+      "unit": "case",
+      "estimated_weight_lbs": 570,
+      "expiry_date": "2027-06-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 12,
+      "unit": "case",
+      "estimated_weight_lbs": 312.0,
+      "expiry_date": "2027-05-03",
+      "storage_type": "ambient"
+    }
+  ]
+}

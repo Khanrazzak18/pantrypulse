@@ -7,8 +7,14 @@ export function roleHome(role: string): string {
 
 /** The navigation each role sees. Later stages add their pages here. */
 export const NAV_ITEMS: Record<Role, { href: string; label: string }[]> = {
-  coordinator: [{ href: "/coordinator", label: "Pantries" }],
-  admin: [{ href: "/coordinator", label: "Pantries" }],
+  coordinator: [
+    { href: "/coordinator", label: "Pantries" },
+    { href: "/coordinator/donations", label: "Donations" },
+  ],
+  admin: [
+    { href: "/coordinator", label: "Pantries" },
+    { href: "/coordinator/donations", label: "Donations" },
+  ],
   pantry_manager: [{ href: "/pantry", label: "My pantry" }],
 };
 

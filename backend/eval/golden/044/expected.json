@@ -1,0 +1,108 @@
+{
+  "id": "044",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "month_year_date",
+    "no_date",
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Peaches",
+      "accepted_names": [
+        "Peaches",
+        "canned peaches",
+        "peaches in juice (canned)"
+      ],
+      "category": "canned",
+      "quantity": 7,
+      "unit": "case",
+      "estimated_weight_lbs": 196,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 144,
+      "expiry_date": "2026-11-28",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Corn",
+      "accepted_names": [
+        "Corn",
+        "canned corn",
+        "corn, canned"
+      ],
+      "category": "canned",
+      "quantity": 2,
+      "unit": "pallet",
+      "estimated_weight_lbs": 1800.0,
+      "expiry_date": "2028-04-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Black beans",
+      "accepted_names": [
+        "Black beans",
+        "canned black beans",
+        "black beans, canned"
+      ],
+      "category": "canned",
+      "quantity": 15,
+      "unit": "case",
+      "estimated_weight_lbs": 420,
+      "expiry_date": "2029-01-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Peanut butter",
+      "accepted_names": [
+        "Peanut butter"
+      ],
+      "category": "dry_goods",
+      "quantity": 18,
+      "unit": "case",
+      "estimated_weight_lbs": 540,
+      "expiry_date": "2027-09-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Green beans",
+      "accepted_names": [
+        "Green beans",
+        "canned green beans",
+        "green beans (canned)"
+      ],
+      "category": "canned",
+      "quantity": 14,
+      "unit": "case",
+      "estimated_weight_lbs": 392,
+      "expiry_date": "2029-03-23",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Flour",
+      "accepted_names": [
+        "Flour",
+        "all-purpose flour"
+      ],
+      "category": "dry_goods",
+      "quantity": 125,
+      "unit": "lb",
+      "estimated_weight_lbs": 125,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    }
+  ]
+}

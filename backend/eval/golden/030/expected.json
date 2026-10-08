@@ -1,0 +1,52 @@
+{
+  "id": "030",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "frozen_meal",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Green beans",
+      "accepted_names": [
+        "Green beans",
+        "canned green beans",
+        "green beans (canned)"
+      ],
+      "category": "canned",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 56,
+      "expiry_date": "2029-01-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 480.0,
+      "expiry_date": "2027-10-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Bananas",
+      "accepted_names": [
+        "Bananas"
+      ],
+      "category": "produce",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 600,
+      "expiry_date": "2026-10-10",
+      "storage_type": "ambient"
+    }
+  ]
+}

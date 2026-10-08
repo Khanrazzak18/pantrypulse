@@ -24,3 +24,6 @@ backend/var/
 .DS_Store
 .idea/
 .vscode/
+
+# generated eval output (the committed record is docs/eval/intake-eval.md)
+backend/eval/results/

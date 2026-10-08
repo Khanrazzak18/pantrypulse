@@ -1,0 +1,119 @@
+{
+  "id": "043",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Oakline Grocers",
+  "tags": [
+    "frozen_meal",
+    "frozen_produce",
+    "month_year_date",
+    "not_donated"
+  ],
+  "items": [
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 11,
+      "unit": "box",
+      "estimated_weight_lbs": 198,
+      "expiry_date": "2026-10-16",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 17,
+      "unit": "case",
+      "estimated_weight_lbs": 408,
+      "expiry_date": "2026-11-25",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Romaine lettuce",
+      "accepted_names": [
+        "Romaine lettuce",
+        "romaine hearts"
+      ],
+      "category": "produce",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 600,
+      "expiry_date": "2026-10-10",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 11,
+      "unit": "case",
+      "estimated_weight_lbs": 330,
+      "expiry_date": "2027-12-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Flour",
+      "accepted_names": [
+        "Flour",
+        "all-purpose flour"
+      ],
+      "category": "dry_goods",
+      "quantity": 325,
+      "unit": "lb",
+      "estimated_weight_lbs": 325,
+      "expiry_date": "2027-09-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bagels",
+      "accepted_names": [
+        "Bagels"
+      ],
+      "category": "bakery",
+      "quantity": 14,
+      "unit": "box",
+      "estimated_weight_lbs": 252,
+      "expiry_date": "2026-10-11",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 60,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Green beans",
+      "accepted_names": [
+        "Green beans",
+        "canned green beans",
+        "green beans (canned)"
+      ],
+      "category": "canned",
+      "quantity": 11,
+      "unit": "case",
+      "estimated_weight_lbs": 242.0,
+      "expiry_date": "2029-01-31",
+      "storage_type": "ambient"
+    }
+  ]
+}

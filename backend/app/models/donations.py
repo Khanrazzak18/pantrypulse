@@ -42,18 +42,32 @@ class Donation(Base):
         CheckConstraint(in_list("source_type", DONATION_SOURCES), name="source_valid"),
         CheckConstraint(in_list("status", DONATION_STATUSES), name="status_valid"),
         CheckConstraint("latency_ms IS NULL OR latency_ms >= 0", name="latency_nonneg"),
+        # The donor is picked during review, so it can be empty only while a donation is pending.
+        CheckConstraint(
+            "status <> 'confirmed' OR donor_id IS NOT NULL", name="confirmed_has_donor"
+        ),
+        # Pending donations are unreviewed; rejected ones say when. Confirmed history needs neither.
+        CheckConstraint(
+            "(status = 'pending_review' AND reviewed_at IS NULL AND reviewed_by IS NULL) "
+            "OR (status = 'rejected' AND reviewed_at IS NOT NULL) OR status = 'confirmed'",
+            name="review_matches_status",
+        ),
+        Index("ix_donations_status_created_at", "status", "created_at"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    donor_id: Mapped[int] = mapped_column(ForeignKey("donors.id", ondelete="RESTRICT"))
+    donor_id: Mapped[int | None] = mapped_column(ForeignKey("donors.id", ondelete="RESTRICT"))
     source_type: Mapped[str] = mapped_column(String(20))
     file_key: Mapped[str | None] = mapped_column(String(300))
+    original_filename: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(20))
     raw_llm_output: Mapped[dict | None] = mapped_column(JSONB)
     model_id: Mapped[str | None] = mapped_column(String(120))
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

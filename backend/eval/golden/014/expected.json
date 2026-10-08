@@ -1,0 +1,67 @@
+{
+  "id": "014",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "frozen_meal",
+    "frozen_protein",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 5,
+      "unit": "box",
+      "estimated_weight_lbs": 90,
+      "expiry_date": "2026-10-08",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Rice",
+      "accepted_names": [
+        "long-grain rice",
+        "Rice"
+      ],
+      "category": "dry_goods",
+      "quantity": 100,
+      "unit": "kg",
+      "estimated_weight_lbs": 220.5,
+      "expiry_date": "2028-05-27",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen meals",
+      "accepted_names": [
+        "Frozen meals",
+        "frozen entrees"
+      ],
+      "category": "frozen",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 552.0,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 225,
+      "unit": "lb",
+      "estimated_weight_lbs": 225,
+      "expiry_date": "2027-09-30",
+      "storage_type": "frozen"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "id": "027",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "frozen_meal",
+    "non_food"
+  ],
+  "items": [
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 920.0,
+      "expiry_date": "2027-10-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 14,
+      "unit": "case",
+      "estimated_weight_lbs": 560.0,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 8,
+      "unit": "box",
+      "estimated_weight_lbs": 144,
+      "expiry_date": "2026-10-08",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 22,
+      "unit": "case",
+      "estimated_weight_lbs": 660,
+      "expiry_date": "2026-10-22",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

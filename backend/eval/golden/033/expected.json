@@ -1,0 +1,104 @@
+{
+  "id": "033",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Millbrook Farm",
+  "tags": [
+    "frozen_meal",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen pizza",
+      "accepted_names": [
+        "Frozen pizza",
+        "pizzas, frozen"
+      ],
+      "category": "frozen",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 180.0,
+      "expiry_date": "2027-04-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Romaine lettuce",
+      "accepted_names": [
+        "Romaine lettuce",
+        "romaine hearts"
+      ],
+      "category": "produce",
+      "quantity": 475,
+      "unit": "lb",
+      "estimated_weight_lbs": 475,
+      "expiry_date": "2026-10-10",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Peanut butter",
+      "accepted_names": [
+        "Peanut butter"
+      ],
+      "category": "dry_goods",
+      "quantity": 21,
+      "unit": "case",
+      "estimated_weight_lbs": 630,
+      "expiry_date": "2027-11-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 18,
+      "unit": "box",
+      "estimated_weight_lbs": 324,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 6,
+      "unit": "box",
+      "estimated_weight_lbs": 108,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Cheddar cheese",
+      "accepted_names": [
+        "Cheddar cheese",
+        "cheddar blocks"
+      ],
+      "category": "dairy",
+      "quantity": 60,
+      "unit": "kg",
+      "estimated_weight_lbs": 132.3,
+      "expiry_date": "2026-10-30",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 250,
+      "unit": "lb",
+      "estimated_weight_lbs": 250,
+      "expiry_date": "2026-11-12",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

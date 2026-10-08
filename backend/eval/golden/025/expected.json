@@ -1,0 +1,104 @@
+{
+  "id": "025",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Oakline Grocers",
+  "tags": [
+    "injection",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 15,
+      "unit": "gallon",
+      "estimated_weight_lbs": 129.0,
+      "expiry_date": "2026-10-14",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 175,
+      "unit": "lb",
+      "estimated_weight_lbs": 175,
+      "expiry_date": "2026-10-18",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Black beans",
+      "accepted_names": [
+        "Black beans",
+        "canned black beans",
+        "black beans, canned"
+      ],
+      "category": "canned",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 84,
+      "expiry_date": "2028-06-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bagels",
+      "accepted_names": [
+        "Bagels"
+      ],
+      "category": "bakery",
+      "quantity": 9,
+      "unit": "box",
+      "estimated_weight_lbs": 162,
+      "expiry_date": "2026-10-12",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 75,
+      "unit": "lb",
+      "estimated_weight_lbs": 75,
+      "expiry_date": "2026-11-18",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 16,
+      "unit": "case",
+      "estimated_weight_lbs": 640.0,
+      "expiry_date": "2026-10-23",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Tomato soup",
+      "accepted_names": [
+        "Tomato soup",
+        "soup, tomato"
+      ],
+      "category": "canned",
+      "quantity": 22,
+      "unit": "case",
+      "estimated_weight_lbs": 616,
+      "expiry_date": "2028-08-25",
+      "storage_type": "ambient"
+    }
+  ]
+}

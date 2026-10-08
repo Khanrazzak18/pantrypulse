@@ -1,0 +1,118 @@
+{
+  "id": "034",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "frozen_protein",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 7,
+      "unit": "case",
+      "estimated_weight_lbs": 280,
+      "expiry_date": "2027-05-03",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Corn",
+      "accepted_names": [
+        "Corn",
+        "canned corn",
+        "corn, canned"
+      ],
+      "category": "canned",
+      "quantity": 13,
+      "unit": "case",
+      "estimated_weight_lbs": 364.0,
+      "expiry_date": "2028-11-23",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Tomato soup",
+      "accepted_names": [
+        "Tomato soup",
+        "soup, tomato"
+      ],
+      "category": "canned",
+      "quantity": 19,
+      "unit": "case",
+      "estimated_weight_lbs": 532.0,
+      "expiry_date": "2029-01-22",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Rolled oats",
+      "accepted_names": [
+        "Rolled oats",
+        "oatmeal"
+      ],
+      "category": "dry_goods",
+      "quantity": 17,
+      "unit": "case",
+      "estimated_weight_lbs": 510,
+      "expiry_date": "2027-10-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Gala apples",
+      "accepted_names": [
+        "Gala apples",
+        "apples (gala)"
+      ],
+      "category": "produce",
+      "quantity": 18,
+      "unit": "case",
+      "estimated_weight_lbs": 540,
+      "expiry_date": "2026-10-25",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Romaine lettuce",
+      "accepted_names": [
+        "Romaine lettuce",
+        "romaine hearts"
+      ],
+      "category": "produce",
+      "quantity": 150,
+      "unit": "lb",
+      "estimated_weight_lbs": 150,
+      "expiry_date": "2026-10-12",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 54.0,
+      "expiry_date": "2026-11-04",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 9,
+      "unit": "box",
+      "estimated_weight_lbs": 162,
+      "expiry_date": "2026-10-16",
+      "storage_type": "ambient"
+    }
+  ]
+}

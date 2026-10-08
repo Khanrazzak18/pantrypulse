@@ -1,0 +1,93 @@
+{
+  "id": "008",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Rotary Club Drive",
+  "tags": [
+    "frozen_meal",
+    "frozen_protein",
+    "injection",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 24,
+      "unit": "case",
+      "estimated_weight_lbs": 720,
+      "expiry_date": "2027-10-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 5,
+      "unit": "case",
+      "estimated_weight_lbs": 150.0,
+      "expiry_date": "2027-11-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Sports drink",
+      "accepted_names": [
+        "Sports drink"
+      ],
+      "category": "beverages",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 52,
+      "expiry_date": "2027-07-02",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 21,
+      "unit": "case",
+      "estimated_weight_lbs": 504.0,
+      "expiry_date": "2026-10-25",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 30,
+      "unit": "bag",
+      "estimated_weight_lbs": 1500.0,
+      "expiry_date": "2026-10-29",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 140,
+      "unit": "kg",
+      "estimated_weight_lbs": 308.6,
+      "expiry_date": "2027-09-30",
+      "storage_type": "frozen"
+    }
+  ]
+}

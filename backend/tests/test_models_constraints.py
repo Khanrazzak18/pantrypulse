@@ -420,6 +420,20 @@ BAD_ROWS = {
     ),
     "summary month not the first": lambda b: summary(month=date(2026, 8, 15)),
     "duplicate summary month": lambda b: summary(month=date(2026, 9, 1)),
+    # --- donation review state (Stage 4) ----------------------------------------------------
+    "confirmed donation without a donor": lambda b: Donation(
+        source_type="pdf", status="confirmed", received_at=NOW
+    ),
+    "pending donation already reviewed": lambda b: Donation(
+        source_type="pdf",
+        status="pending_review",
+        received_at=NOW,
+        reviewed_at=NOW,
+        reviewed_by=b.coordinator.id,
+    ),  # fmt: skip
+    "rejected donation without a review time": lambda b: Donation(
+        source_type="pdf", status="rejected", received_at=NOW
+    ),
 }
 
 
@@ -442,6 +456,31 @@ def test_decided_allocation_is_accepted(session, b):
 def test_approved_summary_with_approver_is_accepted(session, b):
     row = summary(
         status="approved", final_text="Final", approved_by=b.coordinator.id, approved_at=NOW
+    )
+    session.add(row)
+    session.flush()
+    assert row.id is not None
+
+
+def test_a_pending_donation_may_have_no_donor_yet(session, b):
+    row = Donation(source_type="pdf", status="pending_review", received_at=NOW,
+                   original_filename="manifest.pdf")  # fmt: skip
+    session.add(row)
+    session.flush()
+    assert row.donor_id is None and row.id is not None
+
+
+def test_a_rejected_donation_records_who_and_when(session, b):
+    row = Donation(source_type="pdf", status="rejected", received_at=NOW, reviewed_at=NOW,
+                   reviewed_by=b.coordinator.id)  # fmt: skip
+    session.add(row)
+    session.flush()
+    assert row.id is not None
+
+
+def test_historical_confirmed_donations_need_no_review_fields(session, b):
+    row = Donation(
+        donor_id=b.donor.id, source_type="historical", status="confirmed", received_at=NOW
     )
     session.add(row)
     session.flush()

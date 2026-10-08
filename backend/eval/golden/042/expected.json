@@ -1,0 +1,146 @@
+{
+  "id": "042",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Value Basket",
+  "tags": [
+    "frozen_meal",
+    "frozen_produce",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 22,
+      "unit": "case",
+      "estimated_weight_lbs": 792.0,
+      "expiry_date": "2027-07-02",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 24,
+      "unit": "case",
+      "estimated_weight_lbs": 720,
+      "expiry_date": "2027-11-29",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Frozen pizza",
+      "accepted_names": [
+        "Frozen pizza",
+        "pizzas, frozen"
+      ],
+      "category": "frozen",
+      "quantity": 18,
+      "unit": "case",
+      "estimated_weight_lbs": 540,
+      "expiry_date": "2027-04-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 13,
+      "unit": "box",
+      "estimated_weight_lbs": 234,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Green beans",
+      "accepted_names": [
+        "Green beans",
+        "canned green beans",
+        "green beans (canned)"
+      ],
+      "category": "canned",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 252,
+      "expiry_date": "2028-12-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Pork loin",
+      "accepted_names": [
+        "Pork loin",
+        "pork loin roasts"
+      ],
+      "category": "protein",
+      "quantity": 140,
+      "unit": "kg",
+      "estimated_weight_lbs": 308.6,
+      "expiry_date": "2026-10-11",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 12,
+      "unit": "box",
+      "estimated_weight_lbs": 216,
+      "expiry_date": "2026-10-10",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Russet potatoes",
+      "accepted_names": [
+        "Russet potatoes",
+        "potatoes, russet"
+      ],
+      "category": "produce",
+      "quantity": 700,
+      "unit": "lb",
+      "estimated_weight_lbs": 700,
+      "expiry_date": "2026-10-24",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 9,
+      "unit": "box",
+      "estimated_weight_lbs": 162,
+      "expiry_date": "2026-10-17",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Flour",
+      "accepted_names": [
+        "Flour",
+        "all-purpose flour"
+      ],
+      "category": "dry_goods",
+      "quantity": 450,
+      "unit": "lb",
+      "estimated_weight_lbs": 450,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    }
+  ]
+}

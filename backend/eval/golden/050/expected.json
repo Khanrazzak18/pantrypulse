@@ -1,0 +1,79 @@
+{
+  "id": "050",
+  "format": "image",
+  "file": "manifest.png",
+  "received_date": "2026-10-05",
+  "donor_name": "Stoneridge Dairy",
+  "tags": [
+    "month_year_date",
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 20,
+      "unit": "box",
+      "estimated_weight_lbs": 360,
+      "expiry_date": "2026-10-21",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 575,
+      "unit": "lb",
+      "estimated_weight_lbs": 575,
+      "expiry_date": "2026-11-17",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Rolled oats",
+      "accepted_names": [
+        "Rolled oats",
+        "oatmeal"
+      ],
+      "category": "dry_goods",
+      "quantity": 5,
+      "unit": "case",
+      "estimated_weight_lbs": 150,
+      "expiry_date": "2028-05-27",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Corn",
+      "accepted_names": [
+        "Corn",
+        "canned corn",
+        "corn, canned"
+      ],
+      "category": "canned",
+      "quantity": 1,
+      "unit": "pallet",
+      "estimated_weight_lbs": 900.0,
+      "expiry_date": "2028-10-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Greek yogurt",
+      "accepted_names": [
+        "Greek yogurt",
+        "yogurt, greek"
+      ],
+      "category": "dairy",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 54.0,
+      "expiry_date": "2026-10-22",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

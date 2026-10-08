@@ -1,0 +1,145 @@
+{
+  "id": "031",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Three Rivers Orchard",
+  "tags": [
+    "frozen_meal",
+    "kg",
+    "month_year_date",
+    "relative_date"
+  ],
+  "items": [
+    {
+      "name": "Pork loin",
+      "accepted_names": [
+        "Pork loin",
+        "pork loin roasts"
+      ],
+      "category": "protein",
+      "quantity": 200,
+      "unit": "kg",
+      "estimated_weight_lbs": 440.9,
+      "expiry_date": "2026-10-11",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Flour",
+      "accepted_names": [
+        "Flour",
+        "all-purpose flour"
+      ],
+      "category": "dry_goods",
+      "quantity": 27,
+      "unit": "bag",
+      "estimated_weight_lbs": 675.0,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 690,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 8,
+      "unit": "box",
+      "estimated_weight_lbs": 144,
+      "expiry_date": "2026-10-08",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Tomato soup",
+      "accepted_names": [
+        "Tomato soup",
+        "soup, tomato"
+      ],
+      "category": "canned",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 56,
+      "expiry_date": "2028-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Chicken thighs",
+      "accepted_names": [
+        "Chicken thighs",
+        "boneless chicken thighs"
+      ],
+      "category": "protein",
+      "quantity": 13,
+      "unit": "case",
+      "estimated_weight_lbs": 520,
+      "expiry_date": "2026-10-11",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 11,
+      "unit": "case",
+      "estimated_weight_lbs": 330.0,
+      "expiry_date": "2026-10-28",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Green beans",
+      "accepted_names": [
+        "Green beans",
+        "canned green beans",
+        "green beans (canned)"
+      ],
+      "category": "canned",
+      "quantity": 7,
+      "unit": "case",
+      "estimated_weight_lbs": 196,
+      "expiry_date": "2028-06-26",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Cheddar cheese",
+      "accepted_names": [
+        "Cheddar cheese",
+        "cheddar blocks"
+      ],
+      "category": "dairy",
+      "quantity": 600,
+      "unit": "lb",
+      "estimated_weight_lbs": 600,
+      "expiry_date": "2026-10-30",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Bananas",
+      "accepted_names": [
+        "Bananas"
+      ],
+      "category": "produce",
+      "quantity": 24,
+      "unit": "case",
+      "estimated_weight_lbs": 720,
+      "expiry_date": "2026-10-11",
+      "storage_type": "ambient"
+    }
+  ]
+}

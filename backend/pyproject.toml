@@ -14,6 +14,9 @@ dependencies = [
     "numpy>=2.0",
     "argon2-cffi>=23.1",
     "PyJWT>=2.8",
+    "boto3>=1.35",
+    "python-multipart>=0.0.9",
+    "Pillow>=10.1",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +24,7 @@ dev = [
     "pytest>=8",
     "httpx2",
     "ruff>=0.6",
+    "reportlab>=4.0",  # builds the PDF golden manifests
 ]
 
 [build-system]
@@ -45,6 +49,8 @@ known-first-party = ["app", "scripts"]
 
 [tool.ruff.lint.per-file-ignores]
 "alembic/versions/*" = ["E501"]
+"tests/*" = ["E501"]
+"eval/*" = ["E501"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends"]

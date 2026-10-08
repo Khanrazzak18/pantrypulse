@@ -1,0 +1,66 @@
+{
+  "id": "048",
+  "format": "image",
+  "file": "manifest.jpg",
+  "received_date": "2026-10-05",
+  "donor_name": "Oakline Grocers",
+  "tags": [
+    "frozen_meal",
+    "frozen_protein",
+    "injection",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 625,
+      "unit": "lb",
+      "estimated_weight_lbs": 625,
+      "expiry_date": "2027-09-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Peanut butter",
+      "accepted_names": [
+        "Peanut butter"
+      ],
+      "category": "dry_goods",
+      "quantity": 7,
+      "unit": "case",
+      "estimated_weight_lbs": 210,
+      "expiry_date": "2028-05-27",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 7,
+      "unit": "case",
+      "estimated_weight_lbs": 210.0,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 4,
+      "unit": "box",
+      "estimated_weight_lbs": 72,
+      "expiry_date": "2026-10-22",
+      "storage_type": "ambient"
+    }
+  ]
+}

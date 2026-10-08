@@ -1,0 +1,64 @@
+{
+  "id": "013",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "no_date"
+  ],
+  "items": [
+    {
+      "name": "Black beans",
+      "accepted_names": [
+        "Black beans",
+        "canned black beans",
+        "black beans, canned"
+      ],
+      "category": "canned",
+      "quantity": 8,
+      "unit": "case",
+      "estimated_weight_lbs": 224.0,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bananas",
+      "accepted_names": [
+        "Bananas"
+      ],
+      "category": "produce",
+      "quantity": 50,
+      "unit": "lb",
+      "estimated_weight_lbs": 50,
+      "expiry_date": "2026-10-12",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Romaine lettuce",
+      "accepted_names": [
+        "Romaine lettuce",
+        "romaine hearts"
+      ],
+      "category": "produce",
+      "quantity": 75,
+      "unit": "lb",
+      "estimated_weight_lbs": 75,
+      "expiry_date": "2026-10-12",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Rolled oats",
+      "accepted_names": [
+        "Rolled oats",
+        "oatmeal"
+      ],
+      "category": "dry_goods",
+      "quantity": 14,
+      "unit": "case",
+      "estimated_weight_lbs": 560.0,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    }
+  ]
+}

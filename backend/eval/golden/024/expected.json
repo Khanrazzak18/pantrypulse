@@ -1,0 +1,52 @@
+{
+  "id": "024",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Metro Wholesale Foods",
+  "tags": [
+    "frozen_protein",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 100,
+      "unit": "lb",
+      "estimated_weight_lbs": 100,
+      "expiry_date": "2026-11-24",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 5,
+      "unit": "case",
+      "estimated_weight_lbs": 200.0,
+      "expiry_date": "2027-07-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 575,
+      "unit": "lb",
+      "estimated_weight_lbs": 575,
+      "expiry_date": "2026-10-22",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

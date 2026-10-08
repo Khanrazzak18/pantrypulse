@@ -7,11 +7,15 @@ import { NAV_ITEMS, type Role } from "@/lib/roles";
 
 export function NavLinks({ role }: { role: Role }) {
   const pathname = usePathname();
+  const items = NAV_ITEMS[role];
+  // The most specific link wins, so /coordinator/donations does not also light up "Pantries".
+  const matches = items.filter((i) => pathname === i.href || pathname.startsWith(`${i.href}/`));
+  const current = matches.sort((a, b) => b.href.length - a.href.length)[0]?.href;
   return (
     <nav aria-label="Main" className="-mx-4 overflow-x-auto px-4">
       <ul className="flex gap-1">
-        {NAV_ITEMS[role].map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        {items.map((item) => {
+          const active = item.href === current;
           return (
             <li key={item.href}>
               <Link

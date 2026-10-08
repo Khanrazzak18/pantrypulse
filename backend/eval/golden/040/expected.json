@@ -1,0 +1,94 @@
+{
+  "id": "040",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Oakline Grocers",
+  "tags": [
+    "frozen_produce",
+    "frozen_protein",
+    "kg",
+    "month_year_date",
+    "no_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 120,
+      "unit": "kg",
+      "estimated_weight_lbs": 264.6,
+      "expiry_date": "2027-06-02",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Large eggs",
+      "accepted_names": [
+        "Large eggs",
+        "eggs, large"
+      ],
+      "category": "dairy",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 360.0,
+      "expiry_date": "2026-10-28",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 120.0,
+      "expiry_date": "2027-07-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Rice",
+      "accepted_names": [
+        "long-grain rice",
+        "Rice"
+      ],
+      "category": "dry_goods",
+      "quantity": 21,
+      "unit": "bag",
+      "estimated_weight_lbs": 525.0,
+      "expiry_date": "2027-12-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 18,
+      "unit": "case",
+      "estimated_weight_lbs": 468,
+      "expiry_date": "2027-04-03",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bottled water",
+      "accepted_names": [
+        "Bottled water",
+        "water, bottled"
+      ],
+      "category": "beverages",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 52,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    }
+  ]
+}

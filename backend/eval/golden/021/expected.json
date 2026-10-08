@@ -1,0 +1,63 @@
+{
+  "id": "021",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Three Rivers Orchard",
+  "tags": [
+    "frozen_produce",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 14,
+      "unit": "case",
+      "estimated_weight_lbs": 420.0,
+      "expiry_date": "2027-11-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Sports drink",
+      "accepted_names": [
+        "Sports drink"
+      ],
+      "category": "beverages",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 234,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 15,
+      "unit": "box",
+      "estimated_weight_lbs": 270,
+      "expiry_date": "2026-10-11",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Peanut butter",
+      "accepted_names": [
+        "Peanut butter"
+      ],
+      "category": "dry_goods",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 270,
+      "expiry_date": "2027-10-30",
+      "storage_type": "ambient"
+    }
+  ]
+}

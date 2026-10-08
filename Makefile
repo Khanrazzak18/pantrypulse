@@ -6,7 +6,7 @@ BACKEND := backend
 FRONTEND := frontend
 VENV := $(BACKEND)/.venv
 
-.PHONY: setup db db-down migrate seed dev test eval refresh check-env api-types
+.PHONY: setup db db-down migrate seed dev test eval golden refresh check-env api-types
 
 check-env:
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' and fill it in."; exit 1; }
@@ -47,8 +47,14 @@ test: check-env
 	cd $(BACKEND) && .venv/bin/ruff check . && .venv/bin/pytest -q
 	cd $(FRONTEND) && npm run lint && npm run typecheck && npm run build
 
-eval:
-	@echo "eval: not implemented yet (Stage 4: intake eval, Stage 5: forecast backtest)"
+# Calls Bedrock: scores the donation-intake golden set and writes docs/eval/intake-eval.md.
+# (The forecast backtest joins this target in Stage 5.)
+eval: check-env
+	cd $(BACKEND) && .venv/bin/python -m eval.run_intake_eval
+
+# Rebuild the 50 golden manifests from their fixed seed (the committed files already match).
+golden:
+	cd $(BACKEND) && .venv/bin/python -m eval.make_golden_set
 
 refresh:
 	@echo "refresh: not implemented yet (Stage 6: weekly retrain + allocation job)"

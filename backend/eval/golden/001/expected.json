@@ -1,0 +1,75 @@
+{
+  "id": "001",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [],
+  "items": [
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 375,
+      "unit": "lb",
+      "estimated_weight_lbs": 375,
+      "expiry_date": "2026-10-16",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 2,
+      "unit": "box",
+      "estimated_weight_lbs": 36,
+      "expiry_date": "2026-10-19",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Greek yogurt",
+      "accepted_names": [
+        "Greek yogurt",
+        "yogurt, greek"
+      ],
+      "category": "dairy",
+      "quantity": 22,
+      "unit": "case",
+      "estimated_weight_lbs": 528,
+      "expiry_date": "2026-10-21",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "2% milk",
+      "accepted_names": [
+        "2% milk",
+        "milk, 2%"
+      ],
+      "category": "dairy",
+      "quantity": 15,
+      "unit": "gallon",
+      "estimated_weight_lbs": 129.0,
+      "expiry_date": "2026-10-13",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Butter",
+      "accepted_names": [
+        "Butter",
+        "salted butter"
+      ],
+      "category": "dairy",
+      "quantity": 800,
+      "unit": "lb",
+      "estimated_weight_lbs": 800,
+      "expiry_date": "2026-11-14",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

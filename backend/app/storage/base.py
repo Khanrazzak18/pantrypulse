@@ -1,0 +1,13 @@
+from typing import Protocol
+
+
+class StorageBackend(Protocol):
+    """Where uploaded files live. The app writes nothing to disk except through this."""
+
+    def put(self, key: str, data: bytes, content_type: str) -> None: ...
+
+    def get(self, key: str) -> bytes: ...
+
+    def delete(self, key: str) -> None: ...
+
+    def exists(self, key: str) -> bool: ...

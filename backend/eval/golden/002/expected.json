@@ -1,0 +1,54 @@
+{
+  "id": "002",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Three Rivers Orchard",
+  "tags": [
+    "frozen_meal",
+    "frozen_protein",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 90,
+      "expiry_date": "2027-10-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 120,
+      "unit": "kg",
+      "estimated_weight_lbs": 264.6,
+      "expiry_date": "2027-09-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Greek yogurt",
+      "accepted_names": [
+        "Greek yogurt",
+        "yogurt, greek"
+      ],
+      "category": "dairy",
+      "quantity": 12,
+      "unit": "case",
+      "estimated_weight_lbs": 288.0,
+      "expiry_date": "2026-10-16",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

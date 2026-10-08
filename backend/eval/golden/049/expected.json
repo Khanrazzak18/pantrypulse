@@ -1,0 +1,52 @@
+{
+  "id": "049",
+  "format": "image",
+  "file": "manifest.jpg",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "frozen_protein",
+    "no_date"
+  ],
+  "items": [
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 675,
+      "unit": "lb",
+      "estimated_weight_lbs": 675,
+      "expiry_date": "2026-10-16",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Bottled water",
+      "accepted_names": [
+        "Bottled water",
+        "water, bottled"
+      ],
+      "category": "beverages",
+      "quantity": 8,
+      "unit": "case",
+      "estimated_weight_lbs": 208,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 150,
+      "unit": "lb",
+      "estimated_weight_lbs": 150,
+      "expiry_date": "2027-07-02",
+      "storage_type": "frozen"
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "id": "006",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Sunrise Supermarket",
+  "tags": [
+    "frozen_meal",
+    "frozen_produce",
+    "frozen_protein",
+    "kg",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Spaghetti",
+      "accepted_names": [
+        "Spaghetti",
+        "pasta, spaghetti"
+      ],
+      "category": "dry_goods",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 60,
+      "expiry_date": "2027-10-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Ice pops",
+      "accepted_names": [
+        "Ice pops",
+        "popsicles"
+      ],
+      "category": "frozen",
+      "quantity": 17,
+      "unit": "case",
+      "estimated_weight_lbs": 510,
+      "expiry_date": "2027-08-31",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Corn",
+      "accepted_names": [
+        "Corn",
+        "canned corn",
+        "corn, canned"
+      ],
+      "category": "canned",
+      "quantity": 10,
+      "unit": "case",
+      "estimated_weight_lbs": 280,
+      "expiry_date": "2028-12-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 90,
+      "expiry_date": "2027-06-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 17,
+      "unit": "box",
+      "estimated_weight_lbs": 306,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Pork loin",
+      "accepted_names": [
+        "Pork loin",
+        "pork loin roasts"
+      ],
+      "category": "protein",
+      "quantity": 14,
+      "unit": "case",
+      "estimated_weight_lbs": 700.0,
+      "expiry_date": "2026-10-10",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 120,
+      "unit": "kg",
+      "estimated_weight_lbs": 264.6,
+      "expiry_date": "2027-05-03",
+      "storage_type": "frozen"
+    }
+  ]
+}

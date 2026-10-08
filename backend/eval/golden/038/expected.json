@@ -1,0 +1,146 @@
+{
+  "id": "038",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Oakline Grocers",
+  "tags": [
+    "frozen_meal",
+    "frozen_protein",
+    "month_year_date",
+    "no_date",
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 13,
+      "unit": "case",
+      "estimated_weight_lbs": 468.0,
+      "expiry_date": "2027-05-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Bottled water",
+      "accepted_names": [
+        "Bottled water",
+        "water, bottled"
+      ],
+      "category": "beverages",
+      "quantity": 3,
+      "unit": "pallet",
+      "estimated_weight_lbs": 2700.0,
+      "expiry_date": null,
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Greek yogurt",
+      "accepted_names": [
+        "Greek yogurt",
+        "yogurt, greek"
+      ],
+      "category": "dairy",
+      "quantity": 6,
+      "unit": "case",
+      "estimated_weight_lbs": 144,
+      "expiry_date": "2026-10-17",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 6,
+      "unit": "box",
+      "estimated_weight_lbs": 108,
+      "expiry_date": "2026-10-08",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Yellow onions",
+      "accepted_names": [
+        "Yellow onions",
+        "onions"
+      ],
+      "category": "produce",
+      "quantity": 16,
+      "unit": "case",
+      "estimated_weight_lbs": 640.0,
+      "expiry_date": "2026-10-24",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen meals",
+      "accepted_names": [
+        "Frozen meals",
+        "frozen entrees"
+      ],
+      "category": "frozen",
+      "quantity": 11,
+      "unit": "case",
+      "estimated_weight_lbs": 330,
+      "expiry_date": "2027-09-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 400,
+      "unit": "lb",
+      "estimated_weight_lbs": 400,
+      "expiry_date": "2027-06-02",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 690,
+      "expiry_date": "2027-10-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 17,
+      "unit": "box",
+      "estimated_weight_lbs": 306,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Ground beef",
+      "accepted_names": [
+        "Ground beef",
+        "beef, ground"
+      ],
+      "category": "protein",
+      "quantity": 75,
+      "unit": "lb",
+      "estimated_weight_lbs": 75,
+      "expiry_date": "2026-10-09",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

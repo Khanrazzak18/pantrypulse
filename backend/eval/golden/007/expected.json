@@ -1,0 +1,52 @@
+{
+  "id": "007",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Metro Wholesale Foods",
+  "tags": [
+    "frozen_produce",
+    "month_year_date"
+  ],
+  "items": [
+    {
+      "name": "Frozen mixed vegetables",
+      "accepted_names": [
+        "Frozen mixed vegetables",
+        "frozen veg mix"
+      ],
+      "category": "produce",
+      "quantity": 3,
+      "unit": "case",
+      "estimated_weight_lbs": 72.0,
+      "expiry_date": "2027-06-30",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 520,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 4,
+      "unit": "box",
+      "estimated_weight_lbs": 72,
+      "expiry_date": "2026-10-17",
+      "storage_type": "ambient"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "id": "022",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Three Rivers Orchard",
+  "tags": [
+    "month_year_date",
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 16,
+      "unit": "box",
+      "estimated_weight_lbs": 288,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Spaghetti",
+      "accepted_names": [
+        "Spaghetti",
+        "pasta, spaghetti"
+      ],
+      "category": "dry_goods",
+      "quantity": 9,
+      "unit": "case",
+      "estimated_weight_lbs": 270,
+      "expiry_date": "2028-07-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Rice",
+      "accepted_names": [
+        "long-grain rice",
+        "Rice"
+      ],
+      "category": "dry_goods",
+      "quantity": 2,
+      "unit": "pallet",
+      "estimated_weight_lbs": 2000,
+      "expiry_date": "2028-05-27",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 14,
+      "unit": "case",
+      "estimated_weight_lbs": 364,
+      "expiry_date": "2027-05-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Peanut butter",
+      "accepted_names": [
+        "Peanut butter"
+      ],
+      "category": "dry_goods",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 60,
+      "expiry_date": "2027-08-31",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Large eggs",
+      "accepted_names": [
+        "Large eggs",
+        "eggs, large"
+      ],
+      "category": "dairy",
+      "quantity": 80,
+      "unit": "dozen",
+      "estimated_weight_lbs": 120.0,
+      "expiry_date": "2026-10-22",
+      "storage_type": "refrigerated"
+    }
+  ]
+}

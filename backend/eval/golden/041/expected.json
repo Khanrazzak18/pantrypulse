@@ -1,0 +1,133 @@
+{
+  "id": "041",
+  "format": "pdf",
+  "file": "manifest.pdf",
+  "received_date": "2026-10-05",
+  "donor_name": "Three Rivers Orchard",
+  "tags": [
+    "frozen_protein",
+    "month_year_date",
+    "non_food",
+    "pallet"
+  ],
+  "items": [
+    {
+      "name": "Shelf-stable milk",
+      "accepted_names": [
+        "Shelf-stable milk",
+        "UHT milk"
+      ],
+      "category": "beverages",
+      "quantity": 19,
+      "unit": "case",
+      "estimated_weight_lbs": 380.0,
+      "expiry_date": "2027-07-02",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Black beans",
+      "accepted_names": [
+        "Black beans",
+        "canned black beans",
+        "black beans, canned"
+      ],
+      "category": "canned",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 644,
+      "expiry_date": "2028-11-23",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Frozen chicken breast",
+      "accepted_names": [
+        "Frozen chicken breast",
+        "chicken breast (frozen)"
+      ],
+      "category": "protein",
+      "quantity": 750,
+      "unit": "lb",
+      "estimated_weight_lbs": 750,
+      "expiry_date": "2027-06-02",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Chicken thighs",
+      "accepted_names": [
+        "Chicken thighs",
+        "boneless chicken thighs"
+      ],
+      "category": "protein",
+      "quantity": 450,
+      "unit": "lb",
+      "estimated_weight_lbs": 450,
+      "expiry_date": "2026-10-08",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Frozen turkey",
+      "accepted_names": [
+        "Frozen turkey",
+        "turkeys, frozen"
+      ],
+      "category": "protein",
+      "quantity": 18,
+      "unit": "case",
+      "estimated_weight_lbs": 720,
+      "expiry_date": "2027-08-01",
+      "storage_type": "frozen"
+    },
+    {
+      "name": "Tortillas",
+      "accepted_names": [
+        "flour tortillas",
+        "Tortillas"
+      ],
+      "category": "bakery",
+      "quantity": 2,
+      "unit": "box",
+      "estimated_weight_lbs": 36,
+      "expiry_date": "2026-10-16",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Large eggs",
+      "accepted_names": [
+        "Large eggs",
+        "eggs, large"
+      ],
+      "category": "dairy",
+      "quantity": 65,
+      "unit": "dozen",
+      "estimated_weight_lbs": 97.5,
+      "expiry_date": "2026-11-02",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Apple juice",
+      "accepted_names": [
+        "Apple juice",
+        "juice, apple"
+      ],
+      "category": "beverages",
+      "quantity": 3,
+      "unit": "pallet",
+      "estimated_weight_lbs": 3000,
+      "expiry_date": "2027-06-30",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Dinner rolls",
+      "accepted_names": [
+        "Dinner rolls",
+        "rolls"
+      ],
+      "category": "bakery",
+      "quantity": 9,
+      "unit": "box",
+      "estimated_weight_lbs": 162,
+      "expiry_date": "2026-10-09",
+      "storage_type": "ambient"
+    }
+  ]
+}

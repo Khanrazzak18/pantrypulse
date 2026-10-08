@@ -130,3 +130,86 @@
 - Known limitation (also in the README): logout clears the cookie but cannot revoke a token that
   was already copied; it expires after 8 hours. A `token_version` column or sessions table would
   fix that.
+
+## Stage 4: AI donation intake  (2026-10-08 16:02 to 16:30 EDT)
+- Model: **`us.anthropic.claude-haiku-4-5-20251001-v1:0`** (Claude Haiku 4.5 through its `us.` inference
+  profile), set as `BEDROCK_MODEL_ID` in `.env` (and as the default in `.env.example`). Access
+  check, in the requested order: Haiku 5.5 (`us.anthropic.claude-haiku-5-5`, also `global.`) is
+  listed but returns "not available for this account"; Haiku 4.5 worked; Nova Lite was not tried.
+  The first attempts failed because the IAM user had no Bedrock permissions
+  (`ListInferenceProfiles` and `InvokeModel` denied) until `AmazonBedrockFullAccess` was attached.
+- Built:
+  - Backend: `BedrockProvider` over the Converse API (text, PDF document and image blocks;
+    forced tool call with a schema generated from Pydantic; 5 s connect and 45 s read timeouts;
+    logs model, latency, tokens, outcome); a shared retry policy (one retry across timeouts,
+    throttling, 5xx and unusable answers, with the rejection reason sent to the second attempt);
+    the extraction prompt; `StorageBackend` with `LocalStorage` (path-safe, atomic writes) and an
+    S3 stub; upload checks (extension, real content, 10 MB, text length, Bedrock's smaller PDF and
+    image limits, filename cleaning); `.eml` parsing; endpoints `POST/GET /api/donations`,
+    `GET /api/donations/{id}`, `POST .../confirm`, `POST .../reject`, `GET /api/donors`;
+    migration `0002` (donor chosen during review, `reviewed_by`/`reviewed_at`,
+    `original_filename`, two new CHECK constraints).
+  - Frontend: Donations page with upload (client-side checks, loading state with Cancel, error
+    banner with Try again), filter tabs, empty state, success notices; review screen with an
+    editable table (cards on phones), amber "AI unsure (n%)" highlighting under 80%, add and
+    remove rows, donor picker or new donor, per-field errors, Confirm and a two-step Reject; a
+    Donations link in the coordinator navigation; regenerated API types.
+  - Eval: 50 golden manifests (30 `.eml`, 15 `.pdf`, 5 photos) with answer files, `scoring.py`,
+    `run_intake_eval.py` (also `--rescore`), `make eval` and `make golden`.
+- Tests: written first and seen failing. `make test`: ruff clean, **468 pytest passed** (about 21 s),
+  frontend lint, typecheck and build pass. The mocked-LLM tests cover valid JSON; invalid JSON
+  then a good retry; invalid twice (502, nothing saved); a timeout then success; two timeouts
+  (504, nothing saved, exactly one retry); throttling; access errors (not retried, no AWS details
+  leaked); a wrong file type (including `.exe`, double extensions and content that does not match
+  the extension); a file over 10 MB and exactly 10 MB; an empty file; an image over the model
+  limit (shrunk, original kept); a storage failure (nothing left behind); no items and no lots
+  until Confirm; confirm and reject rules (atomic, 409 on a second decision, expired items
+  blocked, edited and added rows flagged); roles; storage path safety; provider request shape,
+  error mapping and logging; scorer, golden-set integrity (every manifest passes the app's own
+  upload validation) and runner. A guard fails any test that creates a boto3 session. I also broke
+  the code six ways on purpose (no retry, double confirm allowed, expired items accepted, file
+  content not checked, tool call not forced, stored file differing from the upload); each was caught
+  by the intended test.
+- One real call (golden manifest 003, an email): all 6 items matched the golden answer on every
+  field (frozen chicken and turkey came back as protein with frozen storage; 160 kg became
+  352.7 lb); 5.2 s, 2,759 tokens in, 1,116 out.
+- **Eval (one `make eval` run, 50 manifests, 70 s):** first scoring **92.9%** (1,867 of 2,009
+  fields), below the 95% target. After correcting the answer key and scoring the **same saved
+  answers** again (no new model calls, prompt unchanged): **98.7%** (1,982 of 2,009), all 287
+  items found, 0 extra items, donor name right in 50 of 50, 0 failures, 0 retries. By field:
+  name 100%, quantity 100%, unit 100%, category 99.3%, weight 98.3%, expiry 97.9%, storage 95.1%.
+  By format: email 99.0%, PDF 98.5%, photo 97.0%. **Token usage: 170,445 in + 53,773 out =
+  224,218 total** (about 3,408 in and 1,075 out per manifest, 5.3 s average latency).
+- Problems found and fixed:
+  - The first eval score exposed a flaw in my answer key: it accepted one name per food, so the
+    model's faithful 'UHT milk', 'Popsicles', 'Oatmeal', 'Romaine hearts' and 'Cheddar blocks'
+    counted as 16 missed items and 10 wrong names. The key now lists every name a manifest may use.
+    That fixed 115 of the 142 wrong fields and revealed 7 real mistakes hidden behind the misses.
+    The key was corrected after seeing the result, so the 98.7% is not a blind score; the golden
+    set is synthetic and uses the same rules as the prompt. Both numbers are in the report.
+  - In the browser, editing a field and then submitting hid that field's error (a cleared server
+    error stored as `undefined` overwrote the client error when merged). Fixed in
+    `review-form.tsx` and re-checked.
+  - The model gave "Expires: AI unsure (0%)" for items whose manifest simply has no date. The
+    prompt now says a missing date is high-confidence when the manifest clearly has none.
+  - My first draft of the report's scoring note had two wrong numbers (122 fixed and 20 remaining);
+    the true figures are 115 and 27. Caught by checking the note against the report and corrected.
+  - Test-fixture teardown deleted users that new donations still referenced; the cleanup now
+    clears donation tables first. `openapi-typescript` regenerated for the new endpoints.
+- Decisions: Haiku 4.5 (Haiku 5.5 not available to the account); forced tool call instead of
+  prompt-only JSON (as requested); one shared retry budget; a failed extraction saves nothing;
+  rejected donations are kept as an audit record; model output reaches `donation_items` and lots
+  only on Confirm; the donor is chosen on review; images over 3.75 MB are shrunk for the model but
+  stored unchanged; extraction runs inside the upload request; absent-date confidence wording.
+- Real model mistakes seen in the eval (left as follow-ups, because changing the prompt would
+  need another paid run to verify): fresh apples and carrots called `ambient` (no default storage
+  rule in the prompt, 9 of the 27 wrong fields); UHT milk called `refrigerated` (3) and its
+  weights wrong in 3 cases; fresh chicken and ground beef called `frozen` (2); refrigerated 2%
+  milk called a beverage (2); "2 boxes" weighed as one box and "20 cases" of eggs as 20 dozen;
+  month-only dates resolved to the 1st instead of the last day (2) and a year-less date to a past
+  year (2); "5/27/28" read as May 2028 (2). Suggested prompt additions for the Stage 8 quality
+  pass: default storage by food, "refrigerated milk is dairy, only shelf-stable milk is a
+  beverage", a worked example for boxes and eggs, and one for month-only and year-less dates.
+- Not done on purpose: no IAM changes were made by me (the AWS user was configured by the owner);
+  the app database still holds the two donations I created while testing the screens, which
+  `make seed` clears.

@@ -1,0 +1,75 @@
+{
+  "id": "028",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Metro Wholesale Foods",
+  "tags": [],
+  "items": [
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 17,
+      "unit": "box",
+      "estimated_weight_lbs": 306,
+      "expiry_date": "2026-10-08",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Large eggs",
+      "accepted_names": [
+        "Large eggs",
+        "eggs, large"
+      ],
+      "category": "dairy",
+      "quantity": 20,
+      "unit": "case",
+      "estimated_weight_lbs": 480,
+      "expiry_date": "2026-10-19",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Cereal",
+      "accepted_names": [
+        "breakfast cereal",
+        "Cereal"
+      ],
+      "category": "dry_goods",
+      "quantity": 2,
+      "unit": "case",
+      "estimated_weight_lbs": 80.0,
+      "expiry_date": "2027-07-02",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Carrots",
+      "accepted_names": [
+        "Carrots",
+        "carrots, bulk"
+      ],
+      "category": "produce",
+      "quantity": 275,
+      "unit": "lb",
+      "estimated_weight_lbs": 275,
+      "expiry_date": "2026-10-23",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Tomato soup",
+      "accepted_names": [
+        "Tomato soup",
+        "soup, tomato"
+      ],
+      "category": "canned",
+      "quantity": 16,
+      "unit": "case",
+      "estimated_weight_lbs": 608.0,
+      "expiry_date": "2028-07-26",
+      "storage_type": "ambient"
+    }
+  ]
+}

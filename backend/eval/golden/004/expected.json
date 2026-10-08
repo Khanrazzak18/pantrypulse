@@ -1,0 +1,51 @@
+{
+  "id": "004",
+  "format": "email",
+  "file": "manifest.eml",
+  "received_date": "2026-10-05",
+  "donor_name": "Three Rivers Orchard",
+  "tags": [
+    "relative_date"
+  ],
+  "items": [
+    {
+      "name": "Whole wheat bread",
+      "accepted_names": [
+        "Whole wheat bread",
+        "wheat bread"
+      ],
+      "category": "bakery",
+      "quantity": 11,
+      "unit": "box",
+      "estimated_weight_lbs": 198,
+      "expiry_date": "2026-10-11",
+      "storage_type": "ambient"
+    },
+    {
+      "name": "Greek yogurt",
+      "accepted_names": [
+        "Greek yogurt",
+        "yogurt, greek"
+      ],
+      "category": "dairy",
+      "quantity": 23,
+      "unit": "case",
+      "estimated_weight_lbs": 552,
+      "expiry_date": "2026-10-20",
+      "storage_type": "refrigerated"
+    },
+    {
+      "name": "Romaine lettuce",
+      "accepted_names": [
+        "Romaine lettuce",
+        "romaine hearts"
+      ],
+      "category": "produce",
+      "quantity": 675,
+      "unit": "lb",
+      "estimated_weight_lbs": 675,
+      "expiry_date": "2026-10-10",
+      "storage_type": "refrigerated"
+    }
+  ]
+}
