@@ -5,7 +5,18 @@ from fastapi import FastAPI
 from sqlalchemy.engine import Engine
 
 from app.ai.llm_provider import BedrockProvider, LLMProvider
-from app.api import allocations, auth, donations, donors, forecasts, health, pantries
+from app.api import (
+    admin,
+    allocations,
+    auth,
+    dashboard,
+    donations,
+    donors,
+    forecasts,
+    health,
+    pantries,
+    pantry_portal,
+)
 from app.config import Settings, get_settings
 from app.db import make_engine
 from app.errors import register_exception_handlers
@@ -55,4 +66,7 @@ def create_app(
     app.include_router(donors.router)
     app.include_router(forecasts.router)
     app.include_router(allocations.router)
+    app.include_router(pantry_portal.router)
+    app.include_router(dashboard.router)
+    app.include_router(admin.router)
     return app

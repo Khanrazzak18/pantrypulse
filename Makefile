@@ -65,5 +65,6 @@ eval: check-env
 golden:
 	cd $(BACKEND) && .venv/bin/python -m eval.make_golden_set
 
-refresh:
-	@echo "refresh: not implemented yet (Stage 7: weekly retrain + allocation job)"
+# Calls POST /api/admin/jobs/weekly-refresh (needs `make dev` running): forecast, then allocation.
+refresh: check-env
+	cd $(BACKEND) && .venv/bin/python -m scripts.refresh

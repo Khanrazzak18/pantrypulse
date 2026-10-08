@@ -14,13 +14,13 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from dataclasses import dataclass, field
 
 from pydantic import BaseModel, Field, ValidationError
 
 from app.ai.llm_provider import LLMError, LLMProvider
 from app.schemas.intake import inline_refs
+from app.services.number_check import numbers_in, unsupported_numbers
 
 logger = logging.getLogger("pantrypulse.allocation")
 
@@ -82,12 +82,6 @@ def template_reason(f: ReasonFacts) -> str:
 
 # --- checking what the model wrote -----------------------------------------------------------
 
-_NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
-
-
-def _numbers(text: str) -> list[float]:
-    return [float(m.replace(",", "")) for m in _NUMBER.findall(text) if m.replace(",", "")]
-
 
 def _allowed_numbers(f: ReasonFacts) -> set[float]:
     allowed = {
@@ -100,8 +94,8 @@ def _allowed_numbers(f: ReasonFacts) -> set[float]:
     }
     if f.days_left is not None:
         allowed.add(float(f.days_left))
-    allowed.update(_numbers(f.pantry_name))
-    allowed.update(_numbers(f.item_name))
+    allowed.update(numbers_in(f.pantry_name))
+    allowed.update(numbers_in(f.item_name))
     return allowed
 
 
@@ -111,12 +105,7 @@ def reason_is_valid(reason: str, f: ReasonFacts) -> bool:
         return False
     if f.pantry_name.lower() not in text.lower():
         return False
-    allowed = _allowed_numbers(f)
-    for number in _numbers(text):
-        tolerance = 1.0 if number >= 20 else 0.06
-        if not any(abs(number - a) <= tolerance for a in allowed):
-            return False
-    return True
+    return not unsupported_numbers(text, _allowed_numbers(f))
 
 
 # --- the model call ---------------------------------------------------------------------------

@@ -39,7 +39,7 @@ Check it works: `curl localhost:3000/api/health` returns `{"status":"ok","databa
 | `make simulate` | Replay the last 12 weeks under a manual rule and the optimizer (no AWS, a few seconds; run `make backtest` first): writes `docs/eval/allocation-sim.md` |
 | `make eval` | Both evals: the AI intake eval (calls Bedrock, costs tokens) and then the forecast backtest |
 | `make golden` | Rebuild the golden manifests from their fixed seed |
-| `make refresh` | Weekly retrain and allocation job (Stage 7) |
+| `make refresh` | Weekly job: calls `POST /api/admin/jobs/weekly-refresh` as the demo admin (needs `make dev` running): trains the forward forecast, then reruns allocation (about 14 s) |
 
 Ports are set only in `.env`. Secrets never go in git; AWS access uses the CLI profile in
 `AWS_PROFILE`, not access keys.
@@ -185,6 +185,34 @@ optimizer was better with one delivery a week (38.9% against 57.4%) and worse th
 keeps track of what has already been sent (18.0%). The result depends on how good the manual process
 is assumed to be, which nobody has measured, so the 30% stockout target is not shown by this data.
 
+## Pantry portal
+
+Pantry managers land on **My pantry**, built for a phone (it works at 375 px wide). It lists the
+deliveries approved for their own pantry (category, pounds, delivery date, use-by date; the last
+week's are tucked away) and a shortage form: tap what ran short, tap how bad it was, send. A second
+report for the same category in the same week updates the first. Reports are saved against the
+current Monday-to-Sunday week and feed the next forecast run (the forecast reads them for weeks once
+those weeks have distributions). A manager can only ever see and report for their own pantry.
+
+## Impact dashboard (admins)
+
+**Dashboard** shows perishable spoilage %, pantry-weeks with a shortage, pounds distributed and
+households served, over time and by category, with a date-range filter (presets plus from/to dates)
+and the current date and time in the header. Households are counted once per pantry-week, not once
+per category row. Spoilage is expired pounds over received pounds of perishable lots, by the week
+the lots arrived.
+
+**Monthly summary.** Pick a month and **Draft with AI**: one Bedrock call, shown only that month's
+(and the previous month's) totals, never raw records. Every number in the draft must be one of the
+numbers it was given (the same check as allocation reasons); otherwise the draft is thrown away and
+the error is shown, and you can retry or write the text yourself. The admin edits the text and
+approves it; an approved summary is final. The check catches invented numbers, not a wrong label
+on a real one (a first draft called pounds "items"), which is why a person approves every summary.
+
+**Run weekly refresh** (button, or `make refresh`) trains the forward forecast and reruns allocation
+in one request, about 14 seconds with real Bedrock. If the allocation step fails, the new forecast
+is kept and the error says so.
+
 ## Demo logins (local only)
 
 `make seed` creates these users. The passwords are the `DEMO_*` values in `.env`; the defaults in
@@ -244,3 +272,8 @@ generator uses a fixed seed, so the same data comes out every time. See
   template row.
 - **The simulation does not establish the 12% to 8% spoilage target or the 30% stockout target**
   (see above).
+- **Weekly refresh is a button and a command, not a schedule.** Nothing runs it automatically;
+  production would use EventBridge calling the same endpoint. `make refresh` logs in as the demo admin.
+- **The dashboard's history is synthetic**, and the current week's shortage reports only enter the
+  stockout figures once that week has distribution rows. Deliveries are planned dates, not confirmed
+  receipts: there is no "received" button yet.

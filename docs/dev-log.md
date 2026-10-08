@@ -371,3 +371,34 @@
   makes one Bedrock call (about 5,400 tokens); no weekly schedule yet (Stage 7).
 - The app database was reseeded at the end (current stock present, no allocation runs). Run
   `make backtest` (done), **Run forecast**, then **Run allocation**.
+
+## Stage 7: Pantry portal and impact dashboard  (2026-10-08 18:05 to 18:50 EDT)
+- Built:
+  - Pantry portal: `/api/pantry/deliveries`, `/api/pantry/shortage-reports` (update on duplicate via
+    `ON CONFLICT`, migration `0005`), mobile-first page with delivery cards and a three-tap shortage form.
+  - Dashboard: `/api/dashboard/metrics` (households once per pantry-week), Recharts page with date
+    presets, a live clock, KPI cards, four time series and a by-category chart and table.
+  - Monthly summary: one forced-tool Bedrock call on aggregates only, the shared `number_check` (also
+    now used by allocation reasons), admin edit and approve (final, one per month).
+  - `POST /api/admin/jobs/weekly-refresh`, `make refresh` (`scripts/refresh.py`), a dashboard button.
+- Tests (written first): `test_dashboard_metrics`, `test_shortage_reports`, `test_pantry_portal`,
+  `test_summaries`, `test_number_check`, `test_admin_refresh`. Full suite 799 passed; frontend lint,
+  typecheck and build pass.
+- Browser checks (the five you listed): pantry portal at 375 px with one shortage report submitted;
+  dashboard with the 12-week preset; one real summary drafted and approved; one weekly refresh.
+- Speed: refresh 13.3 s in the browser and 13.9 s from `make refresh` (forecast 3.9 s, allocation
+  10 s). Summary draft about 4 s. Nothing near 20 s.
+- Problems found and fixed:
+  - The first summary draft passed the number check but called pounds "items" and compared totals
+    across months of different length. The check cannot see labels; I tightened the prompt (say
+    "pounds", thousands separators, compare only percentages) and kept the human approval. Not re-run
+    against Bedrock after the prompt change (you asked for one real draft).
+  - The dashboard showed "Loading" on first paint (initial cache key lacked the reload counter).
+  - Test teardown: shortage reports and approved summaries reference users and pantries, so the shared
+    `people` fixture now clears them first.
+- Decisions: the seven as approved. Small additions of mine: the category-level `by_category` rows
+  include all eight categories; "stockout %" counts pantry-weeks with a report that also have
+  distributions; hand-written summaries store an empty `ai_draft`.
+- Known limits: no schedule runs the refresh; deliveries are planned, not confirmed; the dashboard
+  summary prompt change is untested against the real model; the demo summary for September 2026 in
+  the dev database was approved during the browser check and can be ignored.

@@ -60,3 +60,4 @@ class ShortageReport(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     reported_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

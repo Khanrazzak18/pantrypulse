@@ -1025,6 +1025,328 @@
           }
         }
       }
+    },
+    "/api/pantry/deliveries": {
+      "get": {
+        "tags": [
+          "pantry portal"
+        ],
+        "summary": "Deliveries",
+        "description": "Approved deliveries for the manager's own pantry: upcoming, and the last week's.",
+        "operationId": "deliveries_api_pantry_deliveries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/shortage-reports": {
+      "get": {
+        "tags": [
+          "pantry portal"
+        ],
+        "summary": "This Weeks Reports",
+        "operationId": "this_weeks_reports_api_pantry_shortage_reports_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShortageReportOut"
+                  },
+                  "type": "array",
+                  "title": "Response This Weeks Reports Api Pantry Shortage Reports Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pantry portal"
+        ],
+        "summary": "Report Shortage",
+        "description": "File a shortage for this week. A second report for the same category replaces the first.",
+        "operationId": "report_shortage_api_pantry_shortage_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShortageReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShortageReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/metrics": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Metrics",
+        "description": "Spoilage, stockouts, pounds distributed and households served for a range of weeks.",
+        "operationId": "metrics_api_dashboard_metrics_get",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/summaries/{month}": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Summary",
+        "operationId": "get_summary_api_dashboard_summaries__month__get",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "description": "YYYY-MM",
+              "title": "Month"
+            },
+            "description": "YYYY-MM"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/summaries/{month}/draft": {
+      "post": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Draft Summary",
+        "operationId": "draft_summary_api_dashboard_summaries__month__draft_post",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "description": "YYYY-MM",
+              "title": "Month"
+            },
+            "description": "YYYY-MM"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/summaries/{month}/approve": {
+      "post": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Approve Summary",
+        "operationId": "approve_summary_api_dashboard_summaries__month__approve_post",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "description": "YYYY-MM",
+              "title": "Month"
+            },
+            "description": "YYYY-MM"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/jobs/weekly-refresh": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Weekly Refresh",
+        "description": "Train the forward forecast, then rerun allocation against it.",
+        "operationId": "weekly_refresh_api_admin_jobs_weekly_refresh_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshOut"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1290,6 +1612,20 @@
         ],
         "title": "AllocationSummary"
       },
+      "ApproveIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ApproveIn"
+      },
       "Body_upload_donation_api_donations_post": {
         "properties": {
           "file": {
@@ -1339,6 +1675,41 @@
           "approved_lbs"
         ],
         "title": "BulkApproveOut"
+      },
+      "CategoryPoint": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "lbs_distributed": {
+            "type": "number",
+            "title": "Lbs Distributed"
+          },
+          "shortage_reports": {
+            "type": "integer",
+            "title": "Shortage Reports"
+          },
+          "spoilage_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spoilage Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "lbs_distributed",
+          "shortage_reports",
+          "spoilage_pct"
+        ],
+        "title": "CategoryPoint"
       },
       "ConfirmItem": {
         "properties": {
@@ -1465,6 +1836,132 @@
           "items"
         ],
         "title": "ConfirmRequest"
+      },
+      "DateRange": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "data_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Start"
+          },
+          "data_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "data_start",
+          "data_end"
+        ],
+        "title": "DateRange"
+      },
+      "DeliveriesOut": {
+        "properties": {
+          "pantry": {
+            "$ref": "#/components/schemas/PantryOut"
+          },
+          "upcoming": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryOut"
+            },
+            "type": "array",
+            "title": "Upcoming"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryOut"
+            },
+            "type": "array",
+            "title": "Recent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pantry",
+          "upcoming",
+          "recent"
+        ],
+        "title": "DeliveriesOut"
+      },
+      "DeliveryOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "final_lbs": {
+            "type": "number",
+            "title": "Final Lbs"
+          },
+          "delivery_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Delivery Date"
+          },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
+          "edited": {
+            "type": "boolean",
+            "title": "Edited"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "item_name",
+          "final_lbs",
+          "delivery_date",
+          "expiry_date",
+          "edited"
+        ],
+        "title": "DeliveryOut"
       },
       "DonationDetail": {
         "properties": {
@@ -2214,6 +2711,38 @@
         ],
         "title": "LotRef"
       },
+      "MetricsOut": {
+        "properties": {
+          "range": {
+            "$ref": "#/components/schemas/DateRange"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          },
+          "weekly": {
+            "items": {
+              "$ref": "#/components/schemas/WeekPoint"
+            },
+            "type": "array",
+            "title": "Weekly"
+          },
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryPoint"
+            },
+            "type": "array",
+            "title": "By Category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "range",
+          "totals",
+          "weekly",
+          "by_category"
+        ],
+        "title": "MetricsOut"
+      },
       "PantryOut": {
         "properties": {
           "id": {
@@ -2289,6 +2818,48 @@
           "miles"
         ],
         "title": "PantryRef"
+      },
+      "RefreshOut": {
+        "properties": {
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepOut"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "forecast_run_id": {
+            "type": "integer",
+            "title": "Forecast Run Id"
+          },
+          "allocation_run_id": {
+            "type": "integer",
+            "title": "Allocation Run Id"
+          },
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          },
+          "proposed_rows": {
+            "type": "integer",
+            "title": "Proposed Rows"
+          },
+          "total_seconds": {
+            "type": "number",
+            "title": "Total Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "steps",
+          "forecast_run_id",
+          "allocation_run_id",
+          "week_start",
+          "proposed_rows",
+          "total_seconds"
+        ],
+        "title": "RefreshOut"
       },
       "ReviewItem": {
         "properties": {
@@ -2477,6 +3048,294 @@
         ],
         "title": "SeriesPoint"
       },
+      "ShortageReportIn": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "produce",
+              "dairy",
+              "protein",
+              "bakery",
+              "frozen",
+              "canned",
+              "dry_goods",
+              "beverages"
+            ],
+            "title": "Category"
+          },
+          "severity": {
+            "type": "integer",
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Severity",
+            "description": "1 minor, 2 serious, 3 ran out"
+          },
+          "households_turned_away": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Households Turned Away",
+            "default": 0
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "severity"
+        ],
+        "title": "ShortageReportIn"
+      },
+      "ShortageReportOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          },
+          "severity": {
+            "type": "integer",
+            "title": "Severity"
+          },
+          "households_turned_away": {
+            "type": "integer",
+            "title": "Households Turned Away"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "updated": {
+            "type": "boolean",
+            "title": "Updated"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "week_start",
+          "severity",
+          "households_turned_away",
+          "note",
+          "updated",
+          "updated_at"
+        ],
+        "title": "ShortageReportOut"
+      },
+      "StepOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "seconds": {
+            "type": "number",
+            "title": "Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status",
+          "seconds"
+        ],
+        "title": "StepOut"
+      },
+      "SummaryOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "aggregates": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Aggregates"
+          },
+          "ai_draft": {
+            "type": "string",
+            "title": "Ai Draft"
+          },
+          "final_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Text"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "status",
+          "aggregates",
+          "ai_draft",
+          "final_text",
+          "model_id",
+          "approved_at",
+          "created_at"
+        ],
+        "title": "SummaryOut"
+      },
+      "SummaryResponse": {
+        "properties": {
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SummaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary"
+        ],
+        "title": "SummaryResponse"
+      },
+      "Totals": {
+        "properties": {
+          "lbs_distributed": {
+            "type": "number",
+            "title": "Lbs Distributed"
+          },
+          "households_served": {
+            "type": "integer",
+            "title": "Households Served"
+          },
+          "shortage_reports": {
+            "type": "integer",
+            "title": "Shortage Reports"
+          },
+          "pantry_weeks": {
+            "type": "integer",
+            "title": "Pantry Weeks"
+          },
+          "pantry_weeks_with_shortage": {
+            "type": "integer",
+            "title": "Pantry Weeks With Shortage"
+          },
+          "stockout_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stockout Pct"
+          },
+          "received_perishable_lbs": {
+            "type": "number",
+            "title": "Received Perishable Lbs"
+          },
+          "expired_perishable_lbs": {
+            "type": "number",
+            "title": "Expired Perishable Lbs"
+          },
+          "spoilage_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spoilage Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lbs_distributed",
+          "households_served",
+          "shortage_reports",
+          "pantry_weeks",
+          "pantry_weeks_with_shortage",
+          "stockout_pct",
+          "received_perishable_lbs",
+          "expired_perishable_lbs",
+          "spoilage_pct"
+        ],
+        "title": "Totals"
+      },
       "UserOut": {
         "properties": {
           "id": {
@@ -2568,6 +3427,79 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WeekPoint": {
+        "properties": {
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          },
+          "lbs_distributed": {
+            "type": "number",
+            "title": "Lbs Distributed"
+          },
+          "households_served": {
+            "type": "integer",
+            "title": "Households Served"
+          },
+          "shortage_reports": {
+            "type": "integer",
+            "title": "Shortage Reports"
+          },
+          "pantry_weeks": {
+            "type": "integer",
+            "title": "Pantry Weeks"
+          },
+          "pantry_weeks_with_shortage": {
+            "type": "integer",
+            "title": "Pantry Weeks With Shortage"
+          },
+          "stockout_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stockout Pct"
+          },
+          "received_perishable_lbs": {
+            "type": "number",
+            "title": "Received Perishable Lbs"
+          },
+          "expired_perishable_lbs": {
+            "type": "number",
+            "title": "Expired Perishable Lbs"
+          },
+          "spoilage_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spoilage Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start",
+          "lbs_distributed",
+          "households_served",
+          "shortage_reports",
+          "pantry_weeks",
+          "pantry_weeks_with_shortage",
+          "stockout_pct",
+          "received_perishable_lbs",
+          "expired_perishable_lbs",
+          "spoilage_pct"
+        ],
+        "title": "WeekPoint"
       }
     }
   }

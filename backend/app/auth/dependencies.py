@@ -42,3 +42,4 @@ def require_roles(*roles: str) -> Callable[..., User]:
 
 
 require_coordinator = require_roles(*COORDINATOR_ACCESS)
+require_admin = require_roles("admin")

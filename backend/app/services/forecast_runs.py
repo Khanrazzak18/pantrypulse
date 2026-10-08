@@ -196,3 +196,32 @@ def latest_run(db: Session, kind: str) -> ForecastRun | None:
         .order_by(ForecastRun.created_at.desc(), ForecastRun.id.desc())
         .limit(1)
     )
+
+
+def run_forward_checked(db: Session, storage: StorageBackend, config, user_id: int) -> ForecastRun:
+    """`run_forward`, with each expected failure turned into the API's error response."""
+    from app.errors import ApiError
+
+    try:
+        return run_forward(db, storage, config, user_id)
+    except fc.NotEnoughHistory as exc:
+        raise ApiError(
+            422,
+            "not_enough_history",
+            f"There isn't enough history to forecast yet: need at least {exc.needed} weeks, "
+            f"found {exc.found}.",
+            {"found": exc.found, "needed": exc.needed},
+        ) from exc
+    except RunInProgress as exc:
+        raise ApiError(
+            409,
+            "forecast_in_progress",
+            "A forecast is already being built. Wait a moment and refresh.",
+        ) from exc
+    except ForecastFailed as exc:
+        raise ApiError(
+            500,
+            "forecast_failed",
+            "The forecast could not be built. Please try again; if it keeps failing, ask an "
+            "administrator to check the logs.",
+        ) from exc

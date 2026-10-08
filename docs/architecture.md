@@ -303,3 +303,25 @@ week's demand in pounds as three quantiles (P10, P50, P90), and a seasonal-naive
 - **Simulation** (`eval/allocation_sim.py`): replays the last 12 backtest weeks; the report states
   that spoilage cannot be tested on this data.
 
+## Pantry portal, dashboard and weekly refresh (Stage 7)
+
+- **Pantry portal** (`app/api/pantry_portal.py`, pantry managers only): `GET /api/pantry/deliveries`
+  (approved and edited allocations for the manager's own pantry; upcoming from today, recent for the
+  last 7 days), `GET` and `POST /api/pantry/shortage-reports`. The pantry always comes from the
+  logged-in user, never the request. The week is the Monday of the server's today. A report is an
+  `INSERT ... ON CONFLICT (pantry, category, week) DO UPDATE` (migration `0005` adds `updated_at`);
+  201 for a new report and 200 with `updated: true` for a replacement.
+- **Dashboard** (`app/services/dashboard.py`, admin only): `GET /api/dashboard/metrics?start&end`
+  (dates snap to Mondays; default is the last 26 weeks that have data; at most 260 weeks).
+  Households: `MAX(households)` per pantry-week, then summed. Spoilage: perishable lots by received
+  week. Stockout %: pantry-weeks with a report over pantry-weeks with distributions.
+- **Monthly summary** (`app/services/summaries.py`, prompt in `app/ai/prompts/monthly_summary.md`):
+  aggregates (this month and the last, plus per-category) are the only input. One forced tool call,
+  15 s, no retry in the request. `app/services/number_check.py` (shared with allocation reasons)
+  rejects any number not in the aggregates (+/-1 for 20 and over, 0.06 below). Drafts are rows in
+  `monthly_summaries` with status `draft`; approval stores the admin's final text and cannot be
+  repeated (409). Errors: `summary_failed` and `summary_numbers_mismatch` (502), `no_data` (422).
+- **Weekly refresh** (`POST /api/admin/jobs/weekly-refresh`, `app/jobs/weekly_refresh.py`): forward
+  forecast, then allocation. A forecast failure returns that error and runs nothing else; an
+  allocation failure returns `refresh_partial` with the saved forecast run id.
+

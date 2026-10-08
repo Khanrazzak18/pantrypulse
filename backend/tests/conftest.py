@@ -168,6 +168,12 @@ def people(migrated_engine, password_hash):
     # Donations point at users (created_by, reviewed_by), so they have to go first.
     with migrated_engine.begin() as conn:
         conn.execute(text(WIPE_DONATIONS))
+        conn.execute(
+            text(
+                "DELETE FROM shortage_reports WHERE reported_by IS NOT NULL OR pantry_id IN (901, 902)"
+            )
+        )
+        conn.execute(text("DELETE FROM monthly_summaries WHERE approved_by IS NOT NULL"))
     with Session(migrated_engine) as db:
         db.query(User).filter(User.email.in_(vars(emails).values())).delete()
         db.query(Pantry).filter(Pantry.id.in_([PANTRY_A, PANTRY_B])).delete()
@@ -394,3 +400,99 @@ def allocation_world(migrated_engine, people):
             )
         )
         conn.execute(text("DELETE FROM pantries WHERE id IN (921, 922, 923)"))
+
+
+IMPACT_PANTRIES = (931, 932)
+IMPACT_W1, IMPACT_W2 = date(2026, 9, 7), date(2026, 9, 14)  # both Mondays, both in September
+
+
+@pytest.fixture
+def impact_world(migrated_engine):
+    """Two pantries, two weeks of distributions, three shortage reports and three lots, small
+    enough to work every dashboard number out by hand (see test_dashboard_metrics.py).
+    Categories: 1 produce (perishable), 6 canned (not)."""
+    from app.models import (
+        Distribution,
+        Donation,
+        DonationItem,
+        Donor,
+        InventoryLot,
+        ShortageReport,
+    )
+
+    with Session(migrated_engine) as db:
+        for pid in IMPACT_PANTRIES:
+            db.add(
+                Pantry(
+                    id=pid,
+                    name=f"Impact Pantry {pid - 930}",
+                    county="Ashford",
+                    latitude=40.1,
+                    longitude=-83.1,
+                    cold_capacity_lbs=1000,
+                    dry_capacity_lbs=2000,
+                    baseline_households=100,
+                )  # fmt: skip
+            )
+        db.flush()
+        rows = [  # pantry, category, week, lbs, households
+            (931, 1, IMPACT_W1, 100, 50), (931, 6, IMPACT_W1, 200, 50),
+            (931, 1, IMPACT_W2, 120, 60), (931, 6, IMPACT_W2, 180, 60),
+            (932, 1, IMPACT_W1, 40, 20), (932, 6, IMPACT_W1, 60, 20),
+            (932, 1, IMPACT_W2, 10, 5),
+        ]  # fmt: skip
+        for p, c, w, lbs, hh in rows:
+            db.add(Distribution(pantry_id=p, category_id=c, week_start=w, lbs=lbs, households=hh))
+        for p, c, w, sev in [
+            (931, 1, IMPACT_W1, 2),
+            (932, 1, IMPACT_W1, 3),
+            (931, 6, IMPACT_W2, 1),
+        ]:
+            db.add(
+                ShortageReport(
+                    pantry_id=p, category_id=c, week_start=w, severity=sev, households_turned_away=0
+                )  # fmt: skip
+            )
+        donor = Donor(name="Impact Donor", donor_type="grocery")
+        db.add(donor)
+        db.flush()
+        donation = Donation(
+            donor_id=donor.id, source_type="historical", status="confirmed",
+            received_at=datetime(2026, 9, 8, 10, 0, tzinfo=UTC),
+        )  # fmt: skip
+        db.add(donation)
+        db.flush()
+        for category_id, storage, received, expired, day in [
+            (1, "refrigerated", 1000, 120, date(2026, 9, 8)),
+            (1, "refrigerated", 500, 30, date(2026, 9, 16)),
+            (6, "ambient", 2000, 500, date(2026, 9, 8)),
+        ]:
+            item = DonationItem(
+                donation_id=donation.id, name="Impact food", category_id=category_id, quantity=1,
+                unit="case", estimated_weight_lbs=received, storage_type=storage,
+            )  # fmt: skip
+            db.add(item)
+            db.flush()
+            db.add(
+                InventoryLot(
+                    donation_item_id=item.id,
+                    category_id=category_id,
+                    storage_type=storage,
+                    received_lbs=received,
+                    remaining_lbs=0,
+                    expired_lbs=expired,
+                    received_date=day,
+                    expiry_date=day,
+                    status="depleted",
+                )  # fmt: skip
+            )
+        db.commit()
+    yield SimpleNamespace(w1=IMPACT_W1, w2=IMPACT_W2)
+    with migrated_engine.begin() as conn:
+        conn.execute(
+            text(
+                "TRUNCATE distributions, shortage_reports, monthly_summaries, inventory_lots, "
+                "donation_items, donations, donors RESTART IDENTITY CASCADE"
+            )
+        )
+        conn.execute(text("DELETE FROM pantries WHERE id IN (931, 932)"))

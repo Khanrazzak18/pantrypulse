@@ -53,31 +53,9 @@ def run_forecast(
 ) -> ForecastRunOut:
     """Train once on all history and save next week's forecast. Takes a few seconds; the slow
     12-week backtest is a separate command (`make backtest`)."""
-    try:
-        run = forecast_runs.run_forward(
-            db, request.app.state.storage, request.app.state.forecast_config, user.id
-        )
-    except forecasting.NotEnoughHistory as exc:
-        raise ApiError(
-            422,
-            "not_enough_history",
-            f"There isn't enough history to forecast yet: need at least {exc.needed} weeks, "
-            f"found {exc.found}.",
-            {"found": exc.found, "needed": exc.needed},
-        ) from exc
-    except forecast_runs.RunInProgress as exc:
-        raise ApiError(
-            409,
-            "forecast_in_progress",
-            "A forecast is already being built. Wait a moment and refresh.",
-        ) from exc
-    except forecast_runs.ForecastFailed as exc:
-        raise ApiError(
-            500,
-            "forecast_failed",
-            "The forecast could not be built. Please try again; if it keeps failing, ask an "
-            "administrator to check the logs.",
-        ) from exc
+    run = forecast_runs.run_forward_checked(
+        db, request.app.state.storage, request.app.state.forecast_config, user.id
+    )
     return run_out(db, run)
 
 

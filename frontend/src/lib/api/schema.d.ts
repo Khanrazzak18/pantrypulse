@@ -419,6 +419,138 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pantry/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Deliveries
+         * @description Approved deliveries for the manager's own pantry: upcoming, and the last week's.
+         */
+        get: operations["deliveries_api_pantry_deliveries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/shortage-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** This Weeks Reports */
+        get: operations["this_weeks_reports_api_pantry_shortage_reports_get"];
+        put?: never;
+        /**
+         * Report Shortage
+         * @description File a shortage for this week. A second report for the same category replaces the first.
+         */
+        post: operations["report_shortage_api_pantry_shortage_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Metrics
+         * @description Spoilage, stockouts, pounds distributed and households served for a range of weeks.
+         */
+        get: operations["metrics_api_dashboard_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard/summaries/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Summary */
+        get: operations["get_summary_api_dashboard_summaries__month__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard/summaries/{month}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Draft Summary */
+        post: operations["draft_summary_api_dashboard_summaries__month__draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard/summaries/{month}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Summary */
+        post: operations["approve_summary_api_dashboard_summaries__month__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/jobs/weekly-refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Weekly Refresh
+         * @description Train the forward forecast, then rerun allocation against it.
+         */
+        post: operations["weekly_refresh_api_admin_jobs_weekly_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -510,6 +642,11 @@ export interface components {
             /** Approved Lbs */
             approved_lbs: number;
         };
+        /** ApproveIn */
+        ApproveIn: {
+            /** Text */
+            text: string;
+        };
         /** Body_upload_donation_api_donations_post */
         Body_upload_donation_api_donations_post: {
             /** File */
@@ -526,6 +663,17 @@ export interface components {
             approved: number;
             /** Approved Lbs */
             approved_lbs: number;
+        };
+        /** CategoryPoint */
+        CategoryPoint: {
+            /** Category */
+            category: string;
+            /** Lbs Distributed */
+            lbs_distributed: number;
+            /** Shortage Reports */
+            shortage_reports: number;
+            /** Spoilage Pct */
+            spoilage_pct: number | null;
         };
         /** ConfirmItem */
         ConfirmItem: {
@@ -560,6 +708,51 @@ export interface components {
             donor_name?: string | null;
             /** Items */
             items: components["schemas"]["ConfirmItem"][];
+        };
+        /** DateRange */
+        DateRange: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Data Start */
+            data_start: string | null;
+            /** Data End */
+            data_end: string | null;
+        };
+        /** DeliveriesOut */
+        DeliveriesOut: {
+            pantry: components["schemas"]["PantryOut"];
+            /** Upcoming */
+            upcoming: components["schemas"]["DeliveryOut"][];
+            /** Recent */
+            recent: components["schemas"]["DeliveryOut"][];
+        };
+        /** DeliveryOut */
+        DeliveryOut: {
+            /** Id */
+            id: number;
+            /** Category */
+            category: string;
+            /** Item Name */
+            item_name: string;
+            /** Final Lbs */
+            final_lbs: number;
+            /**
+             * Delivery Date
+             * Format: date
+             */
+            delivery_date: string;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Edited */
+            edited: boolean;
         };
         /** DonationDetail */
         DonationDetail: {
@@ -780,6 +973,15 @@ export interface components {
             /** Days Left */
             days_left: number | null;
         };
+        /** MetricsOut */
+        MetricsOut: {
+            range: components["schemas"]["DateRange"];
+            totals: components["schemas"]["Totals"];
+            /** Weekly */
+            weekly: components["schemas"]["WeekPoint"][];
+            /** By Category */
+            by_category: components["schemas"]["CategoryPoint"][];
+        };
         /** PantryOut */
         PantryOut: {
             /** Id */
@@ -809,6 +1011,24 @@ export interface components {
             county: string;
             /** Miles */
             miles: number;
+        };
+        /** RefreshOut */
+        RefreshOut: {
+            /** Steps */
+            steps: components["schemas"]["StepOut"][];
+            /** Forecast Run Id */
+            forecast_run_id: number;
+            /** Allocation Run Id */
+            allocation_run_id: number;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /** Proposed Rows */
+            proposed_rows: number;
+            /** Total Seconds */
+            total_seconds: number;
         };
         /** ReviewItem */
         ReviewItem: {
@@ -865,6 +1085,109 @@ export interface components {
             /** Source */
             source: string | null;
         };
+        /** ShortageReportIn */
+        ShortageReportIn: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "produce" | "dairy" | "protein" | "bakery" | "frozen" | "canned" | "dry_goods" | "beverages";
+            /**
+             * Severity
+             * @description 1 minor, 2 serious, 3 ran out
+             */
+            severity: number;
+            /**
+             * Households Turned Away
+             * @default 0
+             */
+            households_turned_away: number;
+            /** Note */
+            note?: string | null;
+        };
+        /** ShortageReportOut */
+        ShortageReportOut: {
+            /** Id */
+            id: number;
+            /** Category */
+            category: string;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /** Severity */
+            severity: number;
+            /** Households Turned Away */
+            households_turned_away: number;
+            /** Note */
+            note: string | null;
+            /** Updated */
+            updated: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** StepOut */
+        StepOut: {
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            /** Seconds */
+            seconds: number;
+        };
+        /** SummaryOut */
+        SummaryOut: {
+            /** Month */
+            month: string;
+            /** Status */
+            status: string;
+            /** Aggregates */
+            aggregates: {
+                [key: string]: unknown;
+            };
+            /** Ai Draft */
+            ai_draft: string;
+            /** Final Text */
+            final_text: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Approved At */
+            approved_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** SummaryResponse */
+        SummaryResponse: {
+            summary: components["schemas"]["SummaryOut"] | null;
+        };
+        /** Totals */
+        Totals: {
+            /** Lbs Distributed */
+            lbs_distributed: number;
+            /** Households Served */
+            households_served: number;
+            /** Shortage Reports */
+            shortage_reports: number;
+            /** Pantry Weeks */
+            pantry_weeks: number;
+            /** Pantry Weeks With Shortage */
+            pantry_weeks_with_shortage: number;
+            /** Stockout Pct */
+            stockout_pct: number | null;
+            /** Received Perishable Lbs */
+            received_perishable_lbs: number;
+            /** Expired Perishable Lbs */
+            expired_perishable_lbs: number;
+            /** Spoilage Pct */
+            spoilage_pct: number | null;
+        };
         /** UserOut */
         UserOut: {
             /** Id */
@@ -892,6 +1215,32 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WeekPoint */
+        WeekPoint: {
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /** Lbs Distributed */
+            lbs_distributed: number;
+            /** Households Served */
+            households_served: number;
+            /** Shortage Reports */
+            shortage_reports: number;
+            /** Pantry Weeks */
+            pantry_weeks: number;
+            /** Pantry Weeks With Shortage */
+            pantry_weeks_with_shortage: number;
+            /** Stockout Pct */
+            stockout_pct: number | null;
+            /** Received Perishable Lbs */
+            received_perishable_lbs: number;
+            /** Expired Perishable Lbs */
+            expired_perishable_lbs: number;
+            /** Spoilage Pct */
+            spoilage_pct: number | null;
         };
     };
     responses: never;
@@ -1564,6 +1913,231 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deliveries_api_pantry_deliveries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveriesOut"];
+                };
+            };
+        };
+    };
+    this_weeks_reports_api_pantry_shortage_reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortageReportOut"][];
+                };
+            };
+        };
+    };
+    report_shortage_api_pantry_shortage_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShortageReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortageReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    metrics_api_dashboard_metrics_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_summary_api_dashboard_summaries__month__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description YYYY-MM */
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_summary_api_dashboard_summaries__month__draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description YYYY-MM */
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_summary_api_dashboard_summaries__month__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description YYYY-MM */
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    weekly_refresh_api_admin_jobs_weekly_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshOut"];
                 };
             };
         };
