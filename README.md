@@ -4,7 +4,7 @@ AI food allocation for Harvest Bridge Food Bank, a hypothetical regional non-pro
 `docs/spec-5.2.md` for the use case, `CLAUDE.md` for the build contract and `docs/architecture.md`
 for design decisions.
 
-**Status:** Stage 2 of 9 (database, data models and synthetic data). The full README (features, AI evaluation results, known
+**Status:** Stage 3 of 9 (authentication). The full README (features, AI evaluation results, known
 limitations) is written in Stage 8.
 
 ## Requirements
@@ -33,6 +33,7 @@ Check it works: `curl localhost:3000/api/health` returns `{"status":"ok","databa
 | `make migrate` | Apply Alembic migrations to the app database |
 | `make seed` | Reload the synthetic history and demo users (destructive for the app database) |
 | `make dev` | API and web together |
+| `make api-types` | Regenerate the frontend's typed API client after changing the API |
 | `make test` | ruff + pytest, then frontend lint, typecheck and build (needs `make db`) |
 | `make eval` | Intake eval and forecast backtest (Stages 4 and 5) |
 | `make refresh` | Weekly retrain and allocation job (Stage 6) |
@@ -44,7 +45,7 @@ Ports are set only in `.env`. Secrets never go in git; AWS access uses the CLI p
 
 `make seed` creates these users. The passwords are the `DEMO_*` values in `.env`; the defaults in
 `.env.example` are below. They are demo credentials for local development, not real secrets.
-Login itself arrives in Stage 3.
+Log in at http://localhost:3000/login.
 
 | Role | Email | Password variable | Default |
 | --- | --- | --- | --- |
@@ -60,3 +61,14 @@ All data is synthetic. Harvest Bridge Food Bank is hypothetical, the six countie
 and **the weather, school holidays and benefit-payment weeks are generated, not real**. The
 generator uses a fixed seed, so the same data comes out every time. See
 `docs/architecture.md` for how it works and the baseline it produces.
+
+## Known limitations
+
+- **Logout does not revoke a copied session.** The API is stateless: a session is a signed token
+  in an httpOnly cookie. Logging out clears the cookie in the browser, but a token someone had
+  already copied stays valid until it expires (8 hours). Deactivating a user does take effect
+  immediately, because the user is looked up on every request. Revoking tokens on logout would
+  need a `token_version` column or a sessions table.
+- **No login lockout or rate limiting yet.** Failed logins return one generic message, but they
+  are not counted or throttled. This is planned for Stage 8 (it needs a database-backed counter,
+  since the API keeps no in-memory state).

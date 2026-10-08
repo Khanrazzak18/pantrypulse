@@ -122,3 +122,32 @@ history with explicit ids, resets the id sequences, and creates three demo users
 admin, and a pantry manager for Pantry 14). It refuses to run against any database other than
 `POSTGRES_DB`, and fails with a clear message if a `DEMO_*_PASSWORD` is missing from `.env`.
 Passwords are stored as argon2 hashes.
+
+## Authentication (Stage 3)
+
+- `POST /api/auth/login` checks the email and argon2 password hash and sets a signed JWT
+  (HS256, PyJWT) in an httpOnly, `SameSite=Lax` cookie named `pp_session`. The response body
+  carries the user, never the token. `POST /api/auth/logout` clears the cookie.
+  `GET /api/auth/me` returns the current user.
+- The token holds only the user id and issue/expiry times (8 hours, `SESSION_HOURS`). The role
+  is **not** in the token: every request reloads the user, so a role change or deactivation
+  applies on the next request.
+- Every login failure (unknown email, wrong password, inactive user) returns the same 401
+  `invalid_credentials` response, and a password hash is verified even for unknown emails so the
+  timing does not reveal which emails exist. Logs record the reason but never the email or
+  password.
+- Roles are FastAPI dependencies in `app/auth/dependencies.py`: `current_user` (401),
+  `require_roles(...)` (403) and `require_coordinator` (coordinator or admin; admin is a superset
+  of coordinator, per the role table in CLAUDE.md).
+- `GET /api/pantries` is for coordinator and admin. `GET /api/pantries/{id}` lets a pantry
+  manager read only their own pantry; any other id, including one that does not exist, is 403 so
+  the response does not reveal which pantries exist.
+- The API refuses to start unless `JWT_SECRET` is at least 32 characters. Set `COOKIE_SECURE=true`
+  when serving over https.
+
+Frontend: server components ask `/api/auth/me` (forwarding the cookie) and redirect logged-out
+users to `/login?next=...` and wrong-role users to their own home. `src/proxy.ts` adds a real
+redirect before render for visitors with no cookie at all. These guards decide what to show; the
+API enforces the rules. The `next` value is only honoured for same-site paths (`lib/safe-next.ts`).
+The browser's API types are generated from the app's OpenAPI document (`make api-types`); a test
+fails if the committed `openapi.json` no longer matches the API.

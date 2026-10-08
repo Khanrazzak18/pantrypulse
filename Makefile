@@ -6,7 +6,7 @@ BACKEND := backend
 FRONTEND := frontend
 VENV := $(BACKEND)/.venv
 
-.PHONY: setup db db-down migrate seed dev test eval refresh check-env
+.PHONY: setup db db-down migrate seed dev test eval refresh check-env api-types
 
 check-env:
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' and fill it in."; exit 1; }
@@ -28,6 +28,11 @@ migrate: check-env
 
 seed: check-env
 	cd $(BACKEND) && .venv/bin/python -m scripts.seed
+
+# Regenerate the frontend's typed API client from the FastAPI OpenAPI document.
+api-types: check-env
+	cd $(BACKEND) && .venv/bin/python -m scripts.export_openapi
+	cd $(FRONTEND) && npx openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts
 
 # Runs API and web together; Ctrl-C stops both. `exec` makes each background job the
 # server process itself, so the trap kills the servers and not just a wrapper shell.

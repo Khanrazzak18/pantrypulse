@@ -51,7 +51,7 @@ async def _validation_error_handler(_: Request, exc: RequestValidationError) -> 
     details = [
         {
             "field": ".".join(str(part) for part in err["loc"][1:]),
-            "message": err["msg"],
+            "message": err["msg"].removeprefix("Value error, "),
             "type": err["type"],
         }
         for err in exc.errors()

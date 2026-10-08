@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     postgres_test_db: str
 
     jwt_secret: str = ""
+    session_hours: int = 8
+    cookie_secure: bool = False  # set COOKIE_SECURE=true when served over https
 
     # Demo logins for `make seed`. No defaults here on purpose: they live in .env only.
     demo_coordinator_password: str | None = None

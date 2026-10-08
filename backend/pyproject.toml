@@ -13,6 +13,7 @@ dependencies = [
     "alembic>=1.13",
     "numpy>=2.0",
     "argon2-cffi>=23.1",
+    "PyJWT>=2.8",
 ]
 
 [project.optional-dependencies]
@@ -44,3 +45,6 @@ known-first-party = ["app", "scripts"]
 
 [tool.ruff.lint.per-file-ignores]
 "alembic/versions/*" = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends"]

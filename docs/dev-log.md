@@ -75,3 +75,58 @@
   use `source_type = 'historical'`; the six counties are fictional; surplus supply is assumed to
   go to other agencies; demo emails use `example.org`; the shortage-report probability depends on
   the pantry and category; the baseline period is the full 3 years.
+
+## Stage 3: Authentication  (2026-10-08 15:29 to 15:36 EDT)
+- Built:
+  - Backend: login, logout and `GET /api/auth/me` with a JWT in an httpOnly `SameSite=Lax`
+    cookie (8 hours, argon2 hashes from `app/auth/passwords.py`); `current_user`,
+    `require_roles` and `require_coordinator` dependencies; `GET /api/pantries` (coordinator and
+    admin) and `GET /api/pantries/{id}` (a pantry manager may only read their own); a startup
+    check that `JWT_SECRET` is at least 32 characters; `COOKIE_SECURE` and `SESSION_HOURS`
+    settings.
+  - Frontend: login page with client-side validation, inline errors and a loading state; role-based
+    navigation; server-side guards that redirect logged-out users (keeping `next`) and wrong-role
+    users; `src/proxy.ts` for a real redirect before render when there is no cookie; a logout
+    button; a pantries page for coordinators and admins and a "my pantry" page for managers;
+    loading and error screens; a typed API client generated from OpenAPI (`make api-types`), with
+    a test that fails if the committed `openapi.json` drifts from the API.
+- Tests: written first and seen failing. `make test`: ruff clean, 185 pytest passed (60 new),
+  frontend lint, typecheck and build pass. Covered: a wrong password returns 401 and an unknown
+  email gets an identical response; logged-out requests return 401; a pantry manager calling a
+  coordinator route gets 403; a manager reading another pantry gets 403 (also for ids that do not
+  exist); expired, tampered, wrong-secret, other-algorithm and unsigned (`alg: none`) tokens are
+  rejected; deactivated users and role changes apply on the next request; cookie flags; logs never
+  contain passwords or failed-login emails; startup rejects a weak secret.
+  I also broke the code five ways on purpose (accept other algorithms, drop the role check, let
+  managers read any pantry, keep inactive users logged in, skip the password check for unknown
+  emails) and each was caught by the intended test.
+- Browser check (built-in browser pane, local dev server): empty and malformed submissions show
+  inline errors; a wrong password shows "Incorrect email or password."; manager login lands on
+  Pantry 14 and `/coordinator`, `/login` and `/` all redirect them to `/pantry`; in the browser
+  the API gives the manager 403 for the list, 403 for another pantry, 403 for a missing id and
+  200 for their own; the cookie is not readable from JavaScript; logout returns to `/login` and
+  `/api/auth/me` is then 401; a coordinator logging in from a `next=/pantry` link lands on
+  `/coordinator` with all 85 pantries; the pages fit 375 px with no horizontal overflow. The
+  `?next=` guard was run against 15 inputs including `//evil.example.com`, backslashes, newline
+  injection and `javascript:` URLs, all handled.
+- Problems found and fixed:
+  - After a failed login focus did not return to the password field: the inputs were `disabled`
+    while submitting and `focus()` ran before React re-enabled them. They are now `readOnly`.
+  - A logged-out request for `/coordinator` returned 200 because the redirect streamed behind the
+    loading screen (a flash of skeleton, no data leaked). Added `src/proxy.ts` for a real 307.
+  - `openapi-typescript` needs TypeScript 5 and Stage 1 had installed 6; pinned TypeScript to
+    `^5.9`.
+  - ruff flagged FastAPI's `Depends(...)` defaults (B008); configured it as an immutable call.
+- Decisions: PyJWT with HS256; the role is read from the database on every request, not stored
+  in the token; unknown email, wrong password and inactive user are indistinguishable; the cookie
+  is `Secure` only when `COOKIE_SECURE=true`; no `email-validator` dependency (basic format check,
+  lowercased and trimmed); admin counts as a coordinator; navigation lists only pages that exist;
+  the proxy only checks that a cookie exists, the pages and API decide the rest; `AGENTS.md` that
+  Next.js generated in `frontend/` (committed in Stage 1) is left as is.
+- **Deferred to Stage 8:** login lockout / rate limiting. It needs a database-backed counter of
+  failed attempts per email and per IP (no in-memory state, per CLAUDE.md rule 4), with a clear
+  message and a tested reset. Until then failed logins are only logged (reason and request id,
+  no email or password).
+- Known limitation (also in the README): logout clears the cookie but cannot revoke a token that
+  was already copied; it expires after 8 hours. A `token_version` column or sessions table would
+  fix that.
