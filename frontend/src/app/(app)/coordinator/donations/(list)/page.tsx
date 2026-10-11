@@ -107,17 +107,20 @@ export default async function DonationsPage({ searchParams }: { searchParams: Pr
         </p>
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-lg border border-stone-200 bg-white md:block">
+          <div className="hidden overflow-x-auto rounded-lg border border-stone-200 bg-white md:block" tabIndex={0} role="region" aria-label="Donations table">
             <table className="w-full text-left text-sm">
+              <caption className="sr-only">Donations, newest first, with donor, items, weight and status</caption>
               <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Received</th>
-                  <th className="px-4 py-2 font-medium">File</th>
-                  <th className="px-4 py-2 font-medium">Donor</th>
-                  <th className="px-4 py-2 text-right font-medium">Items</th>
-                  <th className="px-4 py-2 text-right font-medium">Weight (lb)</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2" />
+                  <th scope="col" className="px-4 py-2 font-medium">Received</th>
+                  <th scope="col" className="px-4 py-2 font-medium">File</th>
+                  <th scope="col" className="px-4 py-2 font-medium">Donor</th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">Items</th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">Weight (lb)</th>
+                  <th scope="col" className="px-4 py-2 font-medium">Status</th>
+                  <th scope="col" className="relative px-4 py-2">
+                    <span className="sr-only">Open</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">

@@ -157,3 +157,9 @@ export const WEIRD = {
   sql: "' OR 1=1 --",
   spaces: "     ",
 };
+
+/** Add a confirmed lot of fresh produce that expires two days after the E2E server's pinned date. */
+export async function addUrgentLot() {
+  const res = await fetch(`${API}/__e2e/urgent-lot`, { method: "POST" });
+  if (!res.ok) throw new Error(`urgent lot failed: ${res.status}`);
+}

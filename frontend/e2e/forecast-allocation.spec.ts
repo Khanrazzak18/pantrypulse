@@ -80,7 +80,7 @@ test.describe("forecasts", () => {
     await box.check();
     await expect(box).toBeChecked();
     await box.uncheck();
-    await page.getByText("Show the numbers").click();
+    await page.getByRole("button", { name: "View as table" }).click();
     await expect(page.getByRole("columnheader", { name: "Week of" })).toBeVisible();
   });
 

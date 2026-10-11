@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 
+import { Dialog } from "./dialog";
+
 import {
   ApiRequestError,
   apiFetch,
@@ -93,6 +95,8 @@ function Cell({
   unsure,
   children,
   note,
+  row,
+  className = "",
 }: {
   label: string;
   htmlFor: string;
@@ -100,11 +104,14 @@ function Cell({
   unsure?: number;
   children: ReactNode;
   note?: string;
+  row: number;
+  className?: string;
 }) {
   return (
-    <div className="min-w-0">
+    <div role="cell" className={`min-w-0 ${className}`}>
       <label htmlFor={htmlFor} className="mb-0.5 block text-xs font-medium text-stone-600 md:sr-only">
         {label}
+        <span className="sr-only"> (row {row})</span>
       </label>
       {children}
       {error && (
@@ -113,11 +120,11 @@ function Cell({
         </p>
       )}
       {!error && unsure !== undefined && (
-        <p id={`${htmlFor}-unsure`} className="mt-0.5 text-xs font-medium text-amber-800">
+        <p id={`${htmlFor}-unsure`} className="mt-0.5 text-xs font-medium text-amber-900">
           AI unsure ({Math.round(unsure * 100)}%)
         </p>
       )}
-      {!error && unsure === undefined && note && <p className="mt-0.5 text-xs text-amber-800">{note}</p>}
+      {!error && unsure === undefined && note && <p className="mt-0.5 text-xs text-amber-900">{note}</p>}
     </div>
   );
 }
@@ -394,17 +401,18 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
         <div role="table" aria-label="Donation items" className="mt-3 space-y-3">
           <div
             role="row"
-            aria-hidden="true"
-            className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_2rem] gap-2 px-3 text-xs font-medium uppercase tracking-wide text-stone-500 md:grid"
+            className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_2rem] gap-2 px-3 text-xs font-medium uppercase tracking-wide text-stone-600 md:grid"
           >
-            <span>Item</span>
-            <span>Category</span>
-            <span>Qty</span>
-            <span>Unit</span>
-            <span>Weight (lb)</span>
-            <span>Expires</span>
-            <span>Storage</span>
-            <span />
+            <span role="columnheader">Item</span>
+            <span role="columnheader">Category</span>
+            <span role="columnheader">Qty</span>
+            <span role="columnheader">Unit</span>
+            <span role="columnheader">Weight (lb)</span>
+            <span role="columnheader">Expires</span>
+            <span role="columnheader">Storage</span>
+            <span role="columnheader">
+              <span className="sr-only">Remove</span>
+            </span>
           </div>
 
           {rows.length === 0 && (
@@ -430,8 +438,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                   row.sourceIndex === null ? "border-green-300" : "border-stone-200"
                 }`}
               >
-                <div className="col-span-2 md:col-span-1">
-                  <Cell label="Item" htmlFor={id("name")} error={errors.name} unsure={unsure("name")}>
+                  <Cell label="Item" htmlFor={id("name")} error={errors.name} unsure={unsure("name")} row={index + 1} className="col-span-2 md:col-span-1">
                     <input
                       id={id("name")}
                       value={row.name}
@@ -443,8 +450,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                       className={inputClass(Boolean(errors.name), unsure("name") !== undefined)}
                     />
                   </Cell>
-                </div>
-                <Cell label="Category" htmlFor={id("category")} unsure={unsure("category")}>
+                <Cell row={index + 1} label="Category" htmlFor={id("category")} unsure={unsure("category")}>
                   <select
                     id={id("category")}
                     value={row.category}
@@ -460,7 +466,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                     ))}
                   </select>
                 </Cell>
-                <Cell label="Quantity" htmlFor={id("quantity")} error={errors.quantity} unsure={unsure("quantity")}>
+                <Cell row={index + 1} label="Quantity" htmlFor={id("quantity")} error={errors.quantity} unsure={unsure("quantity")}>
                   <input
                     id={id("quantity")}
                     value={row.quantity}
@@ -472,7 +478,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                     className={inputClass(Boolean(errors.quantity), unsure("quantity") !== undefined)}
                   />
                 </Cell>
-                <Cell label="Unit" htmlFor={id("unit")} error={errors.unit} unsure={unsure("unit")}>
+                <Cell row={index + 1} label="Unit" htmlFor={id("unit")} error={errors.unit} unsure={unsure("unit")}>
                   <input
                     id={id("unit")}
                     value={row.unit}
@@ -484,7 +490,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                     className={inputClass(Boolean(errors.unit), unsure("unit") !== undefined)}
                   />
                 </Cell>
-                <Cell label="Weight (lb)" htmlFor={id("weight")} error={errors.weight} unsure={unsure("weight")}>
+                <Cell row={index + 1} label="Weight (lb)" htmlFor={id("weight")} error={errors.weight} unsure={unsure("weight")}>
                   <input
                     id={id("weight")}
                     value={row.weight}
@@ -497,6 +503,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                   />
                 </Cell>
                 <Cell
+                  row={index + 1}
                   label="Expires"
                   htmlFor={id("expiry")}
                   error={errors.expiry}
@@ -514,7 +521,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                     className={inputClass(Boolean(errors.expiry), unsure("expiry") !== undefined)}
                   />
                 </Cell>
-                <Cell label="Storage" htmlFor={id("storage")} unsure={unsure("storage")}>
+                <Cell row={index + 1} label="Storage" htmlFor={id("storage")} unsure={unsure("storage")}>
                   <select
                     id={id("storage")}
                     value={row.storage}
@@ -530,7 +537,7 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
                     ))}
                   </select>
                 </Cell>
-                <div className="col-span-2 flex justify-end md:col-span-1 md:pt-0.5">
+                <div role="cell" className="col-span-2 flex justify-end md:col-span-1 md:pt-0.5">
                   <button
                     type="button"
                     onClick={() => removeRow(row.key)}
@@ -572,37 +579,40 @@ export function ReviewForm({ donation, donors }: { donation: DonationDetail; don
           {busy === "confirm" ? "Adding to inventory…" : `Confirm and add ${rows.length} lot${rows.length === 1 ? "" : "s"}`}
         </button>
 
-        {!askReject ? (
+        <button
+          type="button"
+          onClick={() => setAskReject(true)}
+          disabled={busyNow}
+          className="rounded-md border border-stone-300 bg-white px-4 py-2 font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-50"
+        >
+          Reject
+        </button>
+      </div>
+      <p role="status" className="sr-only">
+        {busy === "confirm" ? "Adding to inventory…" : busy === "reject" ? "Rejecting the donation…" : ""}
+      </p>
+
+      <Dialog open={askReject} onClose={() => setAskReject(false)} title="Confirm rejection" role="alertdialog">
+        <p className="mt-2 text-sm text-stone-700">Reject this donation? Nothing will be added to inventory.</p>
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
           <button
             type="button"
-            onClick={() => setAskReject(true)}
+            onClick={() => setAskReject(false)}
             disabled={busyNow}
-            className="rounded-md border border-stone-300 bg-white px-4 py-2 font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-50"
+            className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-stone-100"
           >
-            Reject
+            Keep reviewing
           </button>
-        ) : (
-          <div role="alertdialog" aria-label="Confirm rejection" className="flex flex-wrap items-center gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm">
-            <span className="text-red-900">Reject this donation? Nothing will be added to inventory.</span>
-            <button
-              type="button"
-              onClick={() => void reject()}
-              disabled={busyNow}
-              className="rounded-md bg-red-700 px-3 py-1 font-medium text-white hover:bg-red-800 disabled:opacity-70"
-            >
-              {busy === "reject" ? "Rejecting…" : "Yes, reject"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAskReject(false)}
-              disabled={busyNow}
-              className="rounded-md border border-stone-300 bg-white px-3 py-1 font-medium hover:bg-stone-100"
-            >
-              Keep reviewing
-            </button>
-          </div>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={() => void reject()}
+            disabled={busyNow}
+            className="rounded-md bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-70"
+          >
+            {busy === "reject" ? "Rejecting…" : "Yes, reject"}
+          </button>
+        </div>
+      </Dialog>
     </form>
   );
 }

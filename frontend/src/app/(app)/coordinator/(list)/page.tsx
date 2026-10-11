@@ -26,21 +26,22 @@ export default async function PantriesPage() {
         </p>
       ) : (
         <>
-          <div className="mt-6 hidden overflow-x-auto rounded-lg border border-stone-200 bg-white md:block">
+          <div className="mt-6 hidden overflow-x-auto rounded-lg border border-stone-200 bg-white md:block" tabIndex={0} role="region" aria-label="Partner pantries table">
             <table className="w-full text-left text-sm">
+              <caption className="sr-only">Partner pantries with county, households per month and storage capacity</caption>
               <thead className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Pantry</th>
-                  <th className="px-4 py-2 font-medium">County</th>
-                  <th className="px-4 py-2 text-right font-medium">Households / month</th>
-                  <th className="px-4 py-2 text-right font-medium">Cold storage (lb)</th>
-                  <th className="px-4 py-2 text-right font-medium">Dry storage (lb)</th>
+                  <th scope="col" className="px-4 py-2 font-medium">Pantry</th>
+                  <th scope="col" className="px-4 py-2 font-medium">County</th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">Households / month</th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">Cold storage (lb)</th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">Dry storage (lb)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {pantries.map((p) => (
                   <tr key={p.id}>
-                    <td className="px-4 py-2 font-medium">{p.name}</td>
+                    <th scope="row" className="px-4 py-2 font-medium">{p.name}</th>
                     <td className="px-4 py-2">{p.county}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{number(p.baseline_households)}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{number(p.cold_capacity_lbs)}</td>

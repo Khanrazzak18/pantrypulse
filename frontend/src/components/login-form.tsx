@@ -86,6 +86,9 @@ export function LoginForm({ next }: { next: string | null }) {
 
   return (
     <form onSubmit={onSubmit} noValidate aria-busy={submitting} className="space-y-4">
+      <p role="status" className="sr-only">
+        {submitting ? "Signing in…" : ""}
+      </p>
       {formError && (
         <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
           {formError}

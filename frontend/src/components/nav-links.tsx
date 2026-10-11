@@ -27,7 +27,9 @@ export function NavLinks({ role }: { role: Role }) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={`flex min-h-11 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium lg:min-h-0 lg:py-1.5 ${
-                active ? "bg-green-100 text-green-900" : "text-stone-700 hover:bg-stone-100"
+                active
+                  ? "bg-green-100 font-semibold text-green-900 underline decoration-2 underline-offset-4"
+                  : "text-stone-700 hover:bg-stone-100"
               }`}
             >
               {item.label}

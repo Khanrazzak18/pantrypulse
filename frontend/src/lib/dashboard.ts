@@ -66,3 +66,22 @@ export function monthLabel(month: string): string {
     timeZone: "UTC",
   });
 }
+
+
+/** One sentence a screen-reader user can use instead of the picture of a weekly series. */
+export function describeSeries(
+  name: string,
+  points: { label: string; value: number | null }[],
+  format: (n: number) => string,
+): string {
+  const real = points.filter((p): p is { label: string; value: number } => p.value != null);
+  if (real.length === 0) return `${name}: no data in this range.`;
+  const lowest = real.reduce((a, b) => (b.value < a.value ? b : a));
+  const highest = real.reduce((a, b) => (b.value > a.value ? b : a));
+  const latest = real[real.length - 1] as { label: string; value: number };
+  return (
+    `${name}: ${real.length} week${real.length === 1 ? "" : "s"}, ${real[0]?.label} to ${latest.label}. ` +
+    `Lowest ${format(lowest.value)} (week of ${lowest.label}), highest ${format(highest.value)} ` +
+    `(week of ${highest.label}), latest ${format(latest.value)}.`
+  );
+}

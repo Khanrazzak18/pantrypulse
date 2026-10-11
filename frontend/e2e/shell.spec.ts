@@ -116,7 +116,8 @@ test.describe("header and navigation", () => {
           const r = e.getBoundingClientRect();
           const type = (e as HTMLInputElement).type;
           return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden" &&
-            !["hidden", "checkbox", "radio", "file"].includes(type) && r.height < 43.5;
+            !["hidden", "checkbox", "radio", "file"].includes(type) && r.height < 43.5 &&
+            !(r.width <= 1 && r.height <= 1); // not the visually hidden skip link: it is 44 px tall when shown (A11Y-20)
         })
         .slice(0, 6)
         .map((e) => `${e.tagName}:${(e as HTMLElement).innerText?.slice(0, 20) ?? ""}:${Math.round(e.getBoundingClientRect().height)}`),

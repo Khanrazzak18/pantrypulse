@@ -218,25 +218,33 @@ def write_a11y() -> dict:
     unique: dict[tuple[str, str], dict] = {}
     for scan in scans:
         for v in scan["violations"]:
-            by_project[scan["project"]][v["impact"]] += 1
+            if v.get("gated", True):
+                by_project[scan["project"]][v["impact"]] += 1
             key = (scan["url"], v["rule"])
             entry = unique.setdefault(
                 key, {**v, "url": scan["url"], "roles": set(), "projects": set()}
             )
+            entry["gated"] = v.get("gated", True)
             entry["roles"].add(scan["role"])
             entry["projects"].add(scan["project"])
             entry["nodes"] = max(entry["nodes"], v["nodes"])
-    severity = Counter(e["impact"] for e in unique.values())
+    severity = Counter(e["impact"] for e in unique.values() if e.get("gated", True))
+    advisory = [e for e in unique.values() if not e.get("gated", True)]
+    pages = sorted({s_["url"] for s_ in scans})
     out = [
         "# Accessibility scan (axe-core)",
         "",
         f"Generated {datetime.now():%Y-%m-%d %H:%M} from {len(scans)} scans (every page, per role, at "
-        "375, 768 and 1280 px in Chromium and 1280 px in WebKit) with WCAG 2.0 and 2.1 A and AA rules "
-        "plus axe best practices. Nothing is fixed yet; this is the starting list for the accessibility stage.",
+        "375, 768 and 1280 px in Chromium and 1280 px in WebKit, including error, dialog and table-view "
+        "states) with WCAG 2.0 and 2.1 A and AA rules plus axe best practices. **Any WCAG violation fails "
+        "the end-to-end run**; best-practice findings are listed as advisory and do not. "
+        "Target: zero violations.",
         "",
-        "## Violations by severity",
+        "## WCAG violations by severity",
         "",
-        "Unique violations: one per rule per page, counted once however many widths or roles show it.",
+        f"{len(pages)} distinct pages and page states were scanned. "
+        "Unique violations: one per rule per page, counted once however many widths or roles show it. "
+        f"Advisory best-practice findings (not counted here, not failing the run): {len(advisory)}.",
         "",
         "| Severity | Unique violations |",
         "| --- | --- |",
@@ -254,18 +262,20 @@ def write_a11y() -> dict:
             + " | ".join(str(counts.get(s, 0)) for s in SEVERITIES)
             + f" | {sum(counts.values())} |"
         )
-    out += ["", "## Every unique violation", "", "| Severity | Rule | Page | What is wrong | Elements | Runs | Example |",
-            "| --- | --- | --- | --- | --- | --- | --- |"]  # fmt: skip
+    out += ["", "## Every unique finding", "", "| Kind | Severity | Rule | Page | What is wrong | Elements | Runs | Example |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |"]  # fmt: skip
     order = {s: i for i, s in enumerate(SEVERITIES)}
     for e in sorted(
         unique.values(), key=lambda e: (order.get(e["impact"], 9), e["rule"], e["url"])
     ):
         out.append(
-            f"| {e['impact']} | `{e['rule']}` | {cell(e['url'])} | {cell(e['help'])} | {e['nodes']} | "
+            f"| {'WCAG' if e.get('gated', True) else 'advisory'} | {e['impact']} | `{e['rule']}` | {cell(e['url'])} | {cell(e['help'])} | {e['nodes']} | "
             f"{len(e['projects'])} | `{cell(e['example'][:90])}` |"
         )
     if not scans:
-        out.append("| | No scans found; run `make e2e`. | | | | | |")
+        out.append("| | | No scans found; run `make e2e`. | | | | | |")
+    elif not unique:
+        out.append("| | | No findings: every scanned page and state passed. | | | | | |")
     out.append("")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "a11y-report.md").write_text("\n".join(out))

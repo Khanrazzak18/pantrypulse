@@ -1,33 +1,26 @@
 # Accessibility scan (axe-core)
 
-Generated 2026-10-11 14:36 from 36 scans (every page, per role, at 375, 768 and 1280 px in Chromium and 1280 px in WebKit) with WCAG 2.0 and 2.1 A and AA rules plus axe best practices. Nothing is fixed yet; this is the starting list for the accessibility stage.
+Generated 2026-10-11 18:42 from 108 scans (every page, per role, at 375, 768 and 1280 px in Chromium and 1280 px in WebKit, including error, dialog and table-view states) with WCAG 2.0 and 2.1 A and AA rules plus axe best practices. **Any WCAG violation fails the end-to-end run**; best-practice findings are listed as advisory and do not. Target: zero violations.
 
-## Violations by severity
+## WCAG violations by severity
 
-Unique violations: one per rule per page, counted once however many widths or roles show it.
+23 distinct pages and page states were scanned. Unique violations: one per rule per page, counted once however many widths or roles show it. Advisory best-practice findings (not counted here, not failing the run): 0.
 
 | Severity | Unique violations |
 | --- | --- |
-| critical | 1 |
-| serious | 1 |
+| critical | 0 |
+| serious | 0 |
 | moderate | 0 |
-| minor | 2 |
-| **Total** | **4** |
+| minor | 0 |
+| **Total** | **0** |
 
 Per run (the same rule on the same page counts once per run):
 
 | Run | critical | serious | moderate | minor | Total |
 | --- | --- | --- | --- | --- | --- |
-| chromium-1280 | 1 | 1 | 0 | 2 | 4 |
-| chromium-375 | 1 | 1 | 0 | 1 | 3 |
-| chromium-768 | 1 | 1 | 0 | 2 | 4 |
-| webkit-1280 | 1 | 1 | 0 | 2 | 4 |
 
-## Every unique violation
+## Every unique finding
 
-| Severity | Rule | Page | What is wrong | Elements | Runs | Example |
-| --- | --- | --- | --- | --- | --- | --- |
-| critical | `aria-required-children` | /coordinator/donations/[id] | Certain ARIA roles must contain particular children | 3 | 4 | `<div role="row" class="grid grid-cols-2 gap-2 rounded-lg border bg-white p-3 md:grid-cols-` |
-| serious | `definition-list` | /admin/dashboard | <dl> elements must only directly contain properly-ordered <dt> and <dd> groups, <script>, <template> or <div> elements | 1 | 4 | `<dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">` |
-| minor | `empty-table-header` | /coordinator/donations | Table header text should not be empty | 1 | 3 | `<th class="px-4 py-2"></th>` |
-| minor | `empty-table-header` | /coordinator/forecasts | Table header text should not be empty | 1 | 4 | `<th class="py-2 pr-4 font-medium"></th>` |
+| Kind | Severity | Rule | Page | What is wrong | Elements | Runs | Example |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| | | No findings: every scanned page and state passed. | | | | | |

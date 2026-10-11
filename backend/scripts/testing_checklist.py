@@ -215,15 +215,36 @@ SEC-10|every page|All|Own pages not blocked by the Origin check|Use a button tha
 SEC-11|/api|All|Role by route|Call every route as logged out, manager, coordinator and admin|n/a|n/a|Exactly the access in the table|test_each_role_gets_exactly_the_access_it_should,test_every_route_is_in_the_access_table
 SEC-12|/api|All|Rate limits|Repeat uploads and AI calls more often than the hourly limit|n/a|n/a|429 rate_limited with Retry-After|test_each_limit_triggers_after_its_configured_number_of_requests
 SEC-13|/api|All|Prompt injection in a manifest|Upload a manifest that tries to take over the model|n/a|n/a|One pending donation, nothing else changed|test_a_prompt_injection_in_a_manifest_creates_only_one_donation_waiting_for_review
-A11Y-01|/login|Logged out|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-02|/coordinator|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-03|/coordinator/donations|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-04|/coordinator/donations/[id]|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-05|/coordinator/forecasts|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-06|/coordinator/allocations|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-07|/admin/dashboard|Admin|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-08|/pantry|Manager|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
-A11Y-09|not found page|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-01|/login|Logged out|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-02|/coordinator|Coordinator|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-03|/coordinator/donations|Coordinator|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-04|/coordinator/donations/[id]|Coordinator|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-05|/coordinator/forecasts|Coordinator|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-06|/coordinator/allocations|Coordinator|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-07|/admin/dashboard|Admin|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-08|/pantry|Manager|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-09|not found page|Coordinator|Accessibility scan|Scan the page with axe (WCAG 2.0/2.1 A and AA)|n/a|n/a|No violations; any violation fails the run|
+A11Y-10|/coordinator, /coordinator/donations, /coordinator/forecasts, /coordinator/allocations|Admin|Accessibility scan as admin|Scan each coordinator page signed in as admin|n/a|n/a|No violations|
+A11Y-11|/login|Logged out|Accessibility scan with errors showing|Submit empty, then a wrong password, and scan each state|n/a|n/a|No violations in either state|
+A11Y-12|/coordinator/allocations|Coordinator|Accessibility scan of the edit form, the dialog and the All tab|Open an edit form with an error, the approve-all dialog, and the All tab|n/a|n/a|No violations in any state|
+A11Y-13|/coordinator/donations/[id]|Coordinator|Accessibility scan with errors and the reject dialog|Confirm with no donor, then open the reject dialog|n/a|n/a|No violations in either state|
+A11Y-14|/coordinator/forecasts, /admin/dashboard|Coordinator, Admin|Accessibility scan with every table view open|Open "View as table" on every chart|n/a|n/a|No violations|
+A11Y-15|/pantry|Manager|Accessibility scan of the shortage form with errors and with choices made|Send an empty report, then choose a category and severity|n/a|n/a|No violations in either state|
+A11Y-16|/unavailable, not-found, /coordinator/donations (AI down)|Logged out, Coordinator|Accessibility scan of the outage and not-found pages|Open each page and scan|n/a|n/a|No violations|
+A11Y-20|every page|All|Skip to main content link|Press Tab once on each page, then Enter|n/a|n/a|The first Tab shows a visible "Skip to main content" link; Enter moves focus to the main content|
+A11Y-21|every page|All|Landmarks and one h1|Inspect each page's landmarks|n/a|n/a|One banner and one Main navigation on signed-in pages, one main, one footer, one h1|
+A11Y-22|every route|All|Unique page title|Read the title of every route|n/a|n/a|Each route has its own "... · PantryPulse" title|
+A11Y-23|every signed-in page|All|Current page in the navigation|Look at the navigation on each page and on a detail page|n/a|n/a|Exactly one link has aria-current="page" and it is the section you are in; the phone menu button says whether it is open|
+A11Y-24|every page|All|Visible focus outline|Press Tab repeatedly through every page and the donation review form|n/a|n/a|Every element that takes focus shows an outline at least 2 px wide|
+A11Y-25|/login, /coordinator/donations/[id], /pantry, /coordinator/allocations, /admin/dashboard|All|Form errors linked and focused|Submit each form with mistakes|empty, 0, abc, backwards dates|n/a|Each invalid field has aria-invalid, an aria-describedby pointing at its message, and the first one has focus; every control has a name|
+A11Y-26|/login, /coordinator/allocations, /pantry, /coordinator/forecasts|All|Status and alert announcements|Sign in wrongly, approve, edit and reject a shipment, send a shortage report, go offline|n/a|n/a|Each outcome is announced in a status or alert region and focus is never lost to the page body|
+A11Y-27|/coordinator/allocations, /coordinator/donations/[id]|Coordinator|Dialogs|Open the approve-all and reject dialogs from the keyboard|n/a|n/a|Focus moves into the dialog and stays there with Tab and Shift+Tab; Escape and the cancel button close it; focus returns to the button that opened it; the dialog has a name and is modal|
+A11Y-28|every page with a table|All|Table captions and header scopes|Inspect every table|n/a|n/a|Every table has a caption, every header cell has a scope and text, the item grid has column headers and named cells|
+A11Y-29|/coordinator/forecasts, /admin/dashboard|Coordinator, Admin|Chart text alternatives|Read each chart's summary and open "View as table"|n/a|n/a|Each chart has a name, a text summary and a table view with the same numbers that works from the keyboard|
+A11Y-30|/coordinator/donations, /coordinator/allocations, /pantry, /admin/dashboard|All|Meaning beyond colour|Look at statuses, urgent food, chosen options, the active link and chart lines|n/a|n/a|Status is in words, urgent food says "Expiring soon", chosen options show a tick, the active link differs by more than colour, chart lines differ by pattern|
+A11Y-31|every page|All|Reduced motion|Turn on "reduce motion" and look at spinners, pulses and transitions; read the dashboard clock|n/a|n/a|Animations and transitions stop; the spinner animates without the setting; the clock does not tick each second|
+A11Y-32|every page|All|200% and 400% zoom|View each page at 640 px and 320 px wide|n/a|n/a|No sideways scrolling, the heading fits and is at least 16 px, zooming is not blocked|
+A11Y-33|/login, /coordinator/donations, /coordinator/allocations, /pantry|All|Keyboard-only journeys|Log in; upload and confirm a donation; approve and edit a shipment; send a shortage report at 375 px; open and close a dialog, all with no mouse|n/a|n/a|Every journey completes and no pointer event is generated|
 """
 
 

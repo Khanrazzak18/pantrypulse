@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ApiRequestError, apiFetch, LONG_TIMEOUT_MS } from "@/lib/api/client";
 import {
@@ -20,6 +20,8 @@ import {
 import { CATEGORY_LABELS } from "@/lib/donations";
 import { controlCharError } from "@/lib/text";
 import { formatRunTime, weekLabel } from "@/lib/forecasts";
+
+import { Dialog } from "./dialog";
 
 type Notice = { kind: "info" | "success" | "error"; message: string } | null;
 
@@ -56,7 +58,8 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
   const [busy, setBusy] = useState<string | null>(null); // what the page is waiting on
   const [notice, setNotice] = useState<Notice>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const confirmRef = useRef<HTMLDialogElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -86,6 +89,11 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
     } finally {
       await reload();
       setBusy(null);
+      // The row you used may be gone; keep focus on the page, at the message about what happened.
+      setTimeout(() => {
+        const active = document.activeElement;
+        if (!active || active === document.body || (active as HTMLButtonElement).disabled) noticeRef.current?.focus();
+      }, 0);
     }
   }
 
@@ -98,7 +106,7 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
     });
 
   const bulkApprove = () => {
-    confirmRef.current?.close();
+    setConfirmOpen(false);
     const ids = shownProposed.map((r) => r.id);
     return act("bulk", async () => {
       const result = await apiFetch<{ approved: number; approved_lbs: number }>("/api/allocations/bulk-approve", {
@@ -119,6 +127,8 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
   const decide = (row: Allocation, action: "approve" | "reject") =>
     act(`row-${row.id}`, async () => {
       await apiFetch(`/api/allocations/${row.id}/${action}`, { method: "POST" });
+      const what = `${formatLbs(row.recommended_lbs)} of ${row.lot.item_name} for ${row.pantry.name}`;
+      return action === "approve" ? `Approved ${what}.` : `Rejected ${what}.`;
     });
 
   const saveEdit = (row: Allocation, lbs: number, note: string) =>
@@ -127,6 +137,7 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
         method: "POST",
         body: JSON.stringify({ lbs, note: note || null }),
       });
+      return `Saved ${formatLbs(lbs)} of ${row.lot.item_name} for ${row.pantry.name} (proposed ${formatLbs(row.recommended_lbs)}).`;
     });
 
   const summary = data.summary;
@@ -163,7 +174,12 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
         </p>
       )}
       {notice && (
-        <p role={notice.kind === "error" ? "alert" : "status"} className={`rounded-md border p-3 text-sm ${NOTICE_STYLES[notice.kind]}`}>
+        <p
+          ref={noticeRef}
+          tabIndex={-1}
+          role={notice.kind === "error" ? "alert" : "status"}
+          className={`rounded-md border p-3 text-sm ${NOTICE_STYLES[notice.kind]}`}
+        >
           {notice.message}
         </p>
       )}
@@ -200,19 +216,43 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
           </dl>
 
           <div className="flex flex-wrap items-end gap-3">
-            <div role="tablist" aria-label="Show" className="flex overflow-hidden rounded-md border border-stone-300 text-sm">
-              {STATUS_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={filters.status === tab.value}
-                  onClick={() => setFilters({ ...filters, status: tab.value })}
-                  className={`px-3 py-1.5 ${filters.status === tab.value ? "bg-green-700 text-white" : "bg-white hover:bg-stone-50"}`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div
+              role="tablist"
+              aria-label="Show"
+              onKeyDown={(e) => {
+                const keys = ["ArrowRight", "ArrowLeft", "Home", "End"];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                const index = STATUS_TABS.findIndex((t) => t.value === filters.status);
+                const next =
+                  e.key === "Home" ? 0
+                  : e.key === "End" ? STATUS_TABS.length - 1
+                  : (index + (e.key === "ArrowRight" ? 1 : -1) + STATUS_TABS.length) % STATUS_TABS.length;
+                const target = STATUS_TABS[next];
+                if (!target) return;
+                setFilters({ ...filters, status: target.value });
+                document.getElementById(`tab-${target.value}`)?.focus();
+              }}
+              className="flex overflow-hidden rounded-md border border-stone-300 text-sm"
+            >
+              {STATUS_TABS.map((tab) => {
+                const selected = filters.status === tab.value;
+                return (
+                  <button
+                    key={tab.value}
+                    id={`tab-${tab.value}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls="allocation-results"
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => setFilters({ ...filters, status: tab.value })}
+                    className={`px-3 py-1.5 ${selected ? "bg-green-700 font-semibold text-white underline decoration-2 underline-offset-4" : "bg-white hover:bg-stone-50"}`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
             <div className="min-w-36">
               <label htmlFor="county" className="mb-1 block text-xs font-medium">County</label>
@@ -241,7 +281,7 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
               )}
               <button
                 type="button"
-                onClick={() => confirmRef.current?.showModal()}
+                onClick={() => setConfirmOpen(true)}
                 disabled={busy !== null || shownProposed.length === 0}
                 className="flex items-center gap-2 rounded-md bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -251,6 +291,7 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
             </div>
           </div>
 
+          <div id="allocation-results" role="tabpanel" aria-labelledby={`tab-${filters.status}`}>
           {groups.length === 0 ? (
             <p className="rounded-md border border-dashed border-stone-300 p-6 text-center text-stone-600">
               {data.rows.length === 0
@@ -276,25 +317,25 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
               ))}
             </ul>
           )}
+          </div>
         </>
       )}
 
-      <dialog ref={confirmRef} className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-lg p-5 shadow-xl backdrop:bg-black/40">
-        <h2 className="text-lg font-semibold">Approve all shown?</h2>
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Approve all shown?">
         <p className="mt-2 text-sm text-stone-700">
           This approves {shownProposed.length.toLocaleString("en-US")} shipments ({formatLbs(shownProposedLbs)}) to{" "}
           {new Set(shownProposed.map((r) => r.pantry.id)).size.toLocaleString("en-US")} pantries and takes that food out of stock.
           Only what the filters show is included. Approved shipments can&rsquo;t be undone here.
         </p>
         <div className="mt-4 flex justify-end gap-2">
-          <button type="button" onClick={() => confirmRef.current?.close()} className="rounded-md border border-stone-300 px-3 py-1.5 text-sm hover:bg-stone-50">
+          <button type="button" onClick={() => setConfirmOpen(false)} className="rounded-md border border-stone-300 px-3 py-1.5 text-sm hover:bg-stone-50">
             Cancel
           </button>
           <button type="button" onClick={() => void bulkApprove()} className="rounded-md bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-800">
             Approve {shownProposed.length.toLocaleString("en-US")}
           </button>
         </div>
-      </dialog>
+      </Dialog>
     </div>
   );
 }
@@ -314,7 +355,12 @@ function AllocationRow({
   const [lbsText, setLbsText] = useState("");
   const [note, setNote] = useState("");
   const [touched, setTouched] = useState(false);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const noteRef = useRef<HTMLInputElement>(null);
   const error = validateEditLbs(lbsText, row.lot.remaining_lbs);
+  useEffect(() => {
+    if (editing) amountRef.current?.focus(); // opening the form moves focus into it
+  }, [editing]);
   const proposed = row.status === "proposed";
   const rowBusy = busy === `row-${row.id}`;
   const urgent = row.lot.days_left != null && row.lot.days_left <= 3;
@@ -328,7 +374,8 @@ function AllocationRow({
   const noteError = controlCharError(note, true);
   function submit() {
     setTouched(true);
-    if (error || noteError) return;
+    if (error) return amountRef.current?.focus();
+    if (noteError) return noteRef.current?.focus();
     onSaveEdit(row, Number(lbsText), note.trim());
     setEditing(false);
   }
@@ -345,7 +392,11 @@ function AllocationRow({
           </p>
           <p className="text-sm text-stone-600">
             {(CATEGORY_LABELS as Record<string, string>)[row.lot.category] ?? row.lot.category} · {row.lot.storage_type} ·{" "}
-            <span className={urgent ? "font-medium text-red-700" : ""}>{expiryLabel(row)}</span> · {formatLbs(row.lot.remaining_lbs)} left in lot
+            <span className={urgent ? "font-medium text-red-700" : ""}>
+              {urgent && <strong className="mr-1">Expiring soon:</strong>}
+              {expiryLabel(row)}
+            </span>{" "}
+            · {formatLbs(row.lot.remaining_lbs)} left in lot
           </p>
         </div>
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[row.status] ?? ""}`}>{statusLabel(row.status)}</span>
@@ -386,6 +437,7 @@ function AllocationRow({
           <div>
             <label htmlFor={`lbs-${row.id}`} className="mb-1 block text-xs font-medium">New amount (lb)</label>
             <input
+              ref={amountRef}
               id={`lbs-${row.id}`}
               inputMode="decimal"
               value={lbsText}
@@ -401,8 +453,8 @@ function AllocationRow({
           </div>
           <div>
             <label htmlFor={`note-${row.id}`} className="mb-1 block text-xs font-medium">Note (optional)</label>
-            <input id={`note-${row.id}`} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} aria-invalid={touched && noteError !== null} className={inputClass} />
-            <p role="alert" className="mt-1 min-h-4 text-xs text-red-700">{touched && noteError ? noteError : ""}</p>
+            <input ref={noteRef} id={`note-${row.id}`} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} aria-invalid={touched && noteError !== null} aria-describedby={`note-err-${row.id}`} className={inputClass} />
+            <p id={`note-err-${row.id}`} role="alert" className="mt-1 min-h-4 text-xs text-red-700">{touched && noteError ? noteError : ""}</p>
           </div>
           <div className="flex gap-2 sm:pt-5">
             <button type="submit" disabled={busy !== null} className="rounded-md bg-green-700 px-3 py-1 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50">

@@ -11,11 +11,13 @@ import {
   formatPounds,
   formatRunTime,
   hasForecast,
+  describeForecast,
   improvement,
   type LatestRuns,
   weekLabel,
 } from "@/lib/forecasts";
 
+import { ChartTable } from "./chart-table";
 import { ForecastChart } from "./forecast-chart";
 
 type Loaded = { key: string; series?: ForecastSeries; error?: string };
@@ -208,9 +210,13 @@ export function ForecastView({ pantries, initialRuns }: { pantries: Pantry[]; in
               </p>
             ) : (
               <div className="mt-3">
+                <p id="forecast-summary" className="mb-2 text-sm text-stone-700">
+                  {describeForecast(series.pantry_name, category, points)}
+                </p>
                 <ForecastChart
                   points={points}
                   showLastYear={showLastYear}
+                  summaryId="forecast-summary"
                   label={`Weekly pounds for ${series.pantry_name}, ${category}: recent history${hasForecast(points) ? " and the forecast" : ""}.`}
                 />
                 {!hasForecast(points) && (
@@ -218,35 +224,24 @@ export function ForecastView({ pantries, initialRuns }: { pantries: Pantry[]; in
                     No forecast yet. Click <strong>Run forecast</strong> to predict next week.
                   </p>
                 )}
-                <details className="mt-3 text-sm">
-                  <summary className="cursor-pointer font-medium text-green-800">Show the numbers</summary>
-                  <div className="mt-2 overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="text-stone-500">
-                        <tr>
-                          <th className="py-1 pr-3 font-medium">Week of</th>
-                          <th className="py-1 pr-3 text-right font-medium">Actual</th>
-                          <th className="py-1 pr-3 text-right font-medium">Forecast</th>
-                          <th className="py-1 pr-3 text-right font-medium">Range</th>
-                          <th className="py-1 text-right font-medium">Last year</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-100 tabular-nums">
-                        {points.map((p) => (
-                          <tr key={p.week_start}>
-                            <td className="py-1 pr-3">{weekLabel(p.week_start)}</td>
-                            <td className="py-1 pr-3 text-right">{formatPounds(p.actual_lbs)}</td>
-                            <td className="py-1 pr-3 text-right">{formatPounds(p.p50_lbs)}</td>
-                            <td className="py-1 pr-3 text-right">
-                              {p.p10_lbs != null ? `${formatPounds(p.p10_lbs)} to ${formatPounds(p.p90_lbs)}` : "n/a"}
-                            </td>
-                            <td className="py-1 text-right">{formatPounds(p.baseline_lbs)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </details>
+                <ChartTable
+                  id="forecast"
+                  caption={`Weekly pounds for ${series.pantry_name}, ${category}: the numbers behind the chart`}
+                  columns={[
+                    { label: "Week of" },
+                    { label: "Actual", align: "right" },
+                    { label: "Forecast", align: "right" },
+                    { label: "Range", align: "right" },
+                    { label: "Last year", align: "right" },
+                  ]}
+                  rows={points.map((p) => [
+                    weekLabel(p.week_start),
+                    formatPounds(p.actual_lbs),
+                    formatPounds(p.p50_lbs),
+                    p.p10_lbs != null ? `${formatPounds(p.p10_lbs)} to ${formatPounds(p.p90_lbs)}` : "n/a",
+                    formatPounds(p.baseline_lbs),
+                  ])}
+                />
               </div>
             )}
           </>
@@ -265,13 +260,16 @@ export function ForecastView({ pantries, initialRuns }: { pantries: Pantry[]; in
               {weekLabel(backtest.backtest_start ?? backtest.horizon_week_start)} to{" "}
               {weekLabel(backtest.backtest_end ?? backtest.train_end)}.
             </p>
-            <div className="mt-3 overflow-x-auto">
+            <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Forecast accuracy table">
               <table className="w-full text-left text-sm">
+                <caption className="sr-only">Forecast error (WAPE) over the last 12 weeks: the model compared with last year&apos;s value</caption>
                 <thead className="border-b border-stone-200 text-stone-600">
                   <tr>
-                    <th className="py-2 pr-4 font-medium" />
-                    <th className="py-2 pr-4 text-right font-medium">Forecast model</th>
-                    <th className="py-2 text-right font-medium">Last year&apos;s value</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">
+                      <span className="sr-only">Measured on</span>
+                    </th>
+                    <th scope="col" className="py-2 pr-4 text-right font-medium">Forecast model</th>
+                    <th scope="col" className="py-2 text-right font-medium">Last year&apos;s value</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 tabular-nums">

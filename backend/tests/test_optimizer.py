@@ -140,13 +140,16 @@ def test_order_of_the_input_does_not_decide_which_lot_goes_first():
         assert shipped(out, lot_id=1) == pytest.approx(100.0, abs=0.01)
 
 
-def test_with_a_shortage_all_of_the_stock_goes_out_and_the_nearer_pantry_is_filled_first():
+def test_with_a_shortage_all_of_the_stock_goes_out_and_is_shared_by_share_of_demand():
+    """Stage 13b: scarce stock used to fill the nearer pantry first (100 lb and 50 lb). It is now
+    shared, so each pantry gets about 75 of its 100; the nearer one only wins the last slice."""
     lots = [lot(1, 1, 150)]
     wants = demand({(1, 1): (100, 100), (2, 1): (100, 100)})
     out = solve(lots, [pantry(1, miles=30), pantry(2, miles=5)], wants, DELIVERY)
     assert shipped(out) == pytest.approx(150.0, abs=0.01)
-    assert shipped(out, pantry_id=2) == pytest.approx(100.0, abs=0.01)  # the nearer pantry is whole
-    assert shipped(out, pantry_id=1) == pytest.approx(50.0, abs=0.01)
+    near, far = shipped(out, pantry_id=2), shipped(out, pantry_id=1)
+    assert near >= far and near - far <= 10.0 + 0.01  # at most one 10% slice apart
+    assert far >= 70.0
 
 
 def test_meeting_demand_beats_saving_distance():

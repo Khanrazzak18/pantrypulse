@@ -7,7 +7,7 @@ import { NavLinks } from "./nav-links";
 export function AppShell({ user, children }: { user: User; children: React.ReactNode }) {
   const role = user.role as Role;
   return (
-    <div className="min-h-screen">
+    <div className="min-h-[calc(100vh-5rem)]">
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto max-w-5xl space-y-2 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
@@ -26,7 +26,9 @@ export function AppShell({ user, children }: { user: User; children: React.React
           <NavLinks role={role} />
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-6">
+        {children}
+      </main>
     </div>
   );
 }

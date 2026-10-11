@@ -35,9 +35,10 @@ function DeliveryCard({ d }: { d: Delivery }) {
       <p className="mt-2 text-sm text-stone-700">
         <span className="font-medium">{dayLabel(d.delivery_date)}</span>
         {d.expiry_date && (
-          <span className={left != null && left <= 3 ? " text-red-700" : " text-stone-600"}>
+          <span className={left != null && left <= 3 ? " font-medium text-red-700" : " text-stone-600"}>
             {" "}
             · use by {dayLabel(d.expiry_date)}
+            {left != null && left <= 3 && " (soon)"}
           </span>
         )}
         {d.edited && <span className="text-stone-500"> · amount adjusted by the coordinator</span>}
@@ -77,7 +78,12 @@ export function PantryPortal({
     e.preventDefault();
     const found = validateReport(form);
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      // put the keyboard on the first thing that needs fixing
+      const first = found.category ? `cat-${CATEGORIES[0]}` : found.severity ? `sev-${SEVERITIES[0].value}` : found.turnedAway ? "turned" : "note";
+      setTimeout(() => document.getElementById(first)?.focus(), 0);
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
@@ -155,7 +161,7 @@ export function PantryPortal({
           </p>
         )}
         <form onSubmit={(e) => void submit(e)} noValidate className="mt-4 space-y-5">
-          <fieldset>
+          <fieldset aria-describedby={errors.category ? "category-error" : undefined}>
             <legend className="mb-2 text-sm font-medium">What ran short?</legend>
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((c) => {
@@ -164,54 +170,58 @@ export function PantryPortal({
                 return (
                   <button
                     key={c}
+                    id={`cat-${c}`}
                     type="button"
                     aria-pressed={selected}
                     onClick={() => choose(c)}
                     className={`min-h-12 rounded-lg border px-3 py-2 text-left text-sm font-medium ${selected ? "border-green-700 bg-green-50 text-green-900 ring-2 ring-green-200" : "border-stone-300 bg-white"}`}
                   >
+                    {selected && <span aria-hidden="true">✓ </span>}
                     {labelOf(c)}
-                    {done && <span className="block text-xs font-normal text-stone-500">Reported this week</span>}
+                    {done && <span className="block text-xs font-normal text-stone-600">Reported this week</span>}
                   </button>
                 );
               })}
             </div>
-            {errors.category && <p role="alert" className="mt-1 text-sm text-red-700">{errors.category}</p>}
+            {errors.category && <p id="category-error" role="alert" className="mt-1 text-sm text-red-700">{errors.category}</p>}
           </fieldset>
 
-          <fieldset>
+          <fieldset aria-describedby={errors.severity ? "severity-error" : undefined}>
             <legend className="mb-2 text-sm font-medium">How bad was it?</legend>
             <div className="grid grid-cols-3 gap-2">
               {SEVERITIES.map((s) => (
                 <button
                   key={s.value}
+                  id={`sev-${s.value}`}
                   type="button"
                   aria-pressed={form.severity === s.value}
                   onClick={() => setForm({ ...form, severity: s.value })}
                   className={`min-h-14 rounded-lg border px-2 py-2 text-center text-sm font-medium ${form.severity === s.value ? "border-green-700 bg-green-50 text-green-900 ring-2 ring-green-200" : "border-stone-300 bg-white"}`}
                 >
+                  {form.severity === s.value && <span aria-hidden="true">✓ </span>}
                   {s.label}
-                  <span className="block text-xs font-normal text-stone-500">{s.hint}</span>
+                  <span className="block text-xs font-normal text-stone-600">{s.hint}</span>
                 </button>
               ))}
             </div>
-            {errors.severity && <p role="alert" className="mt-1 text-sm text-red-700">{errors.severity}</p>}
+            {errors.severity && <p id="severity-error" role="alert" className="mt-1 text-sm text-red-700">{errors.severity}</p>}
           </fieldset>
 
           <div>
             <label htmlFor="turned" className="mb-1 block text-sm font-medium">
-              Households turned away <span className="font-normal text-stone-500">(optional)</span>
+              Households turned away <span className="font-normal text-stone-600">(optional)</span>
             </label>
-            <input id="turned" inputMode="numeric" className={field} value={form.turnedAway} onChange={(e) => setForm({ ...form, turnedAway: e.target.value })} aria-invalid={!!errors.turnedAway} />
-            {errors.turnedAway && <p role="alert" className="mt-1 text-sm text-red-700">{errors.turnedAway}</p>}
+            <input id="turned" inputMode="numeric" className={field} value={form.turnedAway} onChange={(e) => setForm({ ...form, turnedAway: e.target.value })} aria-invalid={!!errors.turnedAway} aria-describedby={errors.turnedAway ? "turned-error" : undefined} />
+            {errors.turnedAway && <p id="turned-error" role="alert" className="mt-1 text-sm text-red-700">{errors.turnedAway}</p>}
           </div>
 
           <div>
             <label htmlFor="note" className="mb-1 block text-sm font-medium">
-              Note <span className="font-normal text-stone-500">(optional)</span>
+              Note <span className="font-normal text-stone-600">(optional)</span>
             </label>
-            <textarea id="note" rows={2} className={field} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} aria-invalid={!!errors.note} />
-            <p className="mt-1 text-xs text-stone-500">{form.note.length}/{MAX_NOTE}</p>
-            {errors.note && <p role="alert" className="text-sm text-red-700">{errors.note}</p>}
+            <textarea id="note" rows={2} className={field} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} aria-invalid={!!errors.note} aria-describedby={errors.note ? "note-error" : undefined} />
+            <p className="mt-1 text-xs text-stone-600">{form.note.length}/{MAX_NOTE}</p>
+            {errors.note && <p id="note-error" role="alert" className="text-sm text-red-700">{errors.note}</p>}
           </div>
 
           <button

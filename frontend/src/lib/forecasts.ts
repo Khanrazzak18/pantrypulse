@@ -69,3 +69,19 @@ export function improvement(model: number | null | undefined, baseline: number |
   const change = (baseline - model) / baseline;
   return `${Math.abs(change * 100).toFixed(0)}% ${change >= 0 ? "lower" : "higher"} error than last year's value`;
 }
+
+
+/** A sentence a screen-reader user can use instead of the picture of the forecast chart. */
+export function describeForecast(name: string, category: string, points: SeriesPoint[]): string {
+  const actual = [...points].reverse().find((p) => p.actual_lbs != null);
+  const next = points.find((p) => p.actual_lbs == null && p.p50_lbs != null);
+  const parts = [`${name}, ${category}: ${points.length} weeks shown.`];
+  if (actual) parts.push(`The latest actual week (${weekLabel(actual.week_start)}) was ${formatPounds(actual.actual_lbs)}.`);
+  if (next) {
+    const range = next.p10_lbs != null ? `, likely between ${formatPounds(next.p10_lbs)} and ${formatPounds(next.p90_lbs)}` : "";
+    parts.push(`The forecast for next week (${weekLabel(next.week_start)}) is ${formatPounds(next.p50_lbs)}${range}.`);
+  } else {
+    parts.push("There is no forecast yet.");
+  }
+  return parts.join(" ");
+}

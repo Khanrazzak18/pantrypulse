@@ -18,6 +18,7 @@ import { ApiRequestError, apiFetch, LONG_TIMEOUT_MS } from "@/lib/api/client";
 import { CATEGORY_LABELS } from "@/lib/donations";
 import {
   addWeeks,
+  describeSeries,
   formatInt,
   formatLb,
   formatPct,
@@ -30,6 +31,7 @@ import {
 
 import { dateRangeError, MAX_DATE, MIN_DATE } from "@/lib/text";
 
+import { ChartFigure } from "./chart-table";
 import { SummaryEditor } from "./summary-editor";
 
 const inputClass =
@@ -40,14 +42,14 @@ const catLabel = (c: string) => (CATEGORY_LABELS as Record<string, string>)[c] ?
 function Clock() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
+    const id = setInterval(() => setNow(new Date()), 30_000); // by the minute: nothing ticks each second
     return () => clearInterval(id);
   }, []);
   return (
     <p className="text-sm text-stone-600" suppressHydrationWarning>
       {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
       {" · "}
-      {now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })}
+      {now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
     </p>
   );
 }
@@ -55,20 +57,12 @@ function Clock() {
 function Kpi({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-4">
-      <dt className="text-sm text-stone-500">{label}</dt>
-      <dd className="mt-1 text-2xl font-semibold tabular-nums">{value}</dd>
-      {note && <p className="mt-0.5 text-xs text-stone-500">{note}</p>}
+      <dt className="text-sm text-stone-600">{label}</dt>
+      <dd className="mt-1 text-2xl font-semibold tabular-nums">
+        {value}
+        {note && <span className="mt-0.5 block text-xs font-normal text-stone-600">{note}</span>}
+      </dd>
     </div>
-  );
-}
-
-function ChartCard({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-lg border border-stone-200 bg-white p-4">
-      <h2 className="font-semibold">{title}</h2>
-      {hint && <p className="text-xs text-stone-500">{hint}</p>}
-      <div className="mt-3 h-56">{children}</div>
-    </section>
   );
 }
 
@@ -169,11 +163,11 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor="from" className="mb-1 block text-xs font-medium">From</label>
-          <input id="from" type="date" className={inputClass} value={start} min={MIN_DATE} max={MAX_DATE} onChange={(e) => e.target.value && setStart(e.target.value)} />
+          <input id="from" type="date" className={inputClass} value={start} min={MIN_DATE} max={MAX_DATE} aria-invalid={Boolean(rangeError)} aria-describedby={rangeError ? "range-error" : undefined} onChange={(e) => e.target.value && setStart(e.target.value)} />
         </div>
         <div>
           <label htmlFor="to" className="mb-1 block text-xs font-medium">To</label>
-          <input id="to" type="date" className={inputClass} value={end} min={MIN_DATE} max={MAX_DATE} onChange={(e) => e.target.value && setEnd(e.target.value)} />
+          <input id="to" type="date" className={inputClass} value={end} min={MIN_DATE} max={MAX_DATE} aria-invalid={Boolean(rangeError)} aria-describedby={rangeError ? "range-error" : undefined} onChange={(e) => e.target.value && setEnd(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           {dataEnd &&
@@ -192,7 +186,7 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
             ))}
         </div>
       </div>
-      {rangeError && <p role="alert" className="text-sm text-red-700">{rangeError}</p>}
+      {rangeError && <p id="range-error" role="alert" className="text-sm text-red-700">{rangeError}</p>}
       {error && (
         <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">
           {error}{" "}
@@ -204,7 +198,7 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
 
       {m && (
         <div className={loading ? "opacity-60 transition-opacity" : ""} aria-busy={loading}>
-          {loading && <p role="status" className="mb-2 text-sm text-stone-500">Loading…</p>}
+          {loading && <p role="status" className="mb-2 text-sm text-stone-600">Loading…</p>}
           {empty ? (
             <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-stone-600">
               No distributions, shortage reports or lots in this date range.
@@ -219,86 +213,107 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
               </dl>
 
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <ChartCard title="Spoilage % over time" hint="Expired pounds of perishable lots by the week they arrived">
+                <ChartFigure
+                  id="spoilage"
+                  title="Spoilage % over time"
+                  hint="Expired pounds of perishable lots by the week they arrived"
+                  summary={describeSeries("Spoilage", weekly.map((w) => ({ label: w.label, value: w.spoilage_pct })), (n) => `${n.toFixed(1)}%`)}
+                  columns={[{ label: "Week of" }, { label: "Spoilage", align: "right" }]}
+                  rows={weekly.map((w) => [w.label, w.spoilage_pct == null ? "n/a" : `${w.spoilage_pct.toFixed(1)}%`])}
+                >
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={weekly}>
+                    <LineChart data={weekly} accessibilityLayer={false}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                       <XAxis dataKey="label" fontSize={11} interval="preserveStartEnd" />
                       <YAxis fontSize={11} unit="%" width={44} />
                       <Tooltip formatter={(v) => (v == null ? "n/a" : `${Number(v).toFixed(1)}%`)} />
-                      <Line type="monotone" dataKey="spoilage_pct" name="Spoilage" stroke={COLORS.red} dot={false} strokeWidth={2} connectNulls />
+                      <Line type="monotone" dataKey="spoilage_pct" name="Spoilage" stroke={COLORS.red} dot={false} strokeWidth={2} connectNulls isAnimationActive={false} />
                     </LineChart>
                   </ResponsiveContainer>
-                </ChartCard>
-                <ChartCard title="Stockouts over time" hint="Shortage reports, and the share of pantry-weeks with one">
+                </ChartFigure>
+                <ChartFigure
+                  id="stockouts"
+                  title="Stockouts over time"
+                  hint="Shortage reports (solid line), and the share of pantry-weeks with one (dashed line)"
+                  summary={`${describeSeries("Shortage reports", weekly.map((w) => ({ label: w.label, value: w.shortage_reports })), (n) => formatInt(n))} ${describeSeries("Pantry-weeks short", weekly.map((w) => ({ label: w.label, value: w.stockout_pct })), (n) => `${n.toFixed(1)}%`)}`}
+                  columns={[{ label: "Week of" }, { label: "Reports", align: "right" }, { label: "Pantry-weeks short", align: "right" }]}
+                  rows={weekly.map((w) => [w.label, formatInt(w.shortage_reports), w.stockout_pct == null ? "n/a" : `${w.stockout_pct.toFixed(1)}%`])}
+                >
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={weekly}>
+                    <LineChart data={weekly} accessibilityLayer={false}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                       <XAxis dataKey="label" fontSize={11} interval="preserveStartEnd" />
                       <YAxis yAxisId="n" fontSize={11} width={44} />
                       <YAxis yAxisId="p" orientation="right" fontSize={11} unit="%" width={44} />
                       <Tooltip />
                       <Legend />
-                      <Line yAxisId="n" type="monotone" dataKey="shortage_reports" name="Reports" stroke={COLORS.amber} dot={false} strokeWidth={2} />
-                      <Line yAxisId="p" type="monotone" dataKey="stockout_pct" name="Pantry-weeks short %" stroke={COLORS.stone} dot={false} strokeWidth={2} connectNulls />
+                      <Line yAxisId="n" type="monotone" dataKey="shortage_reports" name="Reports" stroke={COLORS.amber} dot={false} strokeWidth={2} isAnimationActive={false} />
+                      <Line yAxisId="p" type="monotone" dataKey="stockout_pct" name="Pantry-weeks short %" stroke={COLORS.stone} strokeDasharray="6 3" dot={false} strokeWidth={2} connectNulls isAnimationActive={false} />
                     </LineChart>
                   </ResponsiveContainer>
-                </ChartCard>
-                <ChartCard title="Pounds distributed over time">
+                </ChartFigure>
+                <ChartFigure
+                  id="pounds"
+                  title="Pounds distributed over time"
+                  summary={describeSeries("Pounds distributed", weekly.map((w) => ({ label: w.label, value: w.lbs_distributed })), (n) => formatLb(n))}
+                  columns={[{ label: "Week of" }, { label: "Pounds", align: "right" }]}
+                  rows={weekly.map((w) => [w.label, formatLb(w.lbs_distributed)])}
+                >
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={weekly}>
+                    <BarChart data={weekly} accessibilityLayer={false}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                       <XAxis dataKey="label" fontSize={11} interval="preserveStartEnd" />
                       <YAxis fontSize={11} width={56} tickFormatter={(v) => Number(v).toLocaleString("en-US")} />
                       <Tooltip formatter={(v) => formatLb(Number(v))} />
-                      <Bar dataKey="lbs_distributed" name="Pounds" fill={COLORS.green} />
+                      <Bar dataKey="lbs_distributed" name="Pounds" fill={COLORS.green} isAnimationActive={false} />
                     </BarChart>
                   </ResponsiveContainer>
-                </ChartCard>
-                <ChartCard title="Households served over time" hint="Once per pantry-week">
+                </ChartFigure>
+                <ChartFigure
+                  id="households"
+                  title="Households served over time"
+                  hint="Once per pantry-week"
+                  summary={describeSeries("Households served", weekly.map((w) => ({ label: w.label, value: w.households_served })), (n) => formatInt(n))}
+                  columns={[{ label: "Week of" }, { label: "Households", align: "right" }]}
+                  rows={weekly.map((w) => [w.label, formatInt(w.households_served)])}
+                >
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={weekly}>
+                    <LineChart data={weekly} accessibilityLayer={false}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                       <XAxis dataKey="label" fontSize={11} interval="preserveStartEnd" />
                       <YAxis fontSize={11} width={56} tickFormatter={(v) => Number(v).toLocaleString("en-US")} />
                       <Tooltip formatter={(v) => formatInt(Number(v))} />
-                      <Line type="monotone" dataKey="households_served" name="Households" stroke={COLORS.green} dot={false} strokeWidth={2} />
+                      <Line type="monotone" dataKey="households_served" name="Households" stroke={COLORS.green} dot={false} strokeWidth={2} isAnimationActive={false} />
                     </LineChart>
                   </ResponsiveContainer>
-                </ChartCard>
+                </ChartFigure>
               </div>
 
-              <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4">
-                <h2 className="font-semibold">By category</h2>
-                <div className="mt-3 h-64">
+              <div className="mt-4">
+                <ChartFigure
+                  id="categories"
+                  title="By category"
+                  hint="Pounds distributed in the range, with shortage reports and spoilage"
+                  className="h-64"
+                  summary={
+                    categories.length === 0
+                      ? "By category: no data in this range."
+                      : `By category: ${categories.length} categories. Most pounds: ${[...categories].sort((a, b) => b.lbs_distributed - a.lbs_distributed)[0]?.name} (${formatLb([...categories].sort((a, b) => b.lbs_distributed - a.lbs_distributed)[0]?.lbs_distributed ?? 0)}). Fewest: ${[...categories].sort((a, b) => a.lbs_distributed - b.lbs_distributed)[0]?.name} (${formatLb([...categories].sort((a, b) => a.lbs_distributed - b.lbs_distributed)[0]?.lbs_distributed ?? 0)}).`
+                  }
+                  columns={[{ label: "Category" }, { label: "Pounds", align: "right" }, { label: "Shortage reports", align: "right" }, { label: "Spoilage", align: "right" }]}
+                  rows={categories.map((c) => [c.name, formatLb(c.lbs_distributed), String(c.shortage_reports), c.spoilage_pct == null ? "n/a" : formatPct(c.spoilage_pct)])}
+                >
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={categories} layout="vertical" margin={{ left: 20 }}>
+                    <BarChart data={categories} layout="vertical" margin={{ left: 20 }} accessibilityLayer={false}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                       <XAxis type="number" fontSize={11} tickFormatter={(v) => Number(v).toLocaleString("en-US")} />
                       <YAxis type="category" dataKey="name" fontSize={11} width={80} />
                       <Tooltip formatter={(v) => formatLb(Number(v))} />
-                      <Bar dataKey="lbs_distributed" name="Pounds distributed" fill={COLORS.green} />
+                      <Bar dataKey="lbs_distributed" name="Pounds distributed" fill={COLORS.green} isAnimationActive={false} />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="text-stone-500">
-                      <tr><th className="py-1 pr-4 font-medium">Category</th><th className="py-1 pr-4 font-medium">Pounds</th><th className="py-1 pr-4 font-medium">Shortage reports</th><th className="py-1 font-medium">Spoilage</th></tr>
-                    </thead>
-                    <tbody>
-                      {categories.map((c) => (
-                        <tr key={c.category} className="border-t border-stone-100">
-                          <td className="py-1 pr-4">{c.name}</td>
-                          <td className="py-1 pr-4 tabular-nums">{formatLb(c.lbs_distributed)}</td>
-                          <td className="py-1 pr-4 tabular-nums">{c.shortage_reports}</td>
-                          <td className="py-1 tabular-nums">{c.spoilage_pct == null ? "n/a" : formatPct(c.spoilage_pct)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+                </ChartFigure>
+              </div>
             </>
           )}
         </div>

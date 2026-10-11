@@ -15,3 +15,33 @@
     height: 1.25rem;
   }
 }
+
+/* Visible keyboard focus on everything that can take it. Utilities such as `outline-none` are
+   overridden on purpose: the ring colours in the components are too faint to be the only cue. */
+:focus-visible {
+  outline: 3px solid #1d4ed8 !important;
+  outline-offset: 2px !important;
+}
+/* Elements focused by a script (the main content after the skip link) are not controls. */
+[tabindex="-1"]:focus {
+  outline: none !important;
+}
+
+/* Honour "reduce motion": no spinning, pulsing, fading or smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Windows high contrast and forced colours: keep selection and focus visible. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight !important;
+  }
+}

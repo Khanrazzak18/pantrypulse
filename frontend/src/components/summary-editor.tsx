@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ApiRequestError, apiFetch, LONG_TIMEOUT_MS } from "@/lib/api/client";
 import { controlCharError } from "@/lib/text";
@@ -17,6 +17,7 @@ export function SummaryEditor({ dataStart, dataEnd }: { dataStart: string; dataE
   const [error, setError] = useState<string | null>(null);
 
   const [loadedMonth, setLoadedMonth] = useState<string | null>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
 
   // "Loading" is simply "the data on screen is not for the selected month".
   useEffect(() => {
@@ -57,11 +58,13 @@ export function SummaryEditor({ dataStart, dataEnd }: { dataStart: string; dataE
   async function approve() {
     if (!text.trim()) {
       setError("Write the summary text before approving.");
+      setTimeout(() => textRef.current?.focus(), 0);
       return;
     }
     const bad = controlCharError(text, true);
     if (bad) {
       setError(bad);
+      setTimeout(() => textRef.current?.focus(), 0);
       return;
     }
     setState("approving");
@@ -104,7 +107,7 @@ export function SummaryEditor({ dataStart, dataEnd }: { dataStart: string; dataE
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+        <p id="summary-error" role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">
           {error}
           {!approved && (
             <>
@@ -118,7 +121,7 @@ export function SummaryEditor({ dataStart, dataEnd }: { dataStart: string; dataE
       )}
 
       {loading ? (
-        <p role="status" className="mt-3 text-sm text-stone-500">Loading…</p>
+        <p role="status" className="mt-3 text-sm text-stone-600">Loading…</p>
       ) : (
         <div className="mt-3 space-y-3">
           {approved && (
@@ -131,7 +134,10 @@ export function SummaryEditor({ dataStart, dataEnd }: { dataStart: string; dataE
           )}
           <label htmlFor="summary-text" className="sr-only">Summary text</label>
           <textarea
+            ref={textRef}
             id="summary-text"
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "summary-error" : undefined}
             rows={7}
             value={text}
             onChange={(e) => setText(e.target.value)}

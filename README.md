@@ -180,6 +180,8 @@ refresh. A pantry manager sees only their own pantry.
 | `make backtest` | Forecast backtest over the last 12 weeks (no AWS, about a minute); writes `docs/eval/forecast-backtest.md` |
 | `make simulate` | Replay the last 12 weeks under a manual rule and the optimizer (run `make backtest` first); writes `docs/eval/allocation-sim.md` |
 | `make e2e` | End-to-end tests (Playwright) on a separate API (port 8101) and web server (port 3101) using the test database and a mock AI; writes `docs/testing/checklist.md` and `a11y-report.md`. Never run it at the same time as `make test` |
+| `make fairness` | Share of demand met by county, distance band and pantry size, before and after the fairness change, including a half-stock stress test (run `make backtest` first; no AWS); writes `docs/eval/fairness.md` |
+| `make security` | gitleaks (history and tree), bandit, pip-audit, an npm audit gate and the security tests |
 | `make e2e-report` | Rewrite the two testing reports from the last e2e run |
 | `make eval` | The intake eval (calls Bedrock, costs about 245,000 tokens) and then the backtest |
 | `make golden` | Rebuild the golden manifests from their fixed seed |
@@ -187,7 +189,7 @@ refresh. A pantry manager sees only their own pantry.
 
 ## Testing
 
-`make test` runs ruff and the backend suite (1012 tests against the separate test database), then
+`make test` runs ruff and the backend suite (1,163 tests against the separate test database), then
 frontend lint, typecheck and the production build. It never calls AWS. Tests are written before the
 code they check; the suites cover constraints and migrations, auth and lockout, intake, forecasting
 and its leakage checks, the optimizer, allocation workflow, the pantry portal, dashboard numbers,
@@ -202,7 +204,9 @@ own production web server on port 3101, so your dev app and real Bedrock are nev
 AI and the reset route live only in `backend/scripts/e2e_server.py`; a test proves the normal app
 cannot load them. Every feature, button and error state is listed in
 [docs/testing/checklist.md](docs/testing/checklist.md) with the test that covers it, accessibility
-findings are in [docs/testing/a11y-report.md](docs/testing/a11y-report.md), and bugs found but not
+scan results are in [docs/testing/a11y-report.md](docs/testing/a11y-report.md) (any WCAG 2.1 A or AA violation
+fails the run), what was built for keyboard, screen-reader, zoom and reduced-motion users is in
+[docs/accessibility.md](docs/accessibility.md), and bugs found but not
 yet fixed are in [docs/testing/bugs.md](docs/testing/bugs.md). A test marked `test.fail()` with a
 `[BUG-n]` in its title proves a known bug and flips to a failure the moment the bug is fixed.
 `make test` and `make e2e` share the test database, so run them one after the other.
@@ -276,10 +280,23 @@ what was donated (pilot against comparison pantries in the same weeks, or a step
 pantry reports of food that expired after delivery.
 
 On stockouts the simulation is **not conclusive**. With two deliveries a week (the primary setup)
-pantry-weeks with a shortage were 31.3% for the manual stand-in and 33.2% for the optimizer; the
-optimizer was better with one delivery a week (38.9% against 57.4%) and worse than a coordinator who
-keeps track of what has already been sent (18.0%). The result depends on how good the manual process
+pantry-weeks with a shortage were 31.3% for the manual stand-in and 34.8% for the optimizer (it was
+33.2% before Stage 13's fairness change, which spreads a shortage over more pantries instead of
+concentrating it); the optimizer was better with one delivery a week (46.2% against 57.4%) and worse
+than a coordinator who keeps track of what has already been sent (18.0%). The result depends on how good the manual process
 is assumed to be, which nobody has measured, so the 30% stockout target is not shown by this data.
+
+## Accessibility and responsible AI
+
+- **Accessibility** targets WCAG 2.1 AA. A skip link, landmarks, a title per route, visible focus, linked form errors with focus on the
+  first one, announcements, modal dialogs that trap focus and return it, captions and scopes on tables, a text summary and "View as table"
+  for every chart, no meaning in colour alone, reduced motion, 200% zoom and keyboard-only journeys are built and tested; the axe scans
+  must show zero violations. Details and what is not covered (no manual screen-reader test): [docs/accessibility.md](docs/accessibility.md).
+- **Responsible AI** (human review, transparency, data minimisation, guardrails, accountability, limitations):
+  [docs/responsible-ai.md](docs/responsible-ai.md). **Fairness:** allocation was measured for the share of forecast demand met by county,
+  distance band and pantry size. With normal stock every group is within 1 point of the average; with half the stock the old objective gave
+  the farthest pantries 1.4% of their forecast (59 points below average) and the tiered-coverage objective now gives them 56.9% (4 points below),
+  at the cost of more pound-miles and more pantries being a little short instead of a few being starved ([docs/eval/fairness.md](docs/eval/fairness.md)).
 
 ## Security
 

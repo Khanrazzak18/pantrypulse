@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import { PageTitle } from "./page-title";
+
 /** The one look for "something went wrong" and "not found" screens, so every segment matches. */
 export function ErrorPanel({
   title,
@@ -20,6 +22,7 @@ export function ErrorPanel({
 }) {
   return (
     <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-5">
+      <PageTitle title={`${title} · PantryPulse`} />
       <h1 className="text-lg font-semibold text-red-900">{title}</h1>
       <p className="mt-1 text-red-800">{message}</p>
       {reference && <p className="mt-1 text-xs text-red-700">Reference: {reference}</p>}

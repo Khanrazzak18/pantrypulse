@@ -1,7 +1,7 @@
 # Allocation simulation
 
-- Run: 2026-10-08 18:24
-- Window: 12 weeks, 2026-07-13 to 2026-09-28 (the weeks of backtest run 4); food goes out on Wednesday and Friday
+- Run: 2026-10-11 16:14
+- Window: 12 weeks, 2026-07-13 to 2026-09-28 (the weeks of backtest run 1); food goes out on Wednesday and Friday
 - Stock: 330 lots, 5,585,070 lb usable, arriving on their real received dates; the warehouse starts empty and unshipped stock carries over
 - Pantries: 85; true demand comes from the data generator and is used only to score the result (and by the manual rule, below)
 
@@ -26,14 +26,14 @@ Primary setup: deliveries on Wednesday and Friday. Manual rule: mean of 10 runs 
 
 | Measure | Manual rule | Optimizer | Change |
 | --- | --- | --- | --- |
-| Pantry-weeks with a shortage (any category under 90% of demand) | 31.3% (29.9% to 33.8%) | 33.2% | +6% |
-| Pantry-category-weeks short | 4.4% (4.3% to 4.8%) | 5.8% | +33% |
-| Perishable loss, definition A (expired in the warehouse plus sent beyond need) | 13.7% (13.7% to 13.8%) | 14.3% | +4% |
-| Perishable loss, definition B (expired in the warehouse only) | 0.0% (0.0% to 0.0%) | 3.9% | n/a |
+| Pantry-weeks with a shortage (any category under 90% of demand) | 31.3% (29.9% to 33.8%) | 34.8% | +11% |
+| Pantry-category-weeks short | 4.4% (4.3% to 4.8%) | 6.2% | +42% |
+| Perishable loss, definition A (expired in the warehouse plus sent beyond need) | 13.7% (13.7% to 13.8%) | 14.1% | +3% |
+| Perishable loss, definition B (expired in the warehouse only) | 0.0% (0.0% to 0.0%) | 3.8% | n/a |
 
-**Stockout target (30% fewer shortages): not met (the optimizer was not better than the manual rule).** Pantry-weeks with a shortage went from 31.3% to 33.2%, a change of +6.0%.
+**Stockout target (30% fewer shortages): not met (the optimizer was not better than the manual rule).** Pantry-weeks with a shortage went from 31.3% to 34.8%, a change of +11.0%.
 
-Why the optimizer still runs short: 62% of its short pantry-category-weeks were weeks when true demand was above the P90 forecast, which the optimizer never sends beyond (a rule of the design). The manual rule is not capped, and on average it ships 119% of true demand because the stock on hand exceeds demand in these data.
+Why the optimizer still runs short: 58% of its short pantry-category-weeks were weeks when true demand was above the P90 forecast, which the optimizer never sends beyond (a rule of the design). The manual rule is not capped, and on average it ships 119% of true demand because the stock on hand exceeds demand in these data.
 
 Spoilage: no verdict, for the reason above. Definition A counts food that expires in the warehouse plus food sent to a pantry beyond its true demand (assumed to go to waste). Definition B counts only warehouse expiry, which flatters the manual rule because it ships everything the day it is decided, so little waits long enough to expire. The optimizer keeps stock back when pantries are already covered up to their P90 forecast, which is why B can be higher for it. Both are shown so neither choice hides the other.
 
@@ -43,11 +43,11 @@ Pantry-weeks with a shortage, under different delivery schedules and two version
 
 | Schedule | Manual (as above) | Manual, netted | Optimizer |
 | --- | --- | --- | --- |
-| Wednesday and Friday (primary) | 31.4% | 18.0% | 33.2% |
-| Friday only (everything that arrived Monday to Friday) | 57.4% | 57.4% | 38.9% |
-| Wednesday only (stock that arrived by Wednesday) | 99.9% | 99.9% | 82.9% |
+| Wednesday and Friday (primary) | 31.4% | 18.0% | 34.8% |
+| Friday only (everything that arrived Monday to Friday) | 57.4% | 57.4% | 46.2% |
+| Wednesday only (stock that arrived by Wednesday) | 99.9% | 99.9% | 100.0% |
 
-The optimizer had fewer shortage pantry-weeks than the manual rule in 2 of 3 schedules, and than the netted manual rule in 2 of 3. So this simulation does not give a robust stockout reduction of 30%: the size of the effect, and its sign, depends on how good the current process is and how often food goes out, neither of which has been measured. A pilot would have to measure them.
+The optimizer had fewer shortage pantry-weeks than the manual rule in 1 of 3 schedules, and than the netted manual rule in 1 of 3. So this simulation does not give a robust stockout reduction of 30%: the size of the effect, and its sign, depends on how good the current process is and how often food goes out, neither of which has been measured. A pilot would have to measure them.
 
 Wednesday-only delivery is shown to make a point, not as a plan: short-lived stock that arrives on Thursday or Friday expires before the next Wednesday, so both policies look far worse. That is a scheduling effect, not an allocation one.
 
@@ -57,10 +57,10 @@ The manual rule's error is an assumption (how well a coordinator's split follows
 
 | Error (lognormal sigma) | Manual | Optimizer |
 | --- | --- | --- |
-| 0.00 | 0.0% | 33.2% |
-| 0.15 | 31.4% | 33.2% |
-| 0.30 | 77.8% | 33.2% |
-| 0.50 | 95.4% | 33.2% |
+| 0.00 | 0.0% | 34.8% |
+| 0.15 | 31.4% | 34.8% |
+| 0.30 | 77.8% | 34.8% |
+| 0.50 | 95.4% | 34.8% |
 
 The 0.15 used above is a judgment, not a measurement of Harvest Bridge's coordinators. For scale, the seasonal-naive baseline in the forecast backtest, which is roughly what a person working from last year's numbers could do, has an error of about 14%.
 
@@ -70,6 +70,6 @@ The 0.15 used above is a judgment, not a measurement of Harvest Bridge's coordin
 - Manual rule: ships everything on hand, split between pantries in proportion to true demand times a lognormal error. It uses true demand, which no coordinator has; the optimizer uses only the forecasts the backtest made before each week. This favors the manual rule on information.
 - The manual rule ignores pantry storage capacity; the optimizer respects it.
 - Food goes out on Wednesday, and again on Friday for lots that arrived since (a re-run, as in the app: forecasts and pantry capacity are net of what already went). A lot that arrives on the weekend waits for the next Wednesday. Food a pantry gets beyond its true demand counts as lost in definition A.
-- Perishable percentages are of perishable pounds that were shipped or expired during the window (2,867,178 lb for the optimizer); stock still in the warehouse at the end is left out so neither policy is charged for food it has not had time to handle.
+- Perishable percentages are of perishable pounds that were shipped or expired during the window (2,867,927 lb for the optimizer); stock still in the warehouse at the end is left out so neither policy is charged for food it has not had time to handle.
 - The one optimizer setting chosen with help from this simulation is the reward for demand between P50 and P90 (0.5 of a pound's value). A prototype compared 0, 0.3, 0.6 and 0.9 on this same data, and 0 (aim at P50 only) was clearly worse. The other weights (urgency, distance) were set by reasoning and not tuned. The result therefore is not an untouched out-of-sample test of the optimizer.
 - Demand, supply and spoilage are synthetic. These numbers show how the method behaves on a simulated food bank, not what Harvest Bridge would see.

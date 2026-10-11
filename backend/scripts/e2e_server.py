@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -124,6 +124,46 @@ def build_app() -> FastAPI:
                 conn.execute(text(statement))
         llm.set_mode("ok")
         llm.calls.clear()
+
+    @app.post("/__e2e/urgent-lot", status_code=204)
+    def urgent_lot() -> None:
+        """A confirmed lot of fresh produce that expires two days after the pinned date. The API
+        refuses to confirm an expiry that is in the real past, so tests cannot make one that way."""
+        expiry = (today + timedelta(days=2)).isoformat()
+        with engine.begin() as conn:
+            donor = conn.execute(
+                text(
+                    "INSERT INTO donors (name, donor_type) "
+                    "VALUES ('Urgent Foods', 'grocery') RETURNING id"
+                )
+            ).scalar_one()
+            donation = conn.execute(
+                text(
+                    "INSERT INTO donations (donor_id, source_type, status, received_at) "
+                    "VALUES (:d, 'email', 'confirmed', now()) RETURNING id"
+                ),
+                {"d": donor},
+            ).scalar_one()
+            category = conn.execute(
+                text("SELECT id FROM categories WHERE name = 'produce'")
+            ).scalar_one()
+            item = conn.execute(
+                text(
+                    "INSERT INTO donation_items (donation_id, name, category_id, quantity, unit, "
+                    "estimated_weight_lbs, expiry_date, storage_type) VALUES "
+                    "(:n, 'Fresh spinach', :c, 20, 'case', 900, :e, 'refrigerated') RETURNING id"
+                ),
+                {"n": donation, "c": category, "e": expiry},
+            ).scalar_one()
+            conn.execute(
+                text(
+                    "INSERT INTO inventory_lots (donation_item_id, category_id, storage_type, "
+                    "received_lbs, remaining_lbs, expired_lbs, received_date, expiry_date, status) "
+                    "VALUES "
+                    "(:i, :c, 'refrigerated', 900, 900, 0, :r, :e, 'available')"
+                ),
+                {"i": item, "c": category, "r": today.isoformat(), "e": expiry},
+            )
 
     @app.post("/__e2e/llm", status_code=204)
     def set_llm(body: ModeIn) -> None:

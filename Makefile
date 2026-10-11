@@ -6,7 +6,7 @@ BACKEND := backend
 FRONTEND := frontend
 VENV := $(BACKEND)/.venv
 
-.PHONY: setup db db-down migrate seed dev test security security-tools hooks e2e e2e-report eval backtest golden refresh check-env api-types simulate
+.PHONY: setup db db-down migrate seed dev test security security-tools hooks e2e e2e-report eval backtest golden refresh check-env api-types simulate fairness
 
 check-env:
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' and fill it in."; exit 1; }
@@ -93,6 +93,12 @@ backtest: check-env
 # Replays the last 12 weeks under a manual rule and the optimizer: docs/eval/allocation-sim.md.
 simulate: check-env
 	cd $(BACKEND) && .venv/bin/python -m eval.allocation_sim
+
+# Share of P50 demand met by county, distance band and pantry size, before and after the tiered-coverage
+# objective, on the latest run, the 12-week simulation and a half-stock stress test: docs/eval/fairness.md.
+# No AWS and no database writes; needs `make backtest` first.
+fairness: check-env
+	cd $(BACKEND) && .venv/bin/python -m eval.fairness
 
 # Both evals. The intake eval calls Bedrock (costs tokens): docs/eval/intake-eval.md.
 eval: check-env

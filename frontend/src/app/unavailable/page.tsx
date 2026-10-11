@@ -9,7 +9,7 @@ export default async function UnavailablePage({ searchParams }: { searchParams: 
   // Only a path on this site: never send someone to another address.
   const safe = from && from.startsWith("/") && !from.startsWith("//") && !from.includes("\\") ? from : "/";
   return (
-    <main className="mx-auto max-w-xl px-4 py-12">
+    <main id="main-content" tabIndex={-1} className="mx-auto max-w-xl px-4 py-12">
       <UnavailableView from={safe} />
     </main>
   );

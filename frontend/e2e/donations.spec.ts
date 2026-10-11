@@ -31,7 +31,9 @@ async function openReview(page: Page, body: string | Buffer = EML) {
   await expect(page.getByRole("heading", { name: /Items/ })).toBeVisible();
   return { id, api };
 }
-const firstRow = (page: Page) => page.getByRole("row").first();
+// the grid has a header row (column headers) and one row of cells per item: these are the item rows
+const itemRows = (page: Page) => page.getByRole("row").filter({ has: page.getByRole("cell") });
+const firstRow = (page: Page) => itemRows(page).first();
 
 test.describe("donation list", () => {
   test.beforeEach(async ({ page }) => {
@@ -236,7 +238,7 @@ test.describe("review", () => {
   test("[REV-01][REV-19] the review page has donor, items and buttons, and a way back", async ({ page }) => {
     await openReview(page);
     await expect(page.locator("#donor")).toBeVisible();
-    await expect(page.getByRole("row")).toHaveCount(3);
+    await expect(itemRows(page)).toHaveCount(3);
     await expect(page.getByRole("button", { name: /Confirm and add 3 lots/ })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reject", exact: true })).toBeVisible();
     await page.getByRole("link", { name: /All donations/ }).click();
@@ -365,7 +367,7 @@ test.describe("review", () => {
   test("[REV-13] removing rows works, and removing every row blocks the confirm", async ({ page }) => {
     await openReview(page);
     await page.getByRole("button", { name: /^Remove row 1/ }).click();
-    await expect(page.getByRole("row")).toHaveCount(2);
+    await expect(itemRows(page)).toHaveCount(2);
     await page.getByRole("button", { name: /^Remove row 1/ }).click();
     await page.getByRole("button", { name: /^Remove row 1/ }).click();
     await expect(page.getByText(/No items left/)).toBeVisible();
@@ -377,7 +379,7 @@ test.describe("review", () => {
   test("[REV-14] a new row is empty and must be filled in", async ({ page }) => {
     await openReview(page);
     await page.getByRole("button", { name: "+ Add a row" }).click();
-    await expect(page.getByRole("row")).toHaveCount(4);
+    await expect(itemRows(page)).toHaveCount(4);
     await page.getByRole("button", { name: /Confirm and add/ }).click();
     await expect(page.getByText("Enter the item name.")).toBeVisible();
   });

@@ -182,11 +182,11 @@ test.describe("dashboard", () => {
     for (const label of ["Perishable spoilage", "Pantry-weeks with a shortage", "Pounds distributed", "Households served"]) {
       await expect(page.locator("dt", { hasText: label })).toBeVisible();
     }
-    const clock = page.locator("main p", { hasText: /\d{4}.*\d:\d\d:\d\d/ }).first();
-    const t1 = await clock.innerText();
-    await page.waitForTimeout(2200);
-    expect(await clock.innerText()).not.toBe(t1);
+    // the clock shows the date and the time to the minute; it does not tick each second (A11Y-31)
+    await expect(page.locator("main p", { hasText: /\d{4}.* \d{1,2}:\d\d (AM|PM)$/ }).first()).toBeVisible();
     await expect(page.locator(".recharts-wrapper")).toHaveCount(5);
+    const toggle = page.locator("figure", { hasText: "By category" }).getByRole("button", { name: "View as table" });
+    await toggle.click();
     await expect(page.getByRole("row")).toHaveCount(9);
   });
 
@@ -197,20 +197,20 @@ test.describe("dashboard", () => {
     await page.getByRole("button", { name: "Last 12 weeks" }).click();
     await expect(pounds).not.toHaveText(before);
     const twelve = await pounds.innerText();
-    await page.getByLabel("From").fill("2026-09-07");
+    await page.getByLabel("From", { exact: true }).fill("2026-09-07");
     await expect(pounds).not.toHaveText(twelve);
     for (const preset of ["Last 26 weeks", "Last 52 weeks", "All data"]) await page.getByRole("button", { name: preset }).click();
-    await expect(page.getByLabel("From")).toHaveValue(/^\d{4}-\d\d-\d\d$/);
+    await expect(page.getByLabel("From", { exact: true })).toHaveValue(/^\d{4}-\d\d-\d\d$/);
   });
 
   test("[DASH-06][DASH-07] a start after the end, or more than 260 weeks, is explained", async ({ page }) => {
     await open(page, "/admin/dashboard");
     const sent = countRequests(page, "GET", /\/api\/dashboard\/metrics/);
-    await page.getByLabel("From").fill("2026-09-28");
-    await page.getByLabel("To").fill("2026-09-07");
+    await page.getByLabel("From", { exact: true }).fill("2026-09-28");
+    await page.getByLabel("To", { exact: true }).fill("2026-09-07");
     await expect(page.getByText("The start date must not be after the end date.")).toBeVisible();
-    await page.getByLabel("To").fill("2026-09-28");
-    await page.getByLabel("From").fill("2020-01-06");
+    await page.getByLabel("To", { exact: true }).fill("2026-09-28");
+    await page.getByLabel("From", { exact: true }).fill("2020-01-06");
     await expect(page.getByText(/at most 260 weeks/)).toBeVisible();
     expect(sent.count()).toBeLessThanOrEqual(2);
   });
@@ -218,10 +218,10 @@ test.describe("dashboard", () => {
   test("[DASH-08] dates outside 2020 to 2100 show an inline message and send nothing", async ({ page }) => {
     await open(page, "/admin/dashboard");
     const sent = countRequests(page, "GET", /\/api\/dashboard\/metrics/);
-    await page.getByLabel("To").fill("9999-12-31");
-    await page.getByLabel("From").fill("9999-12-01");
+    await page.getByLabel("To", { exact: true }).fill("9999-12-31");
+    await page.getByLabel("From", { exact: true }).fill("9999-12-01");
     await expect(page.getByText("Dates must be between 2020 and 2100.")).toBeVisible();
-    await page.getByLabel("From").fill("1999-01-01");
+    await page.getByLabel("From", { exact: true }).fill("1999-01-01");
     await expect(page.getByText("Dates must be between 2020 and 2100.")).toBeVisible();
     expect(sent.count()).toBe(0);
     await expect(page.getByText(/Something went wrong/)).toHaveCount(0);
@@ -229,10 +229,10 @@ test.describe("dashboard", () => {
 
   test("[DASH-08][DASH-09][DASH-10] far-past dates and a cleared date do not break the page", async ({ page }) => {
     await open(page, "/admin/dashboard");
-    await page.getByLabel("From").fill("2020-01-06");
-    await page.getByLabel("To").fill("2020-02-03");
+    await page.getByLabel("From", { exact: true }).fill("2020-01-06");
+    await page.getByLabel("To", { exact: true }).fill("2020-02-03");
     await expect(page.getByText(/No distributions, shortage reports or lots/)).toBeVisible();
-    await page.getByLabel("From").fill("");
+    await page.getByLabel("From", { exact: true }).fill("");
     await expect(page.getByRole("heading", { name: "Impact dashboard" })).toBeVisible();
     await expect(page.getByText(/Something went wrong/)).toHaveCount(0);
   });

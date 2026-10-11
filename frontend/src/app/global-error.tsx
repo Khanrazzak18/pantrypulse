@@ -4,7 +4,11 @@
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="en">
+      <head>
+        <title>Something went wrong · PantryPulse</title>
+      </head>
       <body style={{ fontFamily: "system-ui, sans-serif", margin: 0, padding: "3rem 1rem", background: "#fafaf9" }}>
+        <main id="main-content" tabIndex={-1}>
         <div role="alert" style={{ maxWidth: 560, margin: "0 auto", border: "1px solid #fca5a5", background: "#fef2f2", borderRadius: 8, padding: 20 }}>
           <h1 style={{ margin: 0, fontSize: 20, color: "#7f1d1d" }}>Something went wrong</h1>
           <p style={{ color: "#991b1b" }}>PantryPulse hit a problem it could not recover from. Please try again.</p>
@@ -12,6 +16,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
             Try again
           </button>
         </div>
+        </main>
       </body>
     </html>
   );

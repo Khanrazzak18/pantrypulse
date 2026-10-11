@@ -48,19 +48,21 @@ export function ForecastChart({
   points,
   showLastYear,
   label,
+  summaryId,
 }: {
   points: SeriesPoint[];
   showLastYear: boolean;
   label: string;
+  summaryId?: string;
 }) {
   const data = toChartData(points);
   const future = firstFutureWeek(data);
   const futureLabel = data.find((p) => p.weekStart === future)?.label;
 
   return (
-    <div role="img" aria-label={label} className="h-64 w-full sm:h-80">
+    <div role="img" aria-label={label} aria-describedby={summaryId} className="h-64 w-full sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }} accessibilityLayer={false}>
           <CartesianGrid stroke="#e7e5e4" vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} minTickGap={24} tickLine={false} />
           <YAxis

@@ -84,6 +84,12 @@ class SimResult:
     perishable_resolved_lbs: float = 0.0
     short_beyond_p90: float = 0.0  # share of short cells where true demand exceeded the P90
     weekly_short: list[float] = field(default_factory=list)
+    # per pantry, summed over the weeks (for fairness): lb delivered, P50 forecast, P50 met
+    delivered_by_pantry: np.ndarray | None = None
+    p50_by_pantry: np.ndarray | None = None
+    p50_met_by_pantry: np.ndarray | None = None
+    trip_miles: float = 0.0  # miles from the warehouse, summed over every pantry visited each run
+    pound_miles: float = 0.0  # pounds delivered times miles from the warehouse
 
 
 def simulate(
@@ -93,6 +99,7 @@ def simulate(
     noise: float = MANUAL_NOISE,
     net_manual: bool = False,
     days: tuple[int, ...] | None = None,
+    params: optimizer.OptimizerParams | None = None,
 ) -> SimResult:
     rng = np.random.default_rng(seed)
     n_p = len(inputs.pantries)
@@ -102,6 +109,9 @@ def simulate(
     short_pw = short_cells = cells = beyond_p90 = 0
     delivered_total = demand_total = 0.0
     weekly_short: list[float] = []
+    miles = np.array([p.miles for p in inputs.pantries])
+    by_delivered, by_p50, by_met = np.zeros(n_p), np.zeros(n_p), np.zeros(n_p)
+    trip_miles = 0.0
 
     for week in inputs.weeks:
         delivered = np.zeros((n_p, N_CATEGORIES))
@@ -155,7 +165,7 @@ def simulate(
                     )
                     for i, p in enumerate(inputs.pantries)
                 ]
-                solution = optimizer.solve(lots, left_over, demand, delivery)
+                solution = optimizer.solve(lots, left_over, demand, delivery, params)
                 for sh in solution.shipments:
                     entry = stock[sh.lot_id]
                     today[sh.pantry_id - 1, entry[0].category_id - 1] += sh.lbs
@@ -165,8 +175,14 @@ def simulate(
             else:
                 raise ValueError(f"unknown policy {policy!r}")
             delivered += today
+            trip_miles += float(
+                miles[today.sum(axis=1) > 1e-6].sum()
+            )  # one trip per pantry per run
             stock = [e for e in stock if e[1] > 1e-6]
 
+        by_delivered += delivered.sum(axis=1)
+        by_p50 += week.p50.sum(axis=1)
+        by_met += np.minimum(delivered, week.p50).sum(axis=1)
         over += float(np.clip(delivered - week.truth, 0, None)[:, PERISHABLE].sum())
         short = delivered < SHORT_BELOW * week.truth
         short_pw += int(short.any(axis=1).sum())
@@ -192,6 +208,11 @@ def simulate(
         perishable_resolved_lbs=resolved,
         short_beyond_p90=beyond_p90 / short_cells if short_cells else 0.0,
         weekly_short=weekly_short,
+        delivered_by_pantry=by_delivered,
+        p50_by_pantry=by_p50,
+        p50_met_by_pantry=by_met,
+        trip_miles=trip_miles,
+        pound_miles=float((by_delivered * miles).sum()),
     )
 
 
