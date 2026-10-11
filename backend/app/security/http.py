@@ -31,6 +31,63 @@ API_HEADERS = {
 }
 
 
+TOO_LARGE = "That request is too large. Uploads are limited to 10 MB."
+
+
+def body_limit(method: str, path: str) -> int:
+    is_upload = path == "/api/donations" and method == "POST"
+    return MAX_UPLOAD_REQUEST_BYTES if is_upload else MAX_JSON_BYTES
+
+
+class BodyLimit:
+    """Counts request bytes as they arrive and stops at the limit, whatever Content-Length says
+    (or whether it was sent at all, as with a chunked body). A pure ASGI middleware sitting just
+    outside the router, so every reader of the body is counted and the request id is already set.
+
+    FastAPI turns any exception raised while it reads the body into its own 400, so this does not
+    raise. When the limit is crossed it sends the 413 itself, tells the reader the client went
+    away, and drops whatever the application tries to send afterwards."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope["method"] in SAFE_METHODS:
+            return await self.app(scope, receive, send)
+        limit = body_limit(scope["method"], scope["path"])
+        total = 0
+        refused = False
+
+        async def limited():
+            nonlocal total, refused
+            if refused:
+                return {"type": "http.disconnect"}
+            message = await receive()
+            if message["type"] == "http.request":
+                total += len(message.get("body", b""))
+                if total > limit:
+                    refused = True
+                    response = error_response(413, "payload_too_large", TOO_LARGE)
+                    await response(scope, receive, send)
+                    return {"type": "http.disconnect"}
+            return message
+
+        async def guarded_send(message):
+            if not refused:
+                await send(message)
+
+        try:
+            await self.app(scope, limited, guarded_send)
+        except Exception:
+            if not refused:  # after a 413 the application's own failure is expected and moot
+                raise
+
+
+def register_body_limit(app: FastAPI) -> None:
+    """Add first, so it sits just outside the router and inside the request-id middleware."""
+    app.add_middleware(BodyLimit)
+
+
 def allowed_origins(settings: Settings) -> set[str]:
     extra = {o.strip().rstrip("/") for o in settings.allowed_origins.split(",") if o.strip()}
     if extra:
@@ -47,14 +104,8 @@ def register_origin_check(app: FastAPI, settings: Settings) -> None:
         async def dispatch(self, request: Request, call_next):
             declared = request.headers.get("content-length", "")
             if declared.isdigit():  # refuse an oversized body from its declared size, unread
-                is_upload = request.url.path == "/api/donations" and request.method == "POST"
-                limit = MAX_UPLOAD_REQUEST_BYTES if is_upload else MAX_JSON_BYTES
-                if int(declared) > limit:
-                    return error_response(
-                        413,
-                        "payload_too_large",
-                        "That request is too large. Uploads are limited to 10 MB.",
-                    )
+                if int(declared) > body_limit(request.method, request.url.path):
+                    return error_response(413, "payload_too_large", TOO_LARGE)
             if request.method not in SAFE_METHODS:
                 origin = request.headers.get("origin")
                 site = request.headers.get("sec-fetch-site")

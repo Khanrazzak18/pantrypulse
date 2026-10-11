@@ -145,6 +145,8 @@ All live in `.env` (see `.env.example`, which has a comment for each). Ports are
 | `LOG_LEVEL` | no | INFO | Log verbosity |
 | `ALLOWED_ORIGINS` | no | derived from `WEB_PORT` | Comma-separated origins allowed to send state-changing requests (the Origin check) |
 | `EXPOSE_API_DOCS` | no | false | Serve `/api/docs` and the OpenAPI JSON (leave off outside local development) |
+| `TRUSTED_PROXIES` | no | empty (`.env.example`: `127.0.0.1,::1`) | Proxies whose `X-Forwarded-For` is believed; production must list the real proxy and run uvicorn with `--no-proxy-headers` |
+| `RAW_OUTPUT_RETENTION_DAYS` | no | 90 | Days after review before the raw model output is cleared (weekly refresh) |
 | `RATE_LIMIT_UPLOADS_PER_HOUR` | no | 20 | Donation uploads per user per hour |
 | `RATE_LIMIT_AI_PER_HOUR` | no | 30 | Calls per user per hour to each AI endpoint (forecast, allocation run, reasons, summary draft) |
 | `RATE_LIMIT_REFRESH_PER_HOUR` | no | 6 | Weekly refresh runs per user per hour |
@@ -291,19 +293,21 @@ fuzz test. A pre-commit hook (installed by `make setup`) blocks secrets and `.en
   scripts), frame-ancestors, nosniff, Referrer-Policy and Permissions-Policy, plus HSTS when
   `COOKIE_SECURE=true`. Styles still need `'unsafe-inline'` because Next.js and Recharts write
   inline style attributes.
-- Uploads, AI endpoints and the weekly refresh are rate limited per user in the database.
+- Uploads, AI endpoints and the weekly refresh are rate limited per user in the database. Request
+  bodies are counted as they stream in (413 at the limit, chunked or not). `X-Forwarded-For` is
+  trusted only from `TRUSTED_PROXIES`. Raw model output is cleared 90 days after review.
 - One accepted npm risk: a dev-only advisory (braces, via eslint-config-next) with no patched
   release; production dependencies audit clean.
 
 ## Known limitations
 
-- **Login lockout trusts a header for the address.** Five failures for one email, or 20 from one
-  address, in 15 minutes lock that email or address for 15 minutes (counted in the database). Behind
-  the Next.js proxy the address comes from `X-Forwarded-For`, which a caller can forge, so the
-  per-email limit is the real protection; a production proxy should set the header itself.
+- **Login lockout counts one address per proxy hop.** Five failures for one email, or 20 from one
+  address, in 15 minutes lock that email or address for 15 minutes (counted in the database).
+  `X-Forwarded-For` is believed only from proxies in `TRUSTED_PROXIES`; behind a shared office or
+  carrier address, many real users can share one address.
 - **AI work runs inside the request.** A manifest takes 5 to 30 seconds (worst case about 95 with a
-  retry); there is no background queue. Uploads are buffered by the web framework before the 10 MB
-  check, so a production proxy should enforce its own limit.
+  retry); there is no background queue. Request size is enforced while the body streams in, but a
+  production proxy should still enforce its own limit and timeouts.
 - **The model makes mistakes the checks cannot see.** Intake leaves a few wrong dates and weights
   (highlighted when it was unsure); allocation reasons and monthly summaries are checked for invented
   numbers but not for a wrong label on a real number (a first summary draft called pounds "items").

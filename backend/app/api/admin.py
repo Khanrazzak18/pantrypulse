@@ -24,6 +24,7 @@ class RefreshOut(BaseModel):
     allocation_run_id: int
     week_start: date
     proposed_rows: int
+    raw_outputs_cleared: int
     total_seconds: float
 
 
@@ -46,4 +47,5 @@ def weekly_refresh(
         llm=state.llm,
         user_id=user.id,
         today=state.today(),
+        raw_retention_days=state.settings.raw_output_retention_days,
     )

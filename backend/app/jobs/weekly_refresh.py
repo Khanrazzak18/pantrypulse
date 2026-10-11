@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.llm_provider import LLMProvider
 from app.errors import ApiError
-from app.services import allocation_runs, forecast_runs
+from app.services import allocation_runs, forecast_runs, retention
 from app.storage import StorageBackend
 
 logger = logging.getLogger("pantrypulse.refresh")
@@ -24,6 +24,7 @@ def run_weekly_refresh(
     llm: LLMProvider,
     user_id: int,
     today: date,
+    raw_retention_days: int = retention.RETENTION_DAYS,
 ) -> dict:
     steps = []
     started = time.monotonic()
@@ -45,6 +46,8 @@ def run_weekly_refresh(
     steps.append(
         {"name": "allocation", "status": "done", "seconds": round(time.monotonic() - mark, 1)}
     )
+    cleared = retention.clear_old_raw_output(db, today, raw_retention_days)
+    db.commit()
     logger.info(
         "weekly_refresh",
         extra={"forecast_run_id": forecast.id, "allocation_run_id": allocation.id,
@@ -55,6 +58,7 @@ def run_weekly_refresh(
         "forecast_run_id": forecast.id,
         "allocation_run_id": allocation.id,
         "week_start": allocation.week_start,
+        "raw_outputs_cleared": cleared,
         "proposed_rows": allocation.reasons_ai + allocation.reasons_template,
         "total_seconds": round(time.monotonic() - started, 1),
     }

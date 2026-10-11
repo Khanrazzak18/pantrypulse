@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # Extra site addresses allowed to send requests that change data (comma separated). Empty means
     # http://localhost and http://127.0.0.1 on WEB_PORT.
     allowed_origins: str = ""
+    trusted_proxies: str = (
+        ""  # proxies whose X-Forwarded-For is believed (comma-separated IPs/CIDRs)
+    )
+    raw_output_retention_days: int = 90  # raw model output is cleared this long after review
     cookie_secure: bool = False  # set COOKIE_SECURE=true when served over https
 
     # Demo logins for `make seed`. No defaults here on purpose: they live in .env only.

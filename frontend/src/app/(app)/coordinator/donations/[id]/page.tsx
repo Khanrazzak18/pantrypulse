@@ -43,6 +43,13 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
             </>
           )}
         </p>
+        {donation.raw_output_cleared_at && (
+          <p className="mt-1 text-sm text-stone-600">
+            The model&apos;s raw output was cleared on{" "}
+            {new Date(donation.raw_output_cleared_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}{" "}
+            (90 days after review). The decision and any confirmed items are kept.
+          </p>
+        )}
       </div>
       <ReviewForm donation={donation} donors={donors} />
     </div>

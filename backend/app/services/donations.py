@@ -119,6 +119,7 @@ def build_detail(db: Session, donation: Donation) -> DonationDetail:
         latency_ms=donation.latency_ms,
         input_tokens=usage.get("input_tokens"),
         output_tokens=usage.get("output_tokens"),
+        raw_output_cleared_at=donation.raw_output_cleared_at,
     )
 
 

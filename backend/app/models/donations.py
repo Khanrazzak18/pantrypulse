@@ -52,6 +52,12 @@ class Donation(Base):
             "OR (status = 'rejected' AND reviewed_at IS NOT NULL) OR status = 'confirmed'",
             name="review_matches_status",
         ),
+        # Raw model output is cleared only after review, and the marker is set only once it is gone.
+        CheckConstraint(
+            "raw_output_cleared_at IS NULL OR "
+            "(raw_llm_output IS NULL AND status <> 'pending_review')",
+            name="raw_cleared_after_review",
+        ),
         Index("ix_donations_status_created_at", "status", "created_at"),
     )
 
@@ -62,6 +68,7 @@ class Donation(Base):
     original_filename: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(20))
     raw_llm_output: Mapped[dict | None] = mapped_column(JSONB)
+    raw_output_cleared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     model_id: Mapped[str | None] = mapped_column(String(120))
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

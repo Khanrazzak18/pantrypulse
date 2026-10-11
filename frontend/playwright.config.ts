@@ -27,12 +27,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `../backend/.venv/bin/uvicorn scripts.e2e_server:build_app --factory --host 127.0.0.1 --port ${apiPort}`,
+      command: `../backend/.venv/bin/uvicorn scripts.e2e_server:build_app --factory --no-proxy-headers --host 127.0.0.1 --port ${apiPort}`,
       cwd: "../backend",
       url: `http://127.0.0.1:${apiPort}/api/health`,
       env: {
         E2E_MODE: "1",
         E2E_TODAY: "2026-10-06",
+        // the web server is the proxy: believe its X-Forwarded-For, as in .env.example
+        TRUSTED_PROXIES: "127.0.0.1,::1",
         API_PORT: apiPort,
         // the browser's address, so the API's CSRF check knows it
         ALLOWED_ORIGINS: `http://127.0.0.1:${webPort}`,

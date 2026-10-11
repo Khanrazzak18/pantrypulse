@@ -39,7 +39,7 @@ api-types: check-env
 dev: check-env
 	@trap 'kill $$(jobs -p) 2>/dev/null' INT TERM EXIT; \
 	(cd $(BACKEND) && exec .venv/bin/uvicorn app.main:create_app --factory --reload \
-		--host 127.0.0.1 --port $(API_PORT)) & \
+		--no-proxy-headers --host 127.0.0.1 --port $(API_PORT)) & \
 	(cd $(FRONTEND) && exec node_modules/.bin/next dev --port $(WEB_PORT)) & \
 	wait
 
@@ -60,7 +60,8 @@ hooks:
 SECURITY_TESTS := tests/test_authorization_matrix.py tests/test_api_fuzz.py tests/test_token_revocation.py \
 	tests/test_security_headers.py tests/test_csrf_origin.py tests/test_rate_limits.py \
 	tests/test_llm_safety.py tests/test_sql_hygiene.py tests/test_log_hygiene.py \
-	tests/test_data_handling.py tests/test_precommit_hook.py tests/test_audit_gate.py
+	tests/test_data_handling.py tests/test_precommit_hook.py tests/test_audit_gate.py \
+	tests/test_body_stream_limit.py tests/test_trusted_proxies.py tests/test_raw_output_retention.py tests/test_iam_policy.py
 security: check-env security-tools
 	.tools/bin/gitleaks git --config .gitleaks.toml --redact --no-banner .
 	.tools/bin/gitleaks dir --config .gitleaks.toml --redact --no-banner .

@@ -800,6 +800,8 @@ export interface components {
             input_tokens: number | null;
             /** Output Tokens */
             output_tokens: number | null;
+            /** Raw Output Cleared At */
+            raw_output_cleared_at?: string | null;
         };
         /** DonationSummary */
         DonationSummary: {
@@ -1034,6 +1036,8 @@ export interface components {
             week_start: string;
             /** Proposed Rows */
             proposed_rows: number;
+            /** Raw Outputs Cleared */
+            raw_outputs_cleared: number;
             /** Total Seconds */
             total_seconds: number;
         };

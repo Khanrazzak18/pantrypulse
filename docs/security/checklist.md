@@ -10,7 +10,8 @@
 - [ ] The AWS identity can only `bedrock:InvokeModel` on the model in `docs/security/iam-policy.json`: a listing call is denied.
 - [ ] Only one access key exists per IAM user, and no key is older than 90 days.
 - [ ] Postgres is not reachable from outside the host or VPC.
-- [ ] The reverse proxy sets `X-Forwarded-For` itself and enforces a request-size limit.
+- [ ] `TRUSTED_PROXIES` lists the real proxy (not empty behind a load balancer), uvicorn runs with `--no-proxy-headers`, and the proxy enforces its own request-size limit and timeouts.
+- [ ] `RAW_OUTPUT_RETENTION_DAYS` matches the food bank's policy and the weekly refresh runs (it clears reviewed raw model output).
 - [ ] Rate limits in `.env` match the expected team size.
 - [ ] Any new route has an entry in the `ACCESS` table of `test_authorization_matrix.py`.
 - [ ] Any new raw SQL statement is parameterised and added to the inventory in `test_sql_hygiene.py`.

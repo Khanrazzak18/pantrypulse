@@ -11,6 +11,7 @@ from app.auth.tokens import create_token, decode_session
 from app.errors import ApiError
 from app.models import Pantry, User
 from app.schemas.auth import LoginRequest, UserOut
+from app.security.client_address import client_address
 
 logger = logging.getLogger("pantrypulse.auth")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -20,10 +21,8 @@ _DUMMY_HASH = hash_password("a-password-nobody-has")
 
 
 def _client_address(request: Request) -> str:
-    """The caller's address. Behind the Next.js proxy the real one is the first X-Forwarded-For
-    entry; a caller can forge that header, which is why the per-email limit is the main defence."""
-    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-    return forwarded or (request.client.host if request.client else "unknown")
+    """The caller's address: X-Forwarded-For counts only from a proxy in TRUSTED_PROXIES."""
+    return client_address(request, request.app.state.trusted_proxies)
 
 
 def user_out(db: Session, user: User) -> UserOut:

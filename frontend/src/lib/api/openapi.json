@@ -2140,6 +2140,18 @@
               }
             ],
             "title": "Output Tokens"
+          },
+          "raw_output_cleared_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Output Cleared At"
           }
         },
         "type": "object",
@@ -2878,6 +2890,10 @@
             "type": "integer",
             "title": "Proposed Rows"
           },
+          "raw_outputs_cleared": {
+            "type": "integer",
+            "title": "Raw Outputs Cleared"
+          },
           "total_seconds": {
             "type": "number",
             "title": "Total Seconds"
@@ -2890,6 +2906,7 @@
           "allocation_run_id",
           "week_start",
           "proposed_rows",
+          "raw_outputs_cleared",
           "total_seconds"
         ],
         "title": "RefreshOut"

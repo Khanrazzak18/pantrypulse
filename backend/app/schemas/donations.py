@@ -39,6 +39,7 @@ class DonationDetail(DonationSummary):
     latency_ms: int | None
     input_tokens: int | None
     output_tokens: int | None
+    raw_output_cleared_at: datetime | None = None  # the audit copy of the model output was cleared
 
 
 class DonorOut(BaseModel):
