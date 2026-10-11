@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     bedrock_model_id: str = ""  # an inference profile ID such as us.anthropic.claude-haiku-4-5-...
     storage_dir: str = "backend/var/uploads"  # relative paths are resolved from the repo root
+    # The interactive docs and OpenAPI document list every route: off unless asked for.
+    expose_api_docs: bool = False
+    # Hourly limits per user (database-backed): uploads, each AI or heavy endpoint, the weekly job.
+    rate_limit_uploads_per_hour: int = 20
+    rate_limit_ai_per_hour: int = 30
+    rate_limit_refresh_per_hour: int = 6
+    web_port: int = 3000  # the browser-facing port, used to know which Origin is ours
+    # Extra site addresses allowed to send requests that change data (comma separated). Empty means
+    # http://localhost and http://127.0.0.1 on WEB_PORT.
+    allowed_origins: str = ""
     cookie_secure: bool = False  # set COOKIE_SECURE=true when served over https
 
     # Demo logins for `make seed`. No defaults here on purpose: they live in .env only.

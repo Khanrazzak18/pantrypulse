@@ -1,0 +1,19 @@
+# Secret scanning rules: the default gitleaks rules, plus a few paths that are never committed or are
+# generated. `.env` holds local secrets and is gitignored (it must never be committed: the
+# pre-commit hook and `make security` scan the git history, where it must not appear).
+title = "PantryPulse gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Local, ignored or generated folders (not part of the repository)"
+paths = [
+  '''^\.env$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.venv/''',
+  '''(^|/)\.tools/''',
+  '''(^|/)\.next(-e2e)?/''',
+  '''(^|/)test-results/''',
+  '''(^|/)var/''',
+]

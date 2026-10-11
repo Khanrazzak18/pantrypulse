@@ -1,0 +1,21 @@
+#!/bin/sh
+# Blocks a commit that contains a secret or an environment file. Turned on by `make hooks`
+# (git config core.hooksPath .githooks), which `make setup` runs.
+root="$(git rev-parse --show-toplevel)"
+
+# 1. .env and .env.* files hold local secrets and are never committed (only .env.example is).
+blocked="$(git diff --cached --name-only --diff-filter=ACMR | grep -E '(^|/)\.env($|\.)' | grep -Ev '(^|/)\.env\.example$')"
+if [ -n "$blocked" ]; then
+  echo "Commit blocked: these files hold local secrets and must not be committed:"
+  echo "$blocked"
+  exit 1
+fi
+
+# 2. Scan what is being committed for keys, tokens and passwords.
+bin="$root/.tools/bin/gitleaks"
+[ -x "$bin" ] || bin="$(command -v gitleaks || true)"
+if [ -z "$bin" ]; then
+  echo "Commit blocked: gitleaks is not installed. Run: make security-tools"
+  exit 1
+fi
+exec "$bin" git --pre-commit --staged --config "$root/.gitleaks.toml" --redact --no-banner

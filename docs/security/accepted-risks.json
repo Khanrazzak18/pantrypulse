@@ -1,0 +1,12 @@
+{
+  "npm": [
+    {
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces (reached through eslint-config-next, fast-glob and micromatch)",
+      "severity": "high",
+      "reason": "Dev-only linting chain: it never ships and never runs in production (`npm audit --omit=dev` finds nothing). The flaw is stack exhaustion when braces expands a deeply nested pattern; the only patterns ESLint expands come from our own repository files, not from users. No patched braces exists (3.0.3 is the latest release and is affected), and the only 'fix' npm offers downgrades eslint-config-next to version 14, which does not support this project's Next.js 16.",
+      "reviewed": "2026-10-11",
+      "review_again": "when a patched braces is released, or when eslint-config-next drops the dependency"
+    }
+  ]
+}

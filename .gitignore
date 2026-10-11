@@ -33,3 +33,6 @@ frontend/.next-e2e/
 frontend/test-results/
 frontend/playwright-report/
 backend/var/e2e-uploads/
+
+# downloaded tools (gitleaks)
+.tools/

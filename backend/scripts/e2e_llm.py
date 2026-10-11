@@ -61,6 +61,16 @@ class MockLLM:
             return {**base, **low}
 
         soon = (self.today + timedelta(days=8)).isoformat()
+        if "E2E_XSS" in text:  # hostile text from the model must be shown as text, never run
+            return {
+                "donor_name": "<img src=x onerror=window.__pwned=1>",
+                "items": [
+                    {"name": "<script>window.__pwned=1</script>Lettuce", "category": "produce",
+                     "quantity": 1, "unit": "case", "estimated_weight_lbs": 10, "expiry_date": soon,
+                     "storage_type": "refrigerated", "confidence": conf()},
+                ],
+                "notes": "<script>window.__pwned=1</script><b>bold?</b>",
+            }  # fmt: skip
         if "E2E_EMPTY" in text:
             return {"donor_name": "Mock Market", "items": [], "notes": "Nothing donated"}
         return {

@@ -1,15 +1,15 @@
 # Testing checklist
 
-Generated 2026-10-11 12:15 by `make e2e` (`python -m scripts.testing_report`) from `backend/scripts/testing_checklist.py` and Playwright's results. Do not edit by hand.
+Generated 2026-10-11 14:36 by `make e2e` (`python -m scripts.testing_report`) from `backend/scripts/testing_checklist.py` and Playwright's results. Do not edit by hand.
 
 ## Summary
 
-- Checklist items: **195**
-- Covered by at least one automated test: **195** (3 by pytest only, 81 by end-to-end tests only, 111 by both)
+- Checklist items: **208**
+- Covered by at least one automated test: **208** (6 by pytest only, 84 by end-to-end tests only, 118 by both)
 - Not automated (manual): **0**
 - Items whose end-to-end test is a known bug (`test.fail`): **0**
 - Items whose end-to-end test currently fails: **0**
-- pytest: **588** test functions, **1012** collected test cases. Cases outnumber functions because a parametrized test runs once per parameter.
+- pytest: **673** test functions, **1125** collected test cases. Cases outnumber functions because a parametrized test runs once per parameter.
 
 
 How to read the last column: `pass (pytest)` means the cited pytest tests passed in `make test`; `pass (n/n)` is the number of Playwright projects (Chromium 375, 768, 1280 and WebKit 1280) that ran the test and passed; `known bug BUG-n` means the E2E test is marked `test.fail()` because the bug in `docs/testing/bugs.md` is not fixed yet.
@@ -202,6 +202,19 @@ How to read the last column: `pass (pytest)` means the cited pytest tests passed
 | OUT-06 | every page | All | Unhandled promise rejection | Cause a rejected promise nobody caught | n/a | n/a | A dismissible banner, not a silent failure | E2E: an unhandled promise rejection shows a dismissible banner [4 runs] | pass (4/4) |
 | OUT-07 | /api/health | Logged out | Health during an outage | Call /api/health with the database off | n/a | n/a | 503 in the envelope with details database: down | pytest: test_health_says_the_database_is_down, test_health_is_ok_when_the_database_is_up | pass (pytest) |
 | OUT-08 | every API route | All | No raw 500 and no stack trace | Send hostile input to every route as each role | n/a | ids, dates, numbers, huge text, control characters | Never a 500; every error in the envelope with a request id | pytest: test_fuzz_as_an_admin, test_fuzz_as_a_pantry_manager, test_fuzz_logged_out, test_an_unexpected_error_is_a_500_envelope_with_a_request_id_and_no_trace | pass (pytest) |
+| SEC-01 | every page | All | Security headers and CSP | Open each page and read the response headers and console | n/a | n/a | nosniff, frame denial, no-referrer, Permissions-Policy, a nonce-based Content-Security-Policy without unsafe-inline for scripts, and no CSP violation in the console | pytest: test_every_api_response_has_the_security_headers; E2E: /admin/dashboard has the security headers and a nonce-based CSP with no violations (+8 more) [4 runs] | pass (pytest); pass (36/36) |
+| SEC-02 | every page | All | Fresh nonce per page | Load the login page three times | n/a | n/a | A different nonce each time | E2E: each page gets a different nonce [4 runs] | pass (4/4) |
+| SEC-03 | every page | All | Injected script is blocked | Add an inline script and an inline event handler from the console | n/a | n/a | Neither runs | E2E: markup injected into the page without the nonce does not run [4 runs] | pass (4/4) |
+| SEC-04 | /api | All | API headers and CORS | Call the API from the page | n/a | n/a | API security headers, no-store, and no Access-Control-Allow-Origin | pytest: test_api_responses_are_never_cached, test_headers_are_on_error_responses_too; E2E: the API sends its own headers and no CORS permission [4 runs] | pass (pytest); pass (4/4) |
+| SEC-05 | /coordinator/donations/[id] | Coordinator | AI-written text shown as text | Upload a manifest whose AI output contains HTML and script tags | n/a | <script>, <img onerror>, <b> | The tags appear as text; nothing runs; no real bold text | pytest: test_hostile_model_output_is_validated_or_stored_as_inert_text, test_the_front_end_never_uses_an_html_injection_api; E2E: hostile text from the model is shown as text and never runs [4 runs] | pass (pytest); pass (4/4) |
+| SEC-06 | every page | All | Copied session cookie after logout | Copy the cookie, log out, replay the cookie | n/a | n/a | The API answers 401 and protected pages redirect | pytest: test_logout_revokes_the_token_even_if_it_was_copied; E2E: a copied session cookie stops working once the user logs out [4 runs] | pass (pytest); pass (4/4) |
+| SEC-07 | every page | All | Logout on one device | Log in on two browsers, log out on one | n/a | n/a | The other browser is logged out too | pytest: test_logout_ends_every_session_of_that_user_but_nobody_elses; E2E: logging out on one device logs out the others [4 runs] | pass (pytest); pass (4/4) |
+| SEC-08 | /admin/* | Logged out | Redirect for every protected path, /admin included | Open every protected URL logged out | n/a | /admin/anything | Redirected to login with next | E2E: every protected page redirects a logged-out visitor, /admin included [4 runs] | pass (4/4) |
+| SEC-09 | /api | Coordinator | Cross-site request refused | Send a request that changes data with a foreign Origin | n/a | Origin: https://evil.example | 403 forbidden_origin | pytest: test_a_post_from_another_site_is_refused, test_a_lookalike_origin_is_refused; E2E: a request that changes data and claims to come from another site is refused [4 runs] | pass (pytest); pass (4/4) |
+| SEC-10 | every page | All | Own pages not blocked by the Origin check | Use a button that posts data | n/a | n/a | It works | pytest: test_our_own_site_is_allowed; E2E: the page's own requests are not blocked by the Origin check [4 runs] | pass (pytest); pass (4/4) |
+| SEC-11 | /api | All | Role by route | Call every route as logged out, manager, coordinator and admin | n/a | n/a | Exactly the access in the table | pytest: test_each_role_gets_exactly_the_access_it_should, test_every_route_is_in_the_access_table | pass (pytest) |
+| SEC-12 | /api | All | Rate limits | Repeat uploads and AI calls more often than the hourly limit | n/a | n/a | 429 rate_limited with Retry-After | pytest: test_each_limit_triggers_after_its_configured_number_of_requests | pass (pytest) |
+| SEC-13 | /api | All | Prompt injection in a manifest | Upload a manifest that tries to take over the model | n/a | n/a | One pending donation, nothing else changed | pytest: test_a_prompt_injection_in_a_manifest_creates_only_one_donation_waiting_for_review | pass (pytest) |
 | A11Y-01 | /login | Logged out | Accessibility scan | Scan the page with axe | n/a | n/a | Violations reported | E2E: login page [4 runs] | pass (4/4) |
 | A11Y-02 | /coordinator | Coordinator | Accessibility scan | Scan the page with axe | n/a | n/a | Violations reported | E2E: /coordinator as coordinator [4 runs] | pass (4/4) |
 | A11Y-03 | /coordinator/donations | Coordinator | Accessibility scan | Scan the page with axe | n/a | n/a | Violations reported | E2E: /coordinator/donations as coordinator [4 runs] | pass (4/4) |

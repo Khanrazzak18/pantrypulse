@@ -89,7 +89,7 @@ def client(app):
     with TestClient(app, raise_server_exceptions=False) as c:
         yield c
     with app.state.engine.begin() as conn:  # failed logins are counted in the database
-        conn.execute(text("TRUNCATE login_throttle"))
+        conn.execute(text("TRUNCATE login_throttle, rate_limits"))
 
 
 def alembic_config(url) -> Config:

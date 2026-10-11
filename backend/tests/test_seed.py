@@ -168,3 +168,28 @@ def test_demo_passwords_are_read_when_present(settings):
 
 def test_settings_has_no_built_in_demo_passwords():
     assert Settings.model_fields["demo_admin_password"].default is None
+
+
+def test_the_public_demo_passwords_are_refused_on_an_https_site():
+    import pytest
+
+    from app.config import Settings
+    from scripts.seed import require_demo_passwords
+
+    public = {
+        "demo_coordinator_password": "demo-coordinator-pw",
+        "demo_admin_password": "demo-admin-pw",
+        "demo_pantry_manager_password": "demo-manager-pw",
+    }
+    local = Settings(**public, cookie_secure=False)
+    assert require_demo_passwords(local)["admin"] == "demo-admin-pw"  # fine on a laptop
+    with pytest.raises(SystemExit, match="COOKIE_SECURE"):
+        require_demo_passwords(Settings(**public, cookie_secure=True))
+    chosen = Settings(
+        **{**public, "demo_admin_password": "a-long-private-" + "pass" + "word-for-this-test"},
+        cookie_secure=True,
+    )
+    with pytest.raises(SystemExit):  # one public password is enough to refuse
+        require_demo_passwords(chosen)
+    private = {k: f"private-{k}-passphrase" for k in public}
+    assert require_demo_passwords(Settings(**private, cookie_secure=True))

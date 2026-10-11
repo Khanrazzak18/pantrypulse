@@ -89,37 +89,31 @@ Generate the JWT secret with `openssl rand -hex 32`. To use AI features:
    `us.anthropic.claude-haiku-4-5-20251001-v1:0`.
 3. The first time an account uses an Anthropic model, open it once in the Bedrock console
    playground and submit the one-time use-case form.
-4. Give the AWS user permission to call the model. **Minimum IAM policy** (replace
-   `<ACCOUNT_ID>`); `bedrock:InvokeModel` is the permission the Converse API checks. A `us.`
-   inference profile can route to several US regions, so the foundation-model ARN uses `*` for
-   the region:
+4. Give the AWS user permission to call the model, and nothing else. **Minimum IAM policy**
+   (also in `docs/security/iam-policy.json`; replace `<ACCOUNT_ID>`). `bedrock:InvokeModel` is the
+   permission the Converse API checks. A `us.` inference profile can route to several US regions, so
+   the foundation-model ARN uses `us-*` for the region. There are no discovery actions: the app never
+   lists or describes models, and the policy denies listing them.
 
 ```json
 {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "InvokeTheIntakeModel",
+      "Sid": "InvokeClaudeHaiku45ForPantryPulse",
       "Effect": "Allow",
       "Action": "bedrock:InvokeModel",
       "Resource": [
         "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        "arn:aws:bedrock:us-*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
       ]
-    },
-    {
-      "Sid": "OptionalModelDiscovery",
-      "Effect": "Allow",
-      "Action": ["bedrock:ListInferenceProfiles", "bedrock:GetInferenceProfile", "bedrock:ListFoundationModels"],
-      "Resource": "*"
     }
   ]
 }
 ```
 
-The second statement is only for finding model IDs and can be left out. Switching models means
-changing both the model ID in `.env` and the resources above. `AmazonBedrockFullAccess` also
-works but grants far more than the app needs.
+Switching models means changing both the model ID in `.env` and the resources above.
+`AmazonBedrockFullAccess` and `AmazonBedrockReadOnly` also work but grant far more than the app needs.
 
 Tests never call Bedrock (they use a scripted fake and a guard fails any test that tries to create
 an AWS client). Only the running app and `make eval` use the real service. The local file store
@@ -149,6 +143,11 @@ All live in `.env` (see `.env.example`, which has a comment for each). Ports are
 | `BEDROCK_MODEL_ID` | for AI features | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Model or inference profile |
 | `STORAGE_DIR` | no | backend/var/uploads | Where uploads are kept (relative to the repo root) |
 | `LOG_LEVEL` | no | INFO | Log verbosity |
+| `ALLOWED_ORIGINS` | no | derived from `WEB_PORT` | Comma-separated origins allowed to send state-changing requests (the Origin check) |
+| `EXPOSE_API_DOCS` | no | false | Serve `/api/docs` and the OpenAPI JSON (leave off outside local development) |
+| `RATE_LIMIT_UPLOADS_PER_HOUR` | no | 20 | Donation uploads per user per hour |
+| `RATE_LIMIT_AI_PER_HOUR` | no | 30 | Calls per user per hour to each AI endpoint (forecast, allocation run, reasons, summary draft) |
+| `RATE_LIMIT_REFRESH_PER_HOUR` | no | 6 | Weekly refresh runs per user per hour |
 
 ## Demo logins (local only)
 
@@ -280,11 +279,24 @@ optimizer was better with one delivery a week (38.9% against 57.4%) and worse th
 keeps track of what has already been sent (18.0%). The result depends on how good the manual process
 is assumed to be, which nobody has measured, so the 30% stockout target is not shown by this data.
 
+## Security
+
+`docs/security/audit.md` lists every finding (OWASP Top 10 and LLM Top 10, severity, evidence, fix,
+test) and `docs/security/checklist.md` is the pre-deploy checklist. `make security` runs gitleaks
+(history and working tree), bandit, pip-audit, an npm audit gate, the role-by-route test and the
+fuzz test. A pre-commit hook (installed by `make setup`) blocks secrets and `.env` files.
+
+- Logout and deactivation revoke every session of that user (`token_version`).
+- State-changing requests must be same-origin; responses carry CSP (nonce, no `'unsafe-inline'` for
+  scripts), frame-ancestors, nosniff, Referrer-Policy and Permissions-Policy, plus HSTS when
+  `COOKIE_SECURE=true`. Styles still need `'unsafe-inline'` because Next.js and Recharts write
+  inline style attributes.
+- Uploads, AI endpoints and the weekly refresh are rate limited per user in the database.
+- One accepted npm risk: a dev-only advisory (braces, via eslint-config-next) with no patched
+  release; production dependencies audit clean.
+
 ## Known limitations
 
-- **Logout does not revoke a copied session.** A session is a signed token in an httpOnly cookie that
-  stays valid for 8 hours; deactivating a user takes effect immediately. Revoking on logout would
-  need a `token_version` column or a sessions table.
 - **Login lockout trusts a header for the address.** Five failures for one email, or 20 from one
   address, in 15 minutes lock that email or address for 15 minutes (counted in the database). Behind
   the Next.js proxy the address comes from `X-Forwarded-For`, which a caller can forge, so the

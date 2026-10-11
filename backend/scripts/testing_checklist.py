@@ -202,6 +202,19 @@ OUT-05|every page|All|Slow API call times out|Make a call never answer|n/a|n/a|A
 OUT-06|every page|All|Unhandled promise rejection|Cause a rejected promise nobody caught|n/a|n/a|A dismissible banner, not a silent failure|
 OUT-07|/api/health|Logged out|Health during an outage|Call /api/health with the database off|n/a|n/a|503 in the envelope with details database: down|test_health_says_the_database_is_down,test_health_is_ok_when_the_database_is_up
 OUT-08|every API route|All|No raw 500 and no stack trace|Send hostile input to every route as each role|n/a|ids, dates, numbers, huge text, control characters|Never a 500; every error in the envelope with a request id|test_fuzz_as_an_admin,test_fuzz_as_a_pantry_manager,test_fuzz_logged_out,test_an_unexpected_error_is_a_500_envelope_with_a_request_id_and_no_trace
+SEC-01|every page|All|Security headers and CSP|Open each page and read the response headers and console|n/a|n/a|nosniff, frame denial, no-referrer, Permissions-Policy, a nonce-based Content-Security-Policy without unsafe-inline for scripts, and no CSP violation in the console|test_every_api_response_has_the_security_headers
+SEC-02|every page|All|Fresh nonce per page|Load the login page three times|n/a|n/a|A different nonce each time|
+SEC-03|every page|All|Injected script is blocked|Add an inline script and an inline event handler from the console|n/a|n/a|Neither runs|
+SEC-04|/api|All|API headers and CORS|Call the API from the page|n/a|n/a|API security headers, no-store, and no Access-Control-Allow-Origin|test_api_responses_are_never_cached,test_headers_are_on_error_responses_too
+SEC-05|/coordinator/donations/[id]|Coordinator|AI-written text shown as text|Upload a manifest whose AI output contains HTML and script tags|n/a|<script>, <img onerror>, <b>|The tags appear as text; nothing runs; no real bold text|test_hostile_model_output_is_validated_or_stored_as_inert_text,test_the_front_end_never_uses_an_html_injection_api
+SEC-06|every page|All|Copied session cookie after logout|Copy the cookie, log out, replay the cookie|n/a|n/a|The API answers 401 and protected pages redirect|test_logout_revokes_the_token_even_if_it_was_copied
+SEC-07|every page|All|Logout on one device|Log in on two browsers, log out on one|n/a|n/a|The other browser is logged out too|test_logout_ends_every_session_of_that_user_but_nobody_elses
+SEC-08|/admin/*|Logged out|Redirect for every protected path, /admin included|Open every protected URL logged out|n/a|/admin/anything|Redirected to login with next|
+SEC-09|/api|Coordinator|Cross-site request refused|Send a request that changes data with a foreign Origin|n/a|Origin: https://evil.example|403 forbidden_origin|test_a_post_from_another_site_is_refused,test_a_lookalike_origin_is_refused
+SEC-10|every page|All|Own pages not blocked by the Origin check|Use a button that posts data|n/a|n/a|It works|test_our_own_site_is_allowed
+SEC-11|/api|All|Role by route|Call every route as logged out, manager, coordinator and admin|n/a|n/a|Exactly the access in the table|test_each_role_gets_exactly_the_access_it_should,test_every_route_is_in_the_access_table
+SEC-12|/api|All|Rate limits|Repeat uploads and AI calls more often than the hourly limit|n/a|n/a|429 rate_limited with Retry-After|test_each_limit_triggers_after_its_configured_number_of_requests
+SEC-13|/api|All|Prompt injection in a manifest|Upload a manifest that tries to take over the model|n/a|n/a|One pending donation, nothing else changed|test_a_prompt_injection_in_a_manifest_creates_only_one_donation_waiting_for_review
 A11Y-01|/login|Logged out|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
 A11Y-02|/coordinator|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
 A11Y-03|/coordinator/donations|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|

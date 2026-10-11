@@ -7,9 +7,19 @@ if (!apiPort) {
   throw new Error("API_PORT is not set. Run via make (it exports the root .env).");
 }
 
+// Headers for files the proxy does not run on (the compiled scripts and styles).
+const staticHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+];
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false, // do not announce the framework
   // End-to-end tests build into their own folder so they never disturb a running dev server.
   distDir: process.env.E2E_DIST_DIR || ".next",
+  async headers() {
+    return [{ source: "/_next/static/:path*", headers: staticHeaders }];
+  },
   async rewrites() {
     return [
       {

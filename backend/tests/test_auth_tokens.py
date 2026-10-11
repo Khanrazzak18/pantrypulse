@@ -22,9 +22,9 @@ def test_token_round_trips_to_the_user_id():
     assert decode_token(create_token(7, SECRET, 8), SECRET) == 7
 
 
-def test_token_carries_only_the_user_id_and_timestamps():
+def test_token_carries_only_the_user_id_version_and_timestamps():
     payload = jwt.decode(create_token(7, SECRET, 8), SECRET, algorithms=["HS256"])
-    assert set(payload) == {"sub", "iat", "exp"}
+    assert set(payload) == {"sub", "ver", "iat", "exp"}
 
 
 def test_token_lifetime_matches_the_requested_hours():

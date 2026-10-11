@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_db, require_admin
 from app.jobs.weekly_refresh import run_weekly_refresh
 from app.models import User
+from app.security.rate_limit import rate_limit
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -26,7 +27,11 @@ class RefreshOut(BaseModel):
     total_seconds: float
 
 
-@router.post("/jobs/weekly-refresh", response_model=RefreshOut)
+@router.post(
+    "/jobs/weekly-refresh",
+    response_model=RefreshOut,
+    dependencies=[Depends(rate_limit("weekly_refresh", require_admin))],
+)
 def weekly_refresh(
     request: Request,
     user: User = Depends(require_admin),

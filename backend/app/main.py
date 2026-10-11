@@ -22,6 +22,7 @@ from app.db import make_engine
 from app.errors import register_exception_handlers
 from app.logging import configure_logging
 from app.middleware import register_request_middleware
+from app.security.http import register_origin_check, register_security_headers
 from app.services.forecasting import ForecastConfig
 from app.storage import LocalStorage, StorageBackend
 
@@ -49,7 +50,15 @@ def create_app(
         yield
         engine.dispose()
 
-    app = FastAPI(title="PantryPulse API", version="0.1.0", lifespan=lifespan)
+    docs = "/docs" if settings.expose_api_docs else None
+    app = FastAPI(
+        title="PantryPulse API",
+        version="0.1.0",
+        lifespan=lifespan,
+        docs_url=docs,
+        redoc_url="/redoc" if settings.expose_api_docs else None,
+        openapi_url="/openapi.json" if settings.expose_api_docs else None,
+    )
     app.state.settings = settings
     app.state.engine = engine
     # The running app always uses real Bedrock; tests pass a scripted fake instead.
@@ -58,7 +67,9 @@ def create_app(
     app.state.forecast_config = forecast_config or ForecastConfig()
     app.state.today = date.today  # tests pin this to a fixed day
     register_exception_handlers(app)
+    register_origin_check(app, settings)
     register_request_middleware(app)
+    register_security_headers(app, settings)
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(pantries.router)

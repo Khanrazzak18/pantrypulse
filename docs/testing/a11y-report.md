@@ -1,6 +1,6 @@
 # Accessibility scan (axe-core)
 
-Generated 2026-10-11 12:15 from 36 scans (every page, per role, at 375, 768 and 1280 px in Chromium and 1280 px in WebKit) with WCAG 2.0 and 2.1 A and AA rules plus axe best practices. Nothing is fixed yet; this is the starting list for the accessibility stage.
+Generated 2026-10-11 14:36 from 36 scans (every page, per role, at 375, 768 and 1280 px in Chromium and 1280 px in WebKit) with WCAG 2.0 and 2.1 A and AA rules plus axe best practices. Nothing is fixed yet; this is the starting list for the accessibility stage.
 
 ## Violations by severity
 

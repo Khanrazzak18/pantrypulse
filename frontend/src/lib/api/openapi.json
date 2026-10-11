@@ -73,6 +73,7 @@
           "auth"
         ],
         "summary": "Logout",
+        "description": "End the session everywhere: raising the user's token version revokes every token, including\na copy someone took. A missing or invalid cookie is harmless.",
         "operationId": "logout_api_auth_logout_post",
         "responses": {
           "204": {

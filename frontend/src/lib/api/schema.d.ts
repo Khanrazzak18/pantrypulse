@@ -47,7 +47,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Logout */
+        /**
+         * Logout
+         * @description End the session everywhere: raising the user's token version revokes every token, including
+         *     a copy someone took. A missing or invalid cookie is harmless.
+         */
         post: operations["logout_api_auth_logout_post"];
         delete?: never;
         options?: never;

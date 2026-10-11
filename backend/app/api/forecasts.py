@@ -18,6 +18,7 @@ from app.schemas.forecasts import (
     SeriesPoint,
 )
 from app.schemas.types import PositiveId, SafeDate
+from app.security.rate_limit import rate_limit
 from app.services import forecast_runs, forecasting
 
 router = APIRouter(prefix="/api/forecasts", tags=["forecasts"])
@@ -48,7 +49,12 @@ def run_out(db: Session, run: ForecastRun) -> ForecastRunOut:
     )
 
 
-@router.post("/run", status_code=201, response_model=ForecastRunOut)
+@router.post(
+    "/run",
+    status_code=201,
+    response_model=ForecastRunOut,
+    dependencies=[Depends(rate_limit("forecast_run", require_coordinator))],
+)
 def run_forecast(
     request: Request, user: User = Depends(require_coordinator), db: Session = Depends(get_db)
 ) -> ForecastRunOut:

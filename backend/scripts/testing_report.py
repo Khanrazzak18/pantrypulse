@@ -16,7 +16,7 @@ from __future__ import annotations
 import ast
 import json
 import re
-import subprocess
+import subprocess  # nosec B404
 import sys
 from collections import Counter, defaultdict
 from datetime import datetime
@@ -54,7 +54,7 @@ def count_pytest() -> tuple[int, int | None]:
         functions += sum(
             isinstance(n, ast.FunctionDef) and n.name.startswith("test_") for n in ast.walk(tree)
         )
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec B603
         [sys.executable, "-m", "pytest", "--collect-only", "-q"],
         cwd=ROOT / "backend", capture_output=True, text=True,
     )  # fmt: skip

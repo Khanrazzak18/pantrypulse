@@ -7,12 +7,14 @@ refresh), and file uploads (covered separately below with hostile file names and
 """
 
 import json
+import time
 from urllib.parse import quote
 
 import pytest
 
 from app.ai.llm_provider import LLMUnavailable
 from tests.conftest import login
+from tests.openapi_helpers import resolve, sample
 
 pytestmark = pytest.mark.usefixtures("people", "allocation_world", "impact_world")
 
@@ -28,6 +30,19 @@ INTS = [
     "1e400",
     "-99999999999999999999",
     "",
+]
+INJECTIONS = [
+    "'; DROP TABLE users; --",
+    "1; SELECT pg_sleep(5)--",
+    "' OR '1'='1",
+    "' UNION SELECT password_hash FROM users --",
+    "1' AND (SELECT 1 FROM pg_sleep(5))--",
+    '" OR ""="',
+    "%27%20OR%201%3D1",
+    "\\' OR 1=1 --",
+    "admin'--",
+    "${7*7}",
+    "{{7*7}}",
 ]
 TEXTS = [
     "\u0000",
@@ -53,7 +68,7 @@ DATES = [
     "0000-01",
     "9999-12",
 ]
-HOSTILE_QUERY = INTS + TEXTS[:6] + DATES
+HOSTILE_QUERY = INTS + TEXTS[:6] + DATES + INJECTIONS
 JSON_VALUES = [
     None,
     True,
@@ -94,44 +109,6 @@ class AlwaysDown:
 
     def converse_tool(self, **_):
         raise LLMUnavailable("down", retryable=False)
-
-
-def resolve(schema, spec):
-    if "$ref" in schema:
-        node = spec
-        for part in schema["$ref"].lstrip("#/").split("/"):
-            node = node[part]
-        return resolve(node, spec)
-    return schema
-
-
-def sample(schema, spec, depth=0):
-    """A plausible valid value for a schema (good enough to get past validation)."""
-    schema = resolve(schema, spec)
-    for key in ("anyOf", "oneOf"):
-        if key in schema:
-            options = [o for o in schema[key] if o.get("type") != "null"]
-            return sample(options[0], spec, depth) if options else None
-    if "enum" in schema:
-        return schema["enum"][0]
-    kind = schema.get("type")
-    if kind == "object":
-        return {
-            k: sample(v, spec, depth + 1)
-            for k, v in schema.get("properties", {}).items()
-            if k in schema.get("required", [])
-        }
-    if kind == "array":
-        return [sample(schema.get("items", {}), spec, depth + 1)] if depth < 4 else []
-    if kind == "integer":
-        return 1
-    if kind == "number":
-        return 1.5
-    if kind == "boolean":
-        return True
-    if schema.get("format") == "date":
-        return "2026-10-05"
-    return "x"
 
 
 def leaf_paths(value, prefix=()):
@@ -180,7 +157,7 @@ def requests_for(spec):
                 continue  # multipart upload: covered separately
             # 1. hostile path parameters
             for p in path_params:
-                for bad in [*INTS, *DATES, *TEXTS[:6]]:
+                for bad in [*INTS, *DATES, *TEXTS[:6], *INJECTIONS]:
                     yield (
                         method,
                         path.replace(
@@ -216,6 +193,7 @@ def fuzz(client):
     spec = client.app.openapi()
     sent = 0
     for method, path, query, body in requests_for(spec):
+        started = time.monotonic()
         try:
             payload = json.dumps(body, allow_nan=False) if body is not None else None
         except ValueError:
@@ -223,7 +201,10 @@ def fuzz(client):
         response = client.request(
             method, path, params=query, content=payload, headers={"content-type": "application/json"} if payload else {},
         )  # fmt: skip
-        check(response, f"{method} {path} {str(query)[:80]} {str(payload)[:80]}")
+        what = f"{method} {path} {str(query)[:80]} {str(payload)[:80]}"
+        check(response, what)
+        # a time-based injection (pg_sleep) would make the request wait for the database
+        assert time.monotonic() - started < 4, f"{what} took too long"
         sent += 1
     return sent
 
@@ -239,9 +220,20 @@ def test_the_fuzzer_covers_a_lot_of_ground(fuzz_app):
     assert count > 1500
 
 
-def test_fuzz_as_an_admin(fuzz_app, people):
+def count_rows(engine, table):
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        return conn.execute(text(f"SELECT count(*) FROM {table}")).scalar()  # noqa: S608
+
+
+def test_fuzz_as_an_admin(fuzz_app, people, engine):
+    users_before = count_rows(engine, "users")
     login(fuzz_app, people.admin)
     assert fuzz(fuzz_app) > 1500
+    # the injection strings did nothing: the tables are all still there and nobody was added or removed
+    assert count_rows(engine, "users") == users_before
+    assert count_rows(engine, "categories") == 8
 
 
 def test_fuzz_as_a_pantry_manager(fuzz_app, people):

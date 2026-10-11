@@ -28,6 +28,7 @@ from app.schemas.allocations import (
     PantryRef,
 )
 from app.schemas.types import PathId, SafeDate
+from app.security.rate_limit import rate_limit
 from app.services import allocation_runs as svc
 from app.services.optimizer import haversine_miles
 
@@ -122,7 +123,12 @@ def _latest_run(db: Session) -> AllocationRun | None:
     )
 
 
-@router.post("/run", status_code=201, response_model=AllocationRunOut)
+@router.post(
+    "/run",
+    status_code=201,
+    response_model=AllocationRunOut,
+    dependencies=[Depends(rate_limit("allocation_run", require_coordinator))],
+)
 def run_allocation(
     request: Request, user: User = Depends(require_coordinator), db: Session = Depends(get_db)
 ) -> AllocationRunOut:
@@ -137,7 +143,11 @@ def latest_run(db: Session = Depends(get_db)) -> LatestAllocationRun:
     return LatestAllocationRun(run=run_out(db, run) if run else None)
 
 
-@router.post("/runs/{run_id}/reasons", response_model=AllocationRunOut)
+@router.post(
+    "/runs/{run_id}/reasons",
+    response_model=AllocationRunOut,
+    dependencies=[Depends(rate_limit("allocation_reasons", require_coordinator))],
+)
 def more_reasons(
     run_id: PathId, request: Request, db: Session = Depends(get_db)
 ) -> AllocationRunOut:

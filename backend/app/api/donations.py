@@ -11,13 +11,19 @@ from app.errors import ApiError
 from app.models import Donation, User
 from app.schemas.donations import ConfirmRequest, DonationDetail, DonationSummary
 from app.schemas.types import PathId
+from app.security.rate_limit import rate_limit
 from app.services import donations as views
 from app.services import intake
 
 router = APIRouter(prefix="/api/donations", tags=["donations"])
 
 
-@router.post("", status_code=201, response_model=DonationDetail)
+@router.post(
+    "",
+    status_code=201,
+    response_model=DonationDetail,
+    dependencies=[Depends(rate_limit("uploads", require_coordinator))],
+)
 def upload_donation(
     file: UploadFile,
     request: Request,

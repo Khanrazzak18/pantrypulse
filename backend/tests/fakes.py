@@ -30,6 +30,7 @@ class FakeLLM:
                 "tool_name": tool_name,
                 "schema": input_schema,
                 "timeout_seconds": timeout_seconds,
+                "max_tokens": max_tokens,
             }  # fmt: skip
         )
         if not self.outputs:

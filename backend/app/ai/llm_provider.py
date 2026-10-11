@@ -34,7 +34,8 @@ logger = logging.getLogger("pantrypulse.llm")
 
 CONNECT_TIMEOUT_SECONDS = 5
 READ_TIMEOUT_SECONDS = 45
-MAX_OUTPUT_TOKENS = 4096
+MAX_OUTPUT_TOKENS = 4096  # the most any single call may ask for (cost cap)
+MAX_READ_TIMEOUT_SECONDS = 60  # the longest any single call may wait
 
 _sleep = time.sleep  # tests replace this so backoff does not slow them down
 
@@ -176,6 +177,10 @@ class BedrockProvider:
     ) -> LLMResult:
         if not self.model_id:
             raise LLMNotConfigured("BEDROCK_MODEL_ID is not set in .env")
+        # Whatever a caller asks for, one call can never cost more than these limits.
+        max_tokens = max(1, min(max_tokens, MAX_OUTPUT_TOKENS))
+        if timeout_seconds is not None:
+            timeout_seconds = max(1.0, min(timeout_seconds, MAX_READ_TIMEOUT_SECONDS))
         request = {
             "modelId": self.model_id,
             "system": [{"text": system}],
@@ -309,6 +314,8 @@ def run_with_retry[T](
                 raise
             last = exc
         if attempt < max_attempts:
-            _sleep(backoff_seconds * 2 ** (attempt - 1) + random.uniform(0, 0.25))
-    assert last is not None
+            # jitter for the retry delay, not a security use of randomness
+            _sleep(backoff_seconds * 2 ** (attempt - 1) + random.uniform(0, 0.25))  # nosec B311
+    if last is None:  # cannot happen: the loop ran at least once
+        raise RuntimeError("run_with_retry made no attempt")
     raise last

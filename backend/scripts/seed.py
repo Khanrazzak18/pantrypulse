@@ -37,6 +37,8 @@ DEMO_PASSWORD_VARS = {
     "pantry_manager": "DEMO_PANTRY_MANAGER_PASSWORD",
 }
 DEMO_PANTRY_ID = 14
+# The passwords printed in .env.example and the README: fine on a laptop, never on a real site.
+PUBLIC_DEMO_PASSWORDS = {"demo-coordinator-pw", "demo-admin-pw", "demo-manager-pw"}
 KEEP_TABLES = {"categories", "alembic_version"}  # reference data and migration state
 INSERT_CHUNK = 5_000
 
@@ -56,6 +58,11 @@ def require_demo_passwords(settings: Settings) -> dict[str, str]:
             + ".\nSet them in .env (copy the DEMO_* lines from .env.example), then run "
             "make seed again."
         )
+    if settings.cookie_secure and any(v in PUBLIC_DEMO_PASSWORDS for v in values.values()):
+        raise SystemExit(
+            "make seed refuses to create users with the demo passwords from .env.example while "
+            "COOKIE_SECURE=true (a real, https site). Choose your own DEMO_* passwords in .env."
+        )
     return {role: value for role, value in values.items() if value}
 
 
@@ -72,10 +79,16 @@ def app_tables() -> list[str]:
     return [t.name for t in Base.metadata.sorted_tables if t.name not in KEEP_TABLES]
 
 
+def quote(conn_or_engine, name: str) -> str:
+    """A table name made safe to put inside SQL text (these come from our own models, never from a
+    user, but identifiers cannot be bound as parameters, so they are quoted anyway)."""
+    return conn_or_engine.dialect.identifier_preparer.quote(name)
+
+
 def truncate_app_tables(engine: Engine) -> None:
-    names = ", ".join(app_tables())
+    names = ", ".join(quote(engine, name) for name in app_tables())
     with engine.begin() as conn:
-        conn.execute(text(f"TRUNCATE {names} RESTART IDENTITY CASCADE"))
+        conn.execute(text(f"TRUNCATE {names} RESTART IDENTITY CASCADE"))  # nosec B608
 
 
 def _insert(conn, table_name: str, rows: list[dict]) -> None:
@@ -85,12 +98,14 @@ def _insert(conn, table_name: str, rows: list[dict]) -> None:
 
 
 def _reset_sequence(conn, table_name: str) -> None:
+    table = quote(conn, table_name)
     conn.execute(
         text(
-            f"SELECT setval(pg_get_serial_sequence('{table_name}', 'id'), "
-            f"COALESCE((SELECT max(id) FROM {table_name}), 1), "
-            f"(SELECT count(*) > 0 FROM {table_name}))"
-        )
+            "SELECT setval(pg_get_serial_sequence(:table, 'id'), "
+            f"COALESCE((SELECT max(id) FROM {table}), 1), "  # nosec B608
+            f"(SELECT count(*) > 0 FROM {table}))"
+        ),
+        {"table": table},
     )
 
 
@@ -129,7 +144,7 @@ def main() -> None:
         with engine.connect() as conn:
             print("\nRow counts:")
             for name in app_tables() + ["categories"]:
-                count = conn.execute(text(f"SELECT count(*) FROM {name}")).scalar_one()
+                count = conn.execute(text(f"SELECT count(*) FROM {quote(conn, name)}")).scalar_one()  # nosec B608
                 print(f"  {name:20s} {count:>9,}")
     finally:
         engine.dispose()

@@ -13,6 +13,7 @@ from app.schemas.dashboard import (
     SummaryResponse,
 )
 from app.schemas.types import SafeDate, check_month
+from app.security.rate_limit import rate_limit
 from app.services import dashboard, summaries
 
 router = APIRouter(
@@ -58,7 +59,12 @@ def get_summary(month: MonthPath, db: Session = Depends(get_db)) -> SummaryRespo
     return SummaryResponse(summary=_summary_out(row) if row else None)
 
 
-@router.post("/summaries/{month}/draft", response_model=SummaryOut, status_code=201)
+@router.post(
+    "/summaries/{month}/draft",
+    response_model=SummaryOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("summary_draft", require_admin))],
+)
 def draft_summary(request: Request, month: MonthPath, db: Session = Depends(get_db)) -> SummaryOut:
     return _summary_out(summaries.draft(db, request.app.state.llm, month))
 

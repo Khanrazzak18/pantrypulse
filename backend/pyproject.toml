@@ -27,6 +27,9 @@ dev = [
     "pytest>=8",
     "httpx2",
     "ruff>=0.6",
+    "pyyaml>=6.0",  # tests read docker-compose.yml
+    "bandit>=1.8",  # make security
+    "pip-audit>=2.7",  # make security
     "reportlab>=4.0",  # builds the PDF golden manifests
 ]
 
@@ -57,3 +60,9 @@ known-first-party = ["app", "scripts"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends"]
+
+[tool.bandit]
+# Tests and the synthetic-data/eval tooling are not shipped. B101 (assert) is skipped: the few
+# asserts in app code are internal sanity checks, not security checks.
+exclude_dirs = ["tests", "eval", ".venv"]
+skips = ["B101"]

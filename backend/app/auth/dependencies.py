@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterator
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
-from app.auth.tokens import decode_token
+from app.auth.tokens import decode_session
 from app.errors import ApiError
 from app.models import User
 
@@ -23,11 +23,13 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> User:
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         raise not_authenticated
-    user_id = decode_token(token, request.app.state.settings.jwt_secret)
-    if user_id is None:
+    claims = decode_session(token, request.app.state.settings.jwt_secret)
+    if claims is None:
         raise not_authenticated
-    user = db.get(User, user_id)
-    if user is None or not user.is_active:
+    user = db.get(User, claims.user_id)
+    # A token is good only for the version the user is on now: logout, deactivation and role or
+    # password changes all raise it.
+    if user is None or not user.is_active or user.token_version != claims.version:
         raise not_authenticated
     return user
 

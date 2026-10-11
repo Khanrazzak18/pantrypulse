@@ -30,14 +30,25 @@ export default defineConfig({
       command: `../backend/.venv/bin/uvicorn scripts.e2e_server:build_app --factory --host 127.0.0.1 --port ${apiPort}`,
       cwd: "../backend",
       url: `http://127.0.0.1:${apiPort}/api/health`,
-      env: { E2E_MODE: "1", E2E_TODAY: "2026-10-06", API_PORT: apiPort },
+      env: {
+        E2E_MODE: "1",
+        E2E_TODAY: "2026-10-06",
+        API_PORT: apiPort,
+        // the browser's address, so the API's CSRF check knows it
+        ALLOWED_ORIGINS: `http://127.0.0.1:${webPort}`,
+        // the tests make hundreds of uploads and AI calls an hour; the real limits are tested in pytest
+        RATE_LIMIT_UPLOADS_PER_HOUR: "100000",
+        RATE_LIMIT_AI_PER_HOUR: "100000",
+        RATE_LIMIT_REFRESH_PER_HOUR: "100000",
+        COOKIE_SECURE: "false",
+      },
       reuseExistingServer: false,
       timeout: 60_000,
     },
     {
       command: `npx next start --hostname 127.0.0.1 --port ${webPort}`,
       url: `http://127.0.0.1:${webPort}/login`,
-      env: { API_PORT: apiPort, E2E_DIST_DIR: ".next-e2e", WEB_PORT: webPort },
+      env: { API_PORT: apiPort, E2E_DIST_DIR: ".next-e2e", WEB_PORT: webPort, COOKIE_SECURE: "false" },
       reuseExistingServer: false,
       timeout: 60_000,
     },

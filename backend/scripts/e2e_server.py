@@ -35,7 +35,8 @@ DEFAULT_TODAY = "2026-10-06"  # a Tuesday: the forecast week is the one starting
 # Everything a test can change, undone by /__e2e/reset. Seeded history, pantries, users and the
 # backtest are left alone so a reset takes milliseconds.
 RESET_SQL = [
-    "TRUNCATE allocation_edits, allocations, allocation_runs, monthly_summaries, login_throttle "
+    "TRUNCATE allocation_edits, allocations, allocation_runs, monthly_summaries, login_throttle, "
+    "rate_limits "
     "RESTART IDENTITY CASCADE",
     "DELETE FROM shortage_reports WHERE reported_by IS NOT NULL",
     # forward forecasts (the seeded backtest is kind 'backtest')
