@@ -27,3 +27,9 @@ backend/var/
 
 # generated eval output (the committed record is docs/eval/intake-eval.md)
 backend/eval/results/
+
+# end-to-end tests
+frontend/.next-e2e/
+frontend/test-results/
+frontend/playwright-report/
+backend/var/e2e-uploads/

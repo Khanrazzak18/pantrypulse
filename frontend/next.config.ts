@@ -8,6 +8,8 @@ if (!apiPort) {
 }
 
 const nextConfig: NextConfig = {
+  // End-to-end tests build into their own folder so they never disturb a running dev server.
+  distDir: process.env.E2E_DIST_DIR || ".next",
   async rewrites() {
     return [
       {

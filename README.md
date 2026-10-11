@@ -178,6 +178,8 @@ refresh. A pantry manager sees only their own pantry.
 | `make test` | ruff and pytest, then frontend lint, typecheck and production build (needs `make db`) |
 | `make backtest` | Forecast backtest over the last 12 weeks (no AWS, about a minute); writes `docs/eval/forecast-backtest.md` |
 | `make simulate` | Replay the last 12 weeks under a manual rule and the optimizer (run `make backtest` first); writes `docs/eval/allocation-sim.md` |
+| `make e2e` | End-to-end tests (Playwright) on a separate API (port 8101) and web server (port 3101) using the test database and a mock AI; writes `docs/testing/checklist.md` and `a11y-report.md`. Never run it at the same time as `make test` |
+| `make e2e-report` | Rewrite the two testing reports from the last e2e run |
 | `make eval` | The intake eval (calls Bedrock, costs about 245,000 tokens) and then the backtest |
 | `make golden` | Rebuild the golden manifests from their fixed seed |
 | `make refresh` | Weekly job over HTTP (needs `make dev`): trains the forward forecast, then reruns allocation, about 14 s |
@@ -189,6 +191,20 @@ frontend lint, typecheck and the production build. It never calls AWS. Tests are
 code they check; the suites cover constraints and migrations, auth and lockout, intake, forecasting
 and its leakage checks, the optimizer, allocation workflow, the pantry portal, dashboard numbers,
 summaries, error envelopes and input validation.
+
+### End-to-end tests and the testing checklist
+
+`make e2e` drives the real pages with Playwright at 375, 768 and 1280 px in Chromium and 1280 px in
+WebKit (Safari's engine), signed in as each role. It starts its own API on port 8101 (the real app,
+wired to the test database, a scripted mock AI, a throwaway upload folder and a pinned date) and its
+own production web server on port 3101, so your dev app and real Bedrock are never touched. The mock
+AI and the reset route live only in `backend/scripts/e2e_server.py`; a test proves the normal app
+cannot load them. Every feature, button and error state is listed in
+[docs/testing/checklist.md](docs/testing/checklist.md) with the test that covers it, accessibility
+findings are in [docs/testing/a11y-report.md](docs/testing/a11y-report.md), and bugs found but not
+yet fixed are in [docs/testing/bugs.md](docs/testing/bugs.md). A test marked `test.fail()` with a
+`[BUG-n]` in its title proves a known bug and flips to a failure the moment the bug is fixed.
+`make test` and `make e2e` share the test database, so run them one after the other.
 
 ## Using the app, by role
 

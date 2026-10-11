@@ -1,0 +1,227 @@
+# ruff: noqa: E501
+"""The source of docs/testing/checklist.md: every feature, button and error state, page by page.
+
+Each row is  ID | page | role | feature or button | steps | normal input | weird inputs |
+expected result | pytest tests that already cover it (comma separated, optional).
+
+`python -m scripts.testing_report` joins these rows with the end-to-end results (tests whose title
+starts with the row's [ID]) and writes the markdown. `tests/test_testing_checklist.py` checks that
+IDs are unique and every cited pytest test exists.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+HEADER = "ID|page|role|feature or button|steps|normal input|weird inputs|expected result|pytest"
+
+ROWS_TEXT = """
+ANON-01|/|Logged out|Root redirect|Open /|n/a|n/a|Redirects to /login|
+ANON-02|/coordinator, /coordinator/donations, /coordinator/forecasts, /coordinator/allocations|Logged out|Protected page redirect|Open each URL without signing in|n/a|?query strings in the URL|Redirects to /login?next=<that page>|
+ANON-03|/pantry|Logged out|Protected page redirect|Open /pantry without signing in|n/a|n/a|Redirects to /login?next=/pantry|
+ANON-04|/admin/dashboard|Logged out|Protected page redirect|Open /admin/dashboard without signing in|n/a|n/a|Redirects to /login?next=/admin/dashboard (same as the other protected pages)|
+ANON-05|/nope|Logged out|Unknown URL|Open /does-not-exist|n/a|very long path, emoji path|A readable not-found page, not a crash|
+ANON-06|/api/*|Logged out|API without a session|Call each API route with no cookie|n/a|garbage cookie, expired cookie|401 in the error envelope|test_protected_routes_return_401_when_logged_out,test_every_route_refuses_a_logged_out_caller_in_the_envelope,test_a_garbage_cookie_returns_401,test_an_expired_token_returns_401
+ANON-07|/coordinator|Coordinator|Back button after logout|Sign in, open a page, log out, press Back|n/a|forward then back again|No private data shown; the login page appears|
+ANON-08|/coordinator|Logged out|Garbage session cookie|Set cookie pp_session=garbage, open /coordinator|n/a|n/a|Sent to /login, no error page|
+LOGIN-01|/login|Coordinator|Sign in|Enter coordinator email and password, press Sign in|valid demo login|n/a|Lands on /coordinator|test_login_sets_an_httponly_lax_cookie_and_returns_the_user
+LOGIN-02|/login|Admin|Sign in|Enter admin email and password|valid demo login|n/a|Lands on /coordinator (admin home)|
+LOGIN-03|/login|Pantry manager|Sign in|Enter manager email and password|valid demo login|n/a|Lands on /pantry|test_login_for_a_pantry_manager_includes_their_pantry
+LOGIN-04|/login?next=|All|next parameter|Open /login?next=/coordinator/forecasts and sign in|valid login|n/a|Lands on /coordinator/forecasts|
+LOGIN-05|/login?next=|All|Unsafe next parameter|Open /login?next=//evil.com (and https://evil.com, /\\evil.com) and sign in|valid login|external URLs|Ignores it and lands on the role's home|
+LOGIN-06|/login|Logged out|Empty form|Press Sign in with both fields empty|empty|n/a|Inline messages under both fields, no request sent|test_bad_login_bodies_return_a_422_envelope
+LOGIN-07|/login|Logged out|Spaces only|Type spaces in both fields, press Sign in|spaces|n/a|Inline messages, no request sent|
+LOGIN-08|/login|Logged out|Email format|Type 'not-an-email'|text without @|a@b, @b.co, emoji@例え.jp|Inline "valid email" message|test_login_rejects_bad_bodies
+LOGIN-09|/login|Logged out|Wrong password|Right email, wrong password|wrong password|n/a|One generic message; password field focused|test_wrong_password_returns_401_and_no_cookie
+LOGIN-10|/login|Logged out|Unknown email|Unknown email, any password|unknown email|n/a|Exactly the same message as a wrong password|test_unknown_email_gets_exactly_the_same_response_as_a_wrong_password
+LOGIN-11|/login|Logged out|Lockout|Five wrong passwords for one email, then the right one|5 wrong attempts|n/a|A clear "too many failed attempts, try again in N minutes" message, even for the right password|test_the_fifth_failure_locks_even_for_the_right_password
+LOGIN-12|/login|Logged out|Very long input|Paste 5,000 characters into email and password|5,000-character text|n/a|Input is capped or refused with a message; no crash|test_login_rejects_bad_bodies
+LOGIN-13|/login|Logged out|Emoji and non-Latin text|Type emoji, Arabic, Chinese in both fields|emoji and non-Latin text|n/a|Handled like any wrong login; no crash|
+LOGIN-14|/login|Logged out|HTML and SQL text|Type <script>alert(1)</script> and ' OR 1=1 -- in both fields|injection strings|n/a|Treated as ordinary wrong input; nothing executes|
+LOGIN-15|/login|Logged out|Double-click Sign in|Double-click the button|valid login|n/a|Only one login request is sent|
+LOGIN-16|/login|Logged out|Enter key|Type credentials and press Enter|valid login|n/a|Submits the form|
+LOGIN-17|/login|Logged out|Password field is masked|Type a password|any|n/a|Input type is password|
+LOGIN-18|/login|Coordinator|Visit /login when signed in|Sign in, then open /login|n/a|n/a|Sent to the role's home (not asked to sign in again)|
+SHELL-01|every page|All staff|Header shows the user|Sign in, look at the header|any role|long names|Name and role visible from 640 px up; app name always|test_me_returns_the_logged_in_user
+SHELL-02|every page|All|Log out button|Press Log out|n/a|double-click|Goes to /login; session cookie cleared; protected pages redirect again|test_logout_clears_the_cookie_and_ends_the_session
+SHELL-03|every page|Coordinator|Navigation items|Look at the navigation|n/a|n/a|Pantries, Donations, Forecasts, Allocations only|
+SHELL-04|every page|Admin|Navigation items|Look at the navigation|n/a|n/a|Same as coordinator plus Dashboard|
+SHELL-05|every page|Pantry manager|Navigation items|Look at the navigation|n/a|n/a|Only My pantry|
+SHELL-06|every page|All staff|Navigation links|Click each link|n/a|n/a|Goes to that page; the current link is highlighted (aria-current)|
+SHELL-07|every page (under 768 px)|Coordinator|Menu button|Press the menu button, press a link|n/a|double-click|Menu opens and closes; choosing a link closes it; aria-expanded is correct|
+SHELL-08|URLs of another role|All|Wrong-role URL|Coordinator opens /admin/dashboard and /pantry; manager opens /coordinator and /admin/dashboard|n/a|n/a|Redirected to their own home, never shown the page|test_pantry_managers_cannot_run_or_decide,test_only_admins_see_the_dashboard
+SHELL-09|every page (under 1024 px)|All|Tap targets|Measure buttons, links, inputs|n/a|n/a|Every control is at least 44 px tall|
+SHELL-10|/coordinator/donations/99999999|Coordinator|Missing record|Open a donation id that does not exist|n/a|id 0, -1, abc|A not-found page with a way back|test_unknown_and_malformed_ids
+SHELL-11|every page|All|Loading state|Navigate between pages|n/a|n/a|A loading indicator, no blank page|
+SHELL-12|every page|All|Error state|Make a page's server request fail|n/a|n/a|"Something went wrong" with Try again|
+PANT-01|/coordinator|Coordinator|Pantry list|Open Pantries|n/a|n/a|85 pantries in 6 counties; table from 768 px, cards below|test_coordinator_and_admin_can_list_pantries
+PANT-02|/coordinator|Admin|Pantry list|Open Pantries as admin|n/a|n/a|Same list|test_coordinator_and_admin_can_list_pantries
+PANT-03|/coordinator|Coordinator|Empty state|Open Pantries with no pantries|n/a|n/a|"No pantries yet" message|
+DON-01|/coordinator/donations|Coordinator|Donation list|Open Donations|n/a|n/a|Newest first with items, weight, status|test_the_list_shows_newest_first_with_counts_and_filters_by_status
+DON-02|/coordinator/donations|Coordinator|Filter links|Press All, Needs review, Confirmed, Rejected|n/a|n/a|List and the pressed filter change|test_the_list_shows_newest_first_with_counts_and_filters_by_status
+DON-03|/coordinator/donations?status=|Coordinator|Unknown status in the URL|Open ?status=bogus, ?status=<script>|n/a|SQL text|Treated as All; nothing executes|test_the_list_rejects_an_unknown_status_and_a_silly_limit
+DON-04|/coordinator/donations|Coordinator|View link|Press View on a row|n/a|n/a|Opens that donation's review page|
+DON-05|/coordinator/donations|Coordinator|Empty state under a filter|Filter to Rejected with none|n/a|n/a|"No donations with status Rejected"|
+DON-06|/coordinator/donations?added=|Coordinator|Success banners|Open ?added=3&lbs=100 and ?rejected=1|n/a|?added=abc, ?added=-5, ?lbs=<script>|Sensible banner or none; never broken text or script|
+DON-07|/coordinator/donations|Coordinator|Table or cards|Resize across 768 px|n/a|n/a|Table from 768 px, cards below, no horizontal page scroll|
+DON-08|/coordinator/donations|Admin|Same page as admin|Open Donations as admin|n/a|n/a|Works as for a coordinator|test_admins_can_upload
+UP-01|/coordinator/donations|Coordinator|Upload an email (.eml)|Choose a valid .eml|valid .eml|n/a|Opens the review page with the AI's items|test_upload_creates_a_pending_donation_with_the_extracted_items
+UP-02|/coordinator/donations|Coordinator|Upload text (.txt)|Choose a .txt|valid .txt|5,000-character text, emoji and non-Latin text|Opens the review page|test_each_file_kind_reaches_the_model_in_the_right_block
+UP-03|/coordinator/donations|Coordinator|Upload a PDF|Choose a real small PDF|valid .pdf|n/a|Opens the review page|test_each_file_kind_reaches_the_model_in_the_right_block
+UP-04|/coordinator/donations|Coordinator|Upload a photo|Choose a real small PNG|valid .png|n/a|Opens the review page|test_each_file_kind_reaches_the_model_in_the_right_block
+UP-05|/coordinator/donations|Coordinator|0-byte file|Choose an empty .txt|0 bytes|n/a|Message "is empty"; nothing uploaded|test_an_empty_file_is_rejected
+UP-06|/coordinator/donations|Coordinator|Wrong file type|Choose setup.exe|.exe|.sh, no extension|Message naming the allowed types; nothing uploaded|test_wrong_file_types_get_a_readable_415
+UP-07|/coordinator/donations|Coordinator|Renamed .exe|Choose an .exe renamed to .pdf|MZ bytes named .pdf|n/a|A readable error from the server; nothing stored|test_files_that_are_not_what_their_extension_says_are_rejected
+UP-08|/coordinator/donations|Coordinator|11 MB file|Choose an 11 MB .txt|11 MB|exactly 10 MB|Message with the size and the 10 MB limit|test_a_file_over_10_mb_is_rejected_with_a_readable_413,test_exactly_10_mb_passes_the_upload_limit
+UP-09|/coordinator/donations|Coordinator|AI unavailable|Switch the mock AI off, upload|valid .eml|n/a|Readable error with Try again and Choose a different file; nothing saved|test_access_problems_are_not_retried_and_do_not_leak_details
+UP-10|/coordinator/donations|Coordinator|Try again|After UP-09, switch the AI on and press Try again|n/a|n/a|Upload succeeds|test_a_timeout_then_success_works
+UP-11|/coordinator/donations|Coordinator|Choose a different file|After an error press Choose a different file|n/a|n/a|Error clears and the picker is back|
+UP-12|/coordinator/donations|Coordinator|Manifest with no items|Upload text the AI finds no items in|no food|n/a|Message that no items were found; nothing saved|test_a_file_with_no_donation_items_is_reported_not_retried
+UP-13|/coordinator/donations|Coordinator|Double-click choose / submit|Select a file twice quickly|valid .eml|n/a|Only one donation is created|
+UP-14|/coordinator/donations|Coordinator|Odd filenames|Upload files named <img src=x onerror=1>.txt, 😀.txt, 日本語.txt|valid text|very long name|Shown escaped on the review page; no script runs|test_uploaded_filenames_never_become_storage_paths
+UP-15|/coordinator/donations|Coordinator|Cancel while reading|Press Cancel during the AI call|n/a|n/a|Upload stops; nothing saved|
+UP-16|/coordinator/donations|Coordinator|Drag and drop|Drop a file on the box|valid .eml|n/a|Same as choosing it|
+UP-17|/coordinator/donations|Manager|Manager uploads|Call the upload route as a manager|n/a|n/a|403 in the envelope|test_pantry_managers_cannot_upload
+REV-01|/coordinator/donations/[id]|Coordinator|Review page loads|Open a pending donation|n/a|n/a|Donor select, one row per item, confirm and reject buttons|test_detail_returns_the_extracted_items_with_their_confidence
+REV-02|/coordinator/donations/[id]|Coordinator|Low-confidence highlight|Open a donation with a low-confidence field|n/a|n/a|That field is highlighted with an "AI unsure" note; editing clears it|test_untouched_rows_keep_the_models_confidence_and_are_not_flagged_edited
+REV-03|/coordinator/donations/[id]|Coordinator|Choose an existing donor|Pick a donor in the select|n/a|n/a|Confirm works with that donor|test_an_existing_donor_can_be_chosen_by_id
+REV-04|/coordinator/donations/[id]|Coordinator|New donor|Choose New donor… and type a name|a name|spaces only, 121 characters, emoji|Name field appears and is validated|test_a_new_donor_name_reuses_an_existing_donor_ignoring_case
+REV-05|/coordinator/donations/[id]|Coordinator|No donor chosen|Press Confirm with no donor|n/a|n/a|Inline error under the donor field|test_invalid_confirmations_are_rejected_and_create_nothing
+REV-06|/coordinator/donations/[id]|Coordinator|Item name|Clear the name, then type 201 characters|name|spaces only, emoji, HTML, SQL text|Inline error for empty and too long; other text accepted and escaped|test_invalid_confirmations_are_rejected_and_create_nothing
+REV-07|/coordinator/donations/[id]|Coordinator|Quantity|Type 0, -3, 2.5, abc, empty|whole number|decimals, negative, text|Inline error for 0, negative, text and empty|test_invalid_confirmations_are_rejected_and_create_nothing
+REV-08|/coordinator/donations/[id]|Coordinator|Weight|Type 0, -1, 100001, abc|number|zero, negative, huge|Inline error for each|test_invalid_confirmations_are_rejected_and_create_nothing
+REV-09|/coordinator/donations/[id]|Coordinator|Expiry date in the past|Pick yesterday's date|past date|1900-01-01|Inline "already expired" error|test_an_item_that_has_already_expired_is_blocked_and_the_field_is_named
+REV-10|/coordinator/donations/[id]|Coordinator|Expiry date far in the future|Pick 9999-12-31|far future|year 275760|Accepted or flagged; never a crash or a wrong saved date|
+REV-11|/coordinator/donations/[id]|Coordinator|Unit|Clear the unit|unit text|spaces only|Inline error|test_invalid_confirmations_are_rejected_and_create_nothing
+REV-12|/coordinator/donations/[id]|Coordinator|Category and storage selects|Change each select|n/a|n/a|Value changes and is saved on confirm|test_frozen_chicken_is_protein_stored_frozen_in_the_inventory
+REV-13|/coordinator/donations/[id]|Coordinator|Remove row|Press the remove button on a row|n/a|remove every row|Row disappears; removing all rows disables or blocks confirm|test_edited_added_and_removed_rows_are_handled
+REV-14|/coordinator/donations/[id]|Coordinator|Add a row|Press + Add a new row|n/a|add 100 rows|Empty row appears and must be filled in|test_edited_added_and_removed_rows_are_handled
+REV-15|/coordinator/donations/[id]|Coordinator|Confirm|Press Confirm and add N lots|valid items|n/a|Back on Donations with a banner; lots appear in inventory|test_confirm_creates_items_and_one_lot_per_item
+REV-16|/coordinator/donations/[id]|Coordinator|Double-click Confirm|Double-click the confirm button|valid items|n/a|Only one set of lots is created|test_confirming_twice_is_a_409_and_does_not_duplicate_lots
+REV-17|/coordinator/donations/[id]|Coordinator|Reject and its dialog|Press Reject, then Cancel, then Reject and confirm|n/a|n/a|Dialog asks first; Cancel closes it; confirming rejects|test_reject_saves_no_items_or_lots_but_keeps_the_audit_record
+REV-18|/coordinator/donations/[id]|Coordinator|Already decided donation|Open a confirmed or rejected donation|n/a|n/a|Read-only; no confirm or reject buttons|test_a_rejected_donation_cannot_be_confirmed_or_rejected_again
+REV-19|/coordinator/donations/[id]|Coordinator|Back link|Press All donations|n/a|n/a|Returns to the list|
+REV-20|/coordinator/donations/[id]|Coordinator|SQL and HTML text in a field|Type ' OR 1=1 -- and <b>x</b> in the name|injection strings|5,000 characters|Saved literally and shown escaped|test_a_new_donor_is_created_with_type_other
+FC-01|/coordinator/forecasts|Coordinator|Empty state|Open Forecasts before any forward run|n/a|n/a|"No forecast yet" and a Run forecast button|test_latest_runs_reports_nothing_before_any_run
+FC-02|/coordinator/forecasts|Coordinator|Run forecast|Press Run forecast|n/a|n/a|Loading state, then a message with the week and number of forecasts|test_a_run_trains_once_and_saves_next_weeks_forecast
+FC-03|/coordinator/forecasts|Coordinator|Run forecast twice|Press it again, and double-click it|n/a|n/a|Second run works; double-click sends one request|test_running_twice_makes_two_runs_and_the_latest_is_used
+FC-04|/coordinator/forecasts|Admin|Run forecast as admin|Press Run forecast|n/a|n/a|Works|test_run_permissions
+FC-05|/coordinator/forecasts|Coordinator|Pantry select|Change the pantry|85 pantries|n/a|Chart and numbers change|test_filter_by_pantry
+FC-06|/coordinator/forecasts|Coordinator|Category select|Change the category|8 categories|n/a|Chart and numbers change|test_filter_by_category
+FC-07|/coordinator/forecasts|Coordinator|Show last year's value|Tick the checkbox|n/a|n/a|Extra line appears|
+FC-08|/coordinator/forecasts|Coordinator|Show the numbers|Open the details|n/a|n/a|Table of weekly numbers|
+FC-09|/coordinator/forecasts|Coordinator|Accuracy table|Look at How accurate has it been|n/a|n/a|Overall and per-series errors from the latest backtest|test_a_saved_backtest_carries_its_metrics_and_actuals
+FC-10|/coordinator/forecasts|Coordinator|Series request fails|Make the series request return 500|n/a|n/a|Readable error, page still usable|
+FC-11|/coordinator/forecasts|Coordinator|Run fails (too little history)|Make Run forecast return not_enough_history|n/a|n/a|Readable error message|test_a_run_is_refused_when_there_is_too_little_history
+AL-01|/coordinator/allocations|Coordinator|Empty state|Open Allocations before any run|n/a|n/a|"Nothing to review yet" and a Run allocation button|test_latest_run_and_empty_list
+AL-02|/coordinator/allocations|Coordinator|Run without a forecast|Press Run allocation with no forward forecast|n/a|n/a|A readable "run the forecast first" error|test_no_forecast_is_a_clear_422
+AL-03|/coordinator/allocations|Coordinator|Run allocation|Run the forecast, press Run allocation|n/a|n/a|Loading state, then proposals grouped by pantry with summary tiles|test_run_never_exceeds_supply_capacity_or_p90
+AL-04|/coordinator/allocations|Coordinator|Run again|Press Run again after deciding some rows|n/a|double-click|Undecided rows are replaced; decided rows stay; one request|test_rerun_replaces_undecided_rows_and_keeps_decided_ones
+AL-05|/coordinator/allocations|Coordinator|Status tabs|Press To review, Approved, Rejected, All|n/a|n/a|Rows are filtered; the pressed tab is selected|test_list_can_filter_by_status
+AL-06|/coordinator/allocations|Coordinator|County filter|Choose a county|6 counties|n/a|Only that county's pantries|
+AL-07|/coordinator/allocations|Coordinator|Search box|Type a pantry name, then odd text|Pantry 14|spaces only, emoji, <script>, ' OR 1=1 --, 5,000 characters|Matches filter rows; odd text just finds nothing; no crash|
+AL-08|/coordinator/allocations|Coordinator|No search results|Search for text that matches nothing|n/a|n/a|"No shipments match these filters"|
+AL-09|/coordinator/allocations|Coordinator|Approve a row|Press Approve on a row|n/a|double-click|Row becomes Approved; counts change; one request|test_approve_sets_final_lbs_delivery_and_takes_stock,test_approving_twice_is_a_conflict
+AL-10|/coordinator/allocations|Coordinator|Reject a row|Press Reject on a row|n/a|n/a|Row becomes Rejected|test_reject_leaves_the_lot_alone_and_it_is_proposed_again
+AL-11|/coordinator/allocations|Coordinator|Edit opens and cancels|Press Edit, then Cancel|n/a|n/a|Form opens prefilled; Cancel closes it|
+AL-12|/coordinator/allocations|Coordinator|Edit amount (valid)|Edit, type a smaller amount, Save|a smaller whole number|decimal 12.5|Row becomes Edited with the new amount|test_edit_saves_new_amount_and_is_logged
+AL-13|/coordinator/allocations|Coordinator|Edit amount (invalid)|Type empty, 0, -5, abc, 1e9, more than the lot has|n/a|emoji, spaces, 12.345|Inline message each time; nothing saved|test_edit_must_be_positive,test_edit_cannot_exceed_what_the_lot_has
+AL-14|/coordinator/allocations|Coordinator|Edit note|Type a note, then 501 characters|short note|HTML, emoji, SQL text, 5,000 characters|Up to 500 characters saved literally; longer is stopped|test_edit_note_is_limited_to_500_chars
+AL-15|/coordinator/allocations|Coordinator|Approve all shown dialog|Press Approve all shown, then Cancel, then again and confirm|n/a|double-click confirm|Dialog states count and pounds; Cancel changes nothing; confirm approves exactly the shown rows|test_bulk_approve_approves_every_listed_row
+AL-16|/coordinator/allocations|Coordinator|Approve all with a filter|Filter to one county, Approve all shown|n/a|n/a|Only that county's rows are approved|test_bulk_approve_is_all_or_nothing
+AL-17|/coordinator/allocations|Coordinator|Write more AI reasons|Press Write more AI reasons|n/a|n/a|More rows become tagged AI|test_write_more_reasons_fills_in_templates
+AL-18|/coordinator/allocations|Coordinator|AI reasons unavailable|Run allocation with the AI switched off|n/a|n/a|Run still works; every row is tagged Template|test_a_failed_reason_call_does_not_fail_the_run
+AL-19|/coordinator/allocations|Coordinator|Summary tiles|Look at To review, Approved, Rejected, Not offered|n/a|n/a|Numbers match the rows|
+AL-20|/coordinator/allocations|Coordinator|Request fails|Make the list or an action return 500|n/a|n/a|Readable error, page still usable|
+AL-21|/coordinator/allocations|Coordinator|Stale row (someone else decided it)|Approve a row that was approved elsewhere|n/a|n/a|Readable conflict message; list refreshes|test_approving_twice_is_a_conflict
+AL-22|/coordinator/allocations|Coordinator|No stock|Run allocation with no stock|n/a|n/a|A readable "no stock" error|test_no_inventory_is_a_clear_422
+AL-23|/coordinator/allocations|Admin|Allocations as admin|Run and approve as admin|n/a|n/a|Works as for a coordinator|test_admin_can_run
+AL-24|/api/allocations|Manager|Manager approves|Call approve as a manager|n/a|n/a|403|test_pantry_managers_cannot_run_or_decide
+PORT-01|/pantry|Manager|Empty deliveries|Open My pantry with no approved deliveries|n/a|n/a|"Nothing is scheduled yet"|test_no_deliveries_is_an_empty_page_not_an_error
+PORT-02|/pantry|Manager|Incoming deliveries|Approve a row for the manager's pantry, open My pantry|n/a|n/a|A card with item, category, pounds, date, use-by|test_a_manager_sees_only_their_pantrys_approved_deliveries,test_a_delivery_carries_category_lbs_date_and_expiry
+PORT-03|/pantry|Manager|Only own pantry|Approve rows for two pantries|n/a|n/a|Only the manager's pantry is shown|test_a_manager_sees_only_their_pantrys_approved_deliveries
+PORT-04|/pantry|Manager|Delivered in the last week|Open the details|n/a|n/a|Older deliveries listed under the details|test_deliveries_older_than_a_week_drop_off
+PORT-05|/pantry|Manager|Category buttons|Press each of the 8 buttons|n/a|n/a|One is selected at a time (aria-pressed)|
+PORT-06|/pantry|Manager|Severity buttons|Press Minor, Serious, Ran out|n/a|n/a|One selected at a time|
+PORT-07|/pantry|Manager|Send with nothing chosen|Press Send report with an empty form|n/a|n/a|Inline errors for category and severity; no request|test_invalid_reports_are_refused_with_field_messages
+PORT-08|/pantry|Manager|Households turned away|Type values in the field|a whole number|empty, spaces, -1, 1.5, 1e3, 100001, abc, emoji|Valid whole numbers accepted (empty means 0); others show an inline message|test_invalid_reports_are_refused_with_field_messages
+PORT-09|/pantry|Manager|Note|Type a note|short note|501 characters, HTML, emoji, SQL text, 5,000 characters|Up to 500 characters saved literally; longer shows a message|test_note_and_turned_away_are_optional,test_a_blank_note_is_stored_as_nothing
+PORT-10|/pantry|Manager|Send a report|Choose category and severity, Send report|valid report|n/a|Thank-you message; form clears; category shows Reported this week|test_a_report_is_saved_for_this_week_and_the_managers_own_pantry
+PORT-11|/pantry|Manager|Second report updates the first|Report the same category twice|n/a|n/a|"Updated" message; still one report|test_a_second_report_updates_the_first
+PORT-12|/pantry|Manager|Prefill|Press a category that has a report|n/a|n/a|Form fills with that report's values|
+PORT-13|/pantry|Manager|Double-click Send|Double-click Send report|valid report|n/a|One request|
+PORT-14|/pantry|Manager|Report fails|Make the report request return 500|n/a|n/a|Readable error; form kept|
+PORT-15|/pantry|Manager|Fits a phone|View at 375 px|n/a|n/a|No horizontal scroll; every tap target at least 44 px|
+PORT-16|/api/pantry|Coordinator|Coordinator or admin calls the portal API|Call deliveries and reports|n/a|n/a|403|test_only_pantry_managers_use_the_portal,test_only_pantry_managers_report
+DASH-01|/admin/dashboard|Admin|Summary figures|Open Dashboard|n/a|n/a|Spoilage, pantry-weeks short, pounds, households|test_totals_over_the_whole_range
+DASH-02|/admin/dashboard|Admin|Date and time in the header|Look at the header|n/a|n/a|Today's date and a ticking time|
+DASH-03|/admin/dashboard|Admin|Charts|Look at the four time charts and the category chart|n/a|n/a|All render with data|test_weekly_series,test_by_category
+DASH-04|/admin/dashboard|Admin|From and To dates|Change each date|valid dates|n/a|Figures change|test_date_range_filter
+DASH-05|/admin/dashboard|Admin|Presets|Press each of the four presets|n/a|n/a|Dates and figures change|
+DASH-06|/admin/dashboard|Admin|Start after end|Set From later than To|n/a|n/a|Inline message; no request|test_start_after_end_is_a_validation_error
+DASH-07|/admin/dashboard|Admin|Range over 260 weeks|Set From to 2000-01-03|n/a|n/a|Inline message; no request|test_dashboard_range_rejects_bad_dates
+DASH-08|/admin/dashboard|Admin|Far future and far past dates|Set To to 9999-12-31, From to 1900-01-01|n/a|year 275760|A message or an empty result, never a crash|test_a_range_with_no_data_is_empty_not_an_error
+DASH-09|/admin/dashboard|Admin|Clear a date|Clear the From field|n/a|n/a|Ignored or explained; page stays usable|
+DASH-10|/admin/dashboard|Admin|Empty range|Choose a range with no data|n/a|n/a|"No distributions…" message|test_a_range_with_no_data_is_empty_not_an_error
+DASH-11|/admin/dashboard|Admin|Request fails|Make the metrics request return 500|n/a|n/a|Readable error with Try again|
+DASH-12|/admin/dashboard|Admin|By-category table|Look at the table|n/a|n/a|Eight categories with pounds, reports, spoilage|test_by_category
+DASH-13|/admin/dashboard|Coordinator|Coordinator cannot see it|Open /admin/dashboard as a coordinator|n/a|n/a|Redirected to /coordinator; the API gives 403|test_only_admins_see_the_dashboard
+SUM-01|/admin/dashboard|Admin|Month select|Open the Month select|n/a|n/a|Months that have data, newest first|
+SUM-02|/admin/dashboard|Admin|No summary yet|Look at the summary box|n/a|n/a|Says there is none yet; Draft with AI is offered|test_reading_a_month
+SUM-03|/admin/dashboard|Admin|Draft with AI|Press Draft with AI|n/a|n/a|A draft appears in the box|test_a_draft_with_matching_numbers_is_saved
+SUM-04|/admin/dashboard|Admin|Draft again|Press Draft again with AI|n/a|n/a|The draft is replaced|test_a_new_draft_replaces_an_unapproved_one
+SUM-05|/admin/dashboard|Admin|Edit the text|Type in the box|n/a|5,000 characters, emoji, non-Latin text, HTML|Text accepted up to 4,000 characters; longer is stopped with a message|test_summary_text_over_the_limit_is_refused_and_nothing_is_saved
+SUM-06|/admin/dashboard|Admin|Approve as final|Press Approve as final|edited text|n/a|Shows Approved; box becomes read-only; buttons go away|test_approving_saves_the_edited_text_as_final
+SUM-07|/admin/dashboard|Admin|Approve with no text|Clear the box, press Approve|n/a|spaces only|Message asking for text; nothing saved|test_approval_needs_text
+SUM-08|/admin/dashboard|Admin|AI invents a number|Switch the mock AI to invented numbers, press Draft|n/a|n/a|A readable error naming the numbers; Try the AI again offered; nothing saved|test_a_number_that_is_not_in_the_aggregates_is_refused
+SUM-09|/admin/dashboard|Admin|AI unavailable|Switch the mock AI off, press Draft|n/a|n/a|A readable error; the admin can write the text and approve it|test_a_model_failure_is_a_readable_error,test_the_admin_can_write_it_themselves
+SUM-10|/admin/dashboard|Admin|Approved month is final|Open an approved month|n/a|n/a|No draft or approve buttons|test_an_approved_summary_is_final
+SUM-11|/admin/dashboard|Admin|Switch months|Change the Month select|n/a|n/a|The box shows that month's summary|test_reading_a_month
+SUM-12|/api/dashboard/summaries|Coordinator|Coordinator or manager drafts|Call draft and approve as non-admins|n/a|n/a|403|test_only_admins_draft_or_approve
+SUM-13|/admin/dashboard|Admin|Summary text in other scripts|Write emoji and non-Latin text in the box, approve it|emoji, Arabic, Chinese|HTML tags|Saved and shown exactly as typed|
+REF-01|/admin/dashboard|Admin|Run weekly refresh|Press Run weekly refresh|n/a|n/a|Loading message, then "Done in N s" with the number of proposals|test_refresh_trains_the_forecast_then_allocates
+REF-02|/admin/dashboard|Admin|Refresh fails|Make the refresh return an error|n/a|n/a|Readable message; forecast kept if allocation failed|test_a_failed_allocation_keeps_the_new_forecast_and_says_so
+REF-03|/admin/dashboard|Admin|Double-click refresh|Double-click the button|n/a|n/a|One request|
+REF-04|/api/admin|Coordinator|Coordinator or manager refreshes|Call the job route as a non-admin|n/a|n/a|403|test_only_admins_run_the_refresh
+DON-09|/coordinator/donations|Coordinator|Long list|Have more than 100 donations, open Donations|101 or more donations|n/a|All donations reachable (paging, search or a "showing 100 of N" note)|
+SHELL-13|/coordinator/donations/99999999|Coordinator|Not-found status code|Open a donation id that does not exist and read the HTTP status|n/a|n/a|HTTP 404 together with the not-found page|
+API-01|/api/donations/{id}, /api/pantries/{id}, /api/allocations/{id}/approve|Admin|Id larger than the database allows|Call each route with id 99999999999999999999 and 9999999999|n/a|20-digit ids|404 or 422 in the envelope, never 500|
+API-02|/api/forecasts/series|Coordinator|pantry_id too large|GET series?pantry_id=99999999999&category=produce|n/a|n/a|404 or 422, never 500|
+API-03|/api/allocations|Coordinator|Week far in the future|GET ?week_start=9999-12-31|n/a|0001-01-01|200 or 422, never 500|
+API-04|/api/dashboard/metrics|Admin|Dates in year 9999|GET ?start=9999-01-01&end=9999-12-31|n/a|0001-01-01|200 with empty figures or 422, never 500|
+API-05|/api/dashboard/summaries/{month}|Admin|Month 0000-01|GET /api/dashboard/summaries/0000-01|n/a|9999-12|404 or 422, never 500|
+API-06|note, summary and email fields|All|NUL character in text|Send a NUL (\\u0000) in a shortage note, edit note, summary text and login email|n/a|n/a|422 in the envelope, never 500|
+API-07|/api/* filters|Admin|SQL and HTML text in query parameters|Send ' OR 1=1 -- and <script> as category, status and week_start|n/a|n/a|422 or an empty result, never 500|
+A11Y-01|/login|Logged out|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-02|/coordinator|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-03|/coordinator/donations|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-04|/coordinator/donations/[id]|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-05|/coordinator/forecasts|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-06|/coordinator/allocations|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-07|/admin/dashboard|Admin|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-08|/pantry|Manager|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+A11Y-09|not found page|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
+"""
+
+
+@dataclass(frozen=True)
+class Row:
+    id: str
+    page: str
+    role: str
+    feature: str
+    steps: str
+    normal: str
+    weird: str
+    expected: str
+    pytest: tuple[str, ...]
+
+
+def rows() -> list[Row]:
+    out = []
+    for line in ROWS_TEXT.strip().splitlines():
+        cells = line.split("|")
+        assert len(cells) == 9, f"bad checklist row: {line[:60]}"
+        tests = tuple(t.strip() for t in cells[8].split(",") if t.strip())
+        out.append(Row(*cells[:8], tests))
+    return out

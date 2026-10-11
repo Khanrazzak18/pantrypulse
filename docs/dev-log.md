@@ -461,3 +461,41 @@
     now used (the Stage 7 draft called pounds "items").
 - Not fixed: the Stage 8 prompt still reads month-only dates as the 1st in four cases (see the intake
   report).
+
+## Stage 10: Testing checklist and E2E coverage  (2026-10-11 00:54 to 08:48 EDT; end = commit time)
+- Numbering: the deployment stage (App Runner) never happened and is deferred, so this is Stage 10; the
+  later assignment 5.4 stages are 11 to 14.
+- Built:
+  - `docs/testing/checklist.md`: every feature, button, form field, dialog and error state, page by page
+    and role by role (logged out, coordinator, admin, pantry manager). Source of truth is
+    `backend/scripts/testing_checklist.py`; `make e2e` regenerates the file with each row's tests and
+    result. `tests/test_testing_checklist.py` checks IDs are unique, every cited pytest test exists and
+    every E2E test cites a real row.
+  - Playwright E2E in `frontend/e2e` (`make e2e`): Chromium at 375, 768 and 1280 px plus WebKit at 1280.
+    It runs against its own API (port 8101, the real app on the TEST database with a scripted mock AI, a
+    throwaway upload folder and a pinned date) and a production `next start` on port 3101. The dev app and
+    real Bedrock are untouched. `backend/scripts/e2e_server.py` holds the mock AI and a reset route;
+    `tests/test_e2e_isolation.py` proves the normal app cannot load them (no mention under `app/`, no
+    routes, real Bedrock provider, refuses to start without `E2E_MODE=1` or on a non-test database).
+  - axe-core scans of every page per role and width: `docs/testing/a11y-report.md` (report only, no fixes).
+  - Known bugs are E2E tests marked `test.fail()` with the bug ID in the title, so `make e2e` is green and
+    Playwright flags the test when the bug is fixed. `docs/testing/bugs.md` lists 9 bugs.
+- Tests: `make test`: 851 passed (538 test functions; the 851 collected cases are more because parametrized
+  tests run once per parameter). `make e2e`: 628 test runs (621 passed, of which 42 are known-bug runs;
+  0 failed, 7 skipped by design because they only apply at some widths). Checklist: 185 items, 182 automated.
+- Problems found and fixed (in the tests and harness, not the app):
+  - Clicks and typing right after load were lost because React had not hydrated; added an `open()` helper
+    that waits for the network to go quiet.
+  - `make test` and `make e2e` share the test database; pytest rebuilds it, so e2e setup always reseeds.
+  - Test donors leaked between tests and changed the review page's default donor; the reset route now
+    deletes them.
+  - A hidden menu button made a tap-target test wait 30 s; it now clicks only when visible.
+  - A laptop sleep during a long run produced a false timeout; the final run used `caffeinate`.
+  - The checklist test misread templated test titles and bug tags; fixed.
+- Bugs found in the app and NOT fixed (details in `docs/testing/bugs.md`): ids above 2,147,483,647 return
+  500 (BUG-01), huge `pantry_id` on the series route (02), year 9999 week and dashboard dates (03, 04),
+  month `0000-01` (05), a NUL character in text returns 500 including on the logged-out login route (06),
+  Donations page links under 44 px (07), HTTP 200 for a missing record in the app shell (08), the
+  donation list shows only the newest 100 of 3,626 (09).
+- Decisions: the failing-by-design tests use `test.fail()` as you asked; one worker because of the single
+  shared database; the E2E mock AI is a separate module under `scripts/`, never under `app/`.

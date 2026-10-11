@@ -6,7 +6,7 @@ BACKEND := backend
 FRONTEND := frontend
 VENV := $(BACKEND)/.venv
 
-.PHONY: setup db db-down migrate seed dev test eval backtest golden refresh check-env api-types simulate
+.PHONY: setup db db-down migrate seed dev test e2e e2e-report eval backtest golden refresh check-env api-types simulate
 
 check-env:
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' and fill it in."; exit 1; }
@@ -46,6 +46,21 @@ dev: check-env
 test: check-env
 	cd $(BACKEND) && .venv/bin/ruff check . && .venv/bin/pytest -q
 	cd $(FRONTEND) && npm run lint && npm run typecheck && npm run build
+
+# End-to-end tests (Playwright). A separate API (port 8101) and web server (port 3101) run on the TEST
+# database with a mock AI, so the dev app and real Bedrock are untouched. Uses the same database as
+# `make test`: never run the two at the same time.
+E2E_API_PORT := 8101
+E2E_WEB_PORT := 3101
+e2e: check-env
+	cd $(BACKEND) && .venv/bin/python -m scripts.e2e_setup
+	cd $(FRONTEND) && API_PORT=$(E2E_API_PORT) E2E_DIST_DIR=.next-e2e npx next build
+	cd $(FRONTEND) && E2E_API_PORT=$(E2E_API_PORT) E2E_WEB_PORT=$(E2E_WEB_PORT) npx playwright test; \
+		status=$$?; cd ../$(BACKEND) && .venv/bin/python -m scripts.testing_report; exit $$status
+
+# Rewrite docs/testing/checklist.md and a11y-report.md from the last e2e run.
+e2e-report: check-env
+	cd $(BACKEND) && .venv/bin/python -m scripts.testing_report
 
 # Rolling-origin forecast backtest on the seeded data (no AWS): saves a backtest run and writes
 # docs/eval/forecast-backtest.md. Takes about a minute.
