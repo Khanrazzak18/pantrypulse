@@ -5,6 +5,7 @@ import { type FormEvent, useRef, useState } from "react";
 
 import { ApiRequestError, apiFetch, type User } from "@/lib/api/client";
 import { roleHome } from "@/lib/roles";
+import { CONTROL_MESSAGE, controlCharError } from "@/lib/text";
 
 type Fields = { email: string; password: string };
 type Errors = Partial<Record<keyof Fields, string>>;
@@ -15,7 +16,9 @@ function validate({ email, password }: Fields): Errors {
   const errors: Errors = {};
   if (!email.trim()) errors.email = "Enter your email address.";
   else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "Enter a valid email address.";
+  else if (controlCharError(email)) errors.email = CONTROL_MESSAGE;
   if (!password) errors.password = "Enter your password.";
+  else if (controlCharError(password)) errors.password = CONTROL_MESSAGE;
   return errors;
 }
 

@@ -31,7 +31,7 @@ def client_with_test_routes(app, client):
 
 def assert_envelope(body: dict, code: str):
     assert set(body) == {"error"}
-    assert set(body["error"]) == {"code", "message", "details"}
+    assert set(body["error"]) == {"code", "message", "details", "request_id"}
     assert body["error"]["code"] == code
 
 

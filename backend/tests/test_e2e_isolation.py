@@ -83,3 +83,32 @@ def test_the_makefile_dev_target_runs_the_normal_app():
     makefile = (Path(BACKEND_DIR).parent / "Makefile").read_text()
     dev = makefile.split("\ndev:")[1].split("\n\n")[0]
     assert "app.main:create_app" in dev and "e2e" not in dev.lower()
+
+
+def test_the_e2e_fault_switches_work_and_a_reset_clears_them(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from scripts import e2e_server
+
+    monkeypatch.setenv("E2E_MODE", "1")
+    app = e2e_server.build_app()
+    try:
+        with TestClient(app, raise_server_exceptions=False) as client:
+            assert client.post("/__e2e/fault", json={"mode": "db_down"}).status_code == 204
+            down = client.get("/api/health")
+            assert down.status_code == 503 and down.json()["error"]["code"] == "service_unavailable"
+            assert (
+                client.post("/__e2e/reset").status_code == 204
+            )  # works even while the database is "down"
+            assert client.get("/api/health").status_code == 200
+            assert client.post("/__e2e/fault", json={"mode": "empty_pantries"}).status_code == 204
+            assert client.get("/__e2e/state").json()["fault"] == "empty_pantries"
+            assert client.post("/__e2e/fault", json={"mode": "nonsense"}).status_code >= 400
+            client.post("/__e2e/reset")
+    finally:
+        app.state.engine.dispose()
+
+
+def test_the_normal_app_has_no_fault_switch(settings, engine):
+    app = create_app(settings, engine)
+    assert "/__e2e/fault" not in {getattr(r, "path", "") for r in app.routes}

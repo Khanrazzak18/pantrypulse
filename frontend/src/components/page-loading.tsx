@@ -1,4 +1,4 @@
-export default function Loading() {
+export default function PageLoading() {
   return (
     <div role="status" aria-live="polite" className="animate-pulse space-y-3">
       <div className="h-7 w-48 rounded bg-stone-200" />

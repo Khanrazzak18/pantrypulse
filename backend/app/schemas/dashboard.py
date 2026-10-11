@@ -3,6 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.types import BlockText
+
 
 class Totals(BaseModel):
     lbs_distributed: float
@@ -66,7 +68,7 @@ class SummaryResponse(BaseModel):
 
 
 class ApproveIn(BaseModel):
-    text: str = Field(max_length=4000)
+    text: BlockText = Field(max_length=4000)
 
     @field_validator("text")
     @classmethod

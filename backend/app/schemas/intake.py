@@ -6,6 +6,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.constants import CATEGORY_NAMES, STORAGE_TYPES
+from app.schemas.types import strip_controls
 
 Category = Literal[*CATEGORY_NAMES]
 StorageType = Literal[*STORAGE_TYPES]
@@ -40,7 +41,7 @@ class ExtractedItem(BaseModel):
     @field_validator("name", "unit", mode="before")
     @classmethod
     def _tidy(cls, value: Any) -> Any:
-        return value.strip() if isinstance(value, str) else value
+        return strip_controls(value).strip() if isinstance(value, str) else value
 
     @field_validator("unit")
     @classmethod
@@ -58,13 +59,13 @@ class DonationExtraction(BaseModel):
     @field_validator("donor_name", mode="after")
     @classmethod
     def _clip_donor(cls, value: str | None) -> str | None:
-        value = value.strip()[:120] if value else None
+        value = strip_controls(value).strip()[:120] if value else None
         return value or None
 
     @field_validator("notes", mode="after")
     @classmethod
     def _clip_notes(cls, value: str | None) -> str | None:
-        value = value.strip()[:500] if value else None
+        value = strip_controls(value, keep_newlines=True).strip()[:500] if value else None
         return value or None
 
 

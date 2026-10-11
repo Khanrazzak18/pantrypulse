@@ -499,3 +499,43 @@
   donation list shows only the newest 100 of 3,626 (09).
 - Decisions: the failing-by-design tests use `test.fail()` as you asked; one worker because of the single
   shared database; the E2E mock AI is a separate module under `scripts/`, never under `app/`.
+
+## Stage 11: Bug fixes and error handling  (2026-10-11 09:51 to 12:17 EDT; end = commit time)
+- Built:
+  - All ten bugs in `docs/testing/bugs.md` fixed (root cause, fix and regression tests per bug are in that
+    file). BUG-10 (found by hand with the database stopped) is logged and fixed.
+  - **Backend:** shared validated types (`app/schemas/types.py`: ids, dates 2020 to 2100, months, one-line and
+    block text without control characters) used on every path, query and body field; a global error layer
+    (database outage = 503 `service_unavailable` with Retry-After, refused database value = 422, anything else
+    = 500 envelope); every error body carries `request_id`; `/api/health` reports `database: down`; donation
+    list paging with `X-Total-Count`; text the AI writes is cleaned of control characters (a hidden second
+    route to the NUL 500).
+  - **Frontend:** `/unavailable` page and a session check that treats an outage as an outage, error and
+    not-found screens for every route segment plus `global-error.tsx`, API timeouts (30 s, 120 s for AI),
+    an offline banner, a handler for unhandled promise rejections, inline checks for control characters and
+    the 2020 to 2100 date range, loading screens moved beside the list pages so detail pages return a real
+    404, paging on the Donations page, 44 px tap targets for its links.
+  - **Tests:** `test_api_fuzz.py` (hostile input to every route as three callers, plus upload names and
+    contents), `test_error_handling.py`, `test_bug_regressions.py`, `test_validated_types.py`; E2E fault
+    switches in the test server (`db_down`, `slow`, `empty_pantries`, `api_error`) turned the 3 manual
+    checklist items into automated tests and added outage, offline, timeout and unhandled-rejection tests.
+    All `test.fail()` markers removed.
+- Tests: `make test`: **1012 passed** (588 test functions; the 1012 collected cases are more because
+  parametrized tests run once per parameter), up from 851. Frontend lint, typecheck and build pass.
+  `make e2e`: **668 runs: 661 passed, 0 failed, 7 skipped** (width-specific tests), no known-bug markers.
+  Checklist: 195 items, 195 automated (3 by pytest only, 81 by E2E only, 111 by both), 0 manual.
+- Problems found and fixed on the way:
+  - The error screen's Try again only redrew the page, so a page whose server data had failed stayed broken
+    after recovery (found by E2E); it now refreshes the data.
+  - The first fuzz run flagged the intended 502 answers when the AI is down; the rule is "no HTTP 500", with
+    502, 503 and 504 allowed and checked for the envelope.
+  - A first E2E test of the unavailable page clicked Try again while the database was still down and hung
+    the browser's navigation; the step added nothing, so it was removed. The loading-screen test now uses a
+    streamed first response instead of a menu click.
+  - Two full E2E runs were ruined by the laptop sleeping (one test "took" 7 minutes); the final run used
+    `caffeinate -dimsu`.
+  - My first account of BUG-10 said the outage bodies were raw 500s; they were already in the envelope with the
+    wrong code and status. Corrected in bugs.md.
+- Decisions (all five approved): `request_id` as a fourth envelope key; expiry dates limited to 2020 to 2100 too;
+  notes and summaries may contain new lines and tabs, other text no control characters; paging through
+  `X-Total-Count`; health answers 503 in the envelope with `details: {"database": "down"}`.

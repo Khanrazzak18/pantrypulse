@@ -14,7 +14,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { ApiRequestError, apiFetch } from "@/lib/api/client";
+import { ApiRequestError, apiFetch, LONG_TIMEOUT_MS } from "@/lib/api/client";
 import { CATEGORY_LABELS } from "@/lib/donations";
 import {
   addWeeks,
@@ -27,6 +27,8 @@ import {
   type RefreshResult,
   shortDate,
 } from "@/lib/dashboard";
+
+import { dateRangeError, MAX_DATE, MIN_DATE } from "@/lib/text";
 
 import { SummaryEditor } from "./summary-editor";
 
@@ -93,11 +95,12 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
 
   const key = `${start}|${end}|${reload}`;
   const rangeError =
-    start > end
+    dateRangeError(start) ?? dateRangeError(end) ??
+    (start > end
       ? "The start date must not be after the end date."
       : (Date.parse(end) - Date.parse(start)) / 86_400_000 > 260 * 7
         ? "Choose a range of at most 260 weeks (5 years)."
-        : null;
+        : null);
   useEffect(() => {
     if (rangeError) return;
     let cancelled = false;
@@ -117,7 +120,7 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
   async function runRefresh() {
     setRefresh({ kind: "running" });
     try {
-      const result = await apiFetch<RefreshResult>("/api/admin/jobs/weekly-refresh", { method: "POST" });
+      const result = await apiFetch<RefreshResult>("/api/admin/jobs/weekly-refresh", { method: "POST" }, LONG_TIMEOUT_MS);
       setRefresh({ kind: "done", result });
     } catch (err) {
       setRefresh({ kind: "error", message: err instanceof ApiRequestError || err instanceof Error ? err.message : "Something went wrong." });
@@ -166,11 +169,11 @@ export function ImpactDashboard({ initial }: { initial: Metrics }) {
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor="from" className="mb-1 block text-xs font-medium">From</label>
-          <input id="from" type="date" className={inputClass} value={start} min={dataStart ?? undefined} max={end} onChange={(e) => e.target.value && setStart(e.target.value)} />
+          <input id="from" type="date" className={inputClass} value={start} min={MIN_DATE} max={MAX_DATE} onChange={(e) => e.target.value && setStart(e.target.value)} />
         </div>
         <div>
           <label htmlFor="to" className="mb-1 block text-xs font-medium">To</label>
-          <input id="to" type="date" className={inputClass} value={end} max={dataEnd ?? undefined} onChange={(e) => e.target.value && setEnd(e.target.value)} />
+          <input id="to" type="date" className={inputClass} value={end} min={MIN_DATE} max={MAX_DATE} onChange={(e) => e.target.value && setEnd(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           {dataEnd &&

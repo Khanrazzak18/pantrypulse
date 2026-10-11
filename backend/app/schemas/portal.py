@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.constants import CATEGORY_NAMES
 from app.schemas.pantries import PantryOut
+from app.schemas.types import BlockText
 
 CategoryName = Literal[*CATEGORY_NAMES]
 
@@ -13,7 +14,7 @@ class ShortageReportIn(BaseModel):
     category: CategoryName
     severity: int = Field(ge=1, le=3, description="1 minor, 2 serious, 3 ran out")
     households_turned_away: int = Field(default=0, ge=0, le=100_000)
-    note: str | None = Field(default=None, max_length=500)
+    note: BlockText | None = Field(default=None, max_length=500)
 
     @field_validator("note")
     @classmethod

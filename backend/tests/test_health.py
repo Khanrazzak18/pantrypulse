@@ -27,7 +27,7 @@ def test_health_returns_error_envelope_when_database_is_down(settings: Settings)
         response = client.get("/api/health")
     assert response.status_code == 503
     error = response.json()["error"]
-    assert error["code"] == "database_unavailable"
+    assert error["code"] == "service_unavailable"
     assert error["message"]
     assert "details" in error
     assert "nothing" not in response.text  # no credentials leak into the response

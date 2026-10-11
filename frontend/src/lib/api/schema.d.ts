@@ -113,7 +113,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Donations */
+        /**
+         * List Donations
+         * @description One page of donations, newest first. The X-Total-Count header says how many there are.
+         */
         get: operations["list_donations_api_donations_get"];
         put?: never;
         /**
@@ -1398,6 +1401,7 @@ export interface operations {
             query?: {
                 status?: ("pending_review" | "confirmed" | "rejected") | null;
                 limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -2027,7 +2031,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description YYYY-MM */
+                /** @description YYYY-MM, 2020-01 to 2100-12 */
                 month: string;
             };
             cookie?: never;
@@ -2059,7 +2063,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description YYYY-MM */
+                /** @description YYYY-MM, 2020-01 to 2100-12 */
                 month: string;
             };
             cookie?: never;
@@ -2091,7 +2095,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description YYYY-MM */
+                /** @description YYYY-MM, 2020-01 to 2100-12 */
                 month: string;
             };
             cookie?: never;

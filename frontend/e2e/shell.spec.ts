@@ -145,9 +145,8 @@ test.describe("header and navigation", () => {
     expect([...loginPage, ...staff, ...manager]).toEqual([]);
   });
 
-  test("[SHELL-09][BUG-07] the Donations page filter links and View links are at least 44 px tall", async ({ page }) => {
+  test("[SHELL-09] the Donations page filter links and View links are at least 44 px tall", async ({ page }) => {
     test.skip(!isPhoneOrTablet(page), "only checked below 1024 px");
-    test.fail(true, "BUG-07: the filter links are 32 px and the View links 20 px tall");
     const api = await staffApi("coordinator");
     await api.post("/api/donations", { multipart: { file: file("a.eml", "10 cases lettuce") } });
     expect(await tooSmall(page, ["/coordinator/donations"], "coordinator")).toEqual([]);

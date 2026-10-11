@@ -38,6 +38,16 @@ export async function setAi(mode: "ok" | "down" | "bad_numbers") {
   if (!res.ok) throw new Error(`setAi failed: ${res.status}`);
 }
 
+/** Switch a test-only fault on: db_down, slow, empty_pantries, api_error (or "none"). */
+export async function setFault(mode: "none" | "db_down" | "slow" | "empty_pantries" | "api_error") {
+  const res = await fetch(`${API}/__e2e/fault`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ mode }),
+  });
+  if (!res.ok) throw new Error(`setFault failed: ${res.status}`);
+}
+
 export async function aiCalls(): Promise<string[]> {
   return (await (await fetch(`${API}/__e2e/state`)).json()).llm_calls;
 }

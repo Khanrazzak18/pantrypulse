@@ -5,12 +5,18 @@ import { type NextRequest, NextResponse } from "next/server";
 // tell whether the cookie is still valid: the pages ask the API (see lib/auth.ts), and the API
 // enforces every rule. Expired cookies and wrong roles are handled there.
 export function proxy(request: NextRequest) {
-  if (request.cookies.has("pp_session")) return NextResponse.next();
+  if (request.cookies.has("pp_session")) {
+    // Let pages know where the visitor is going, so the "temporarily unavailable" page can bring
+    // them back to it.
+    const headers = new Headers(request.headers);
+    headers.set("x-pathname", request.nextUrl.pathname + request.nextUrl.search);
+    return NextResponse.next({ request: { headers } });
+  }
   const login = new URL("/login", request.url);
   login.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
   return NextResponse.redirect(login);
 }
 
 export const config = {
-  matcher: ["/coordinator/:path*", "/pantry/:path*"],
+  matcher: ["/coordinator/:path*", "/pantry/:path*", "/admin/:path*"],
 };

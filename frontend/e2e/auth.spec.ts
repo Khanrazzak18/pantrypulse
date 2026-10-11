@@ -32,7 +32,7 @@ test.describe("logged out", () => {
   test("[ANON-05] an unknown URL shows a readable not-found page", async ({ page }) => {
     const res = await page.goto("/does-not-exist");
     expect(res?.status()).toBe(404);
-    await expect(page.getByText(/could not be found|not found/i).first()).toBeVisible();
+    await expect(page.getByText(/find that page/i).first()).toBeVisible();
     const long = await page.goto(`/${"a".repeat(2000)}/${encodeURIComponent("🥕")}`);
     expect(long?.status()).toBe(404);
   });

@@ -58,18 +58,25 @@ def test_wrong_password_returns_401_and_no_cookie(client, people):
     assert "set-cookie" not in response.headers
 
 
+def without_id(response):
+    """The body minus the per-request id, which is different on every request."""
+    error = dict(response.json()["error"])
+    error.pop("request_id")
+    return error
+
+
 def test_unknown_email_gets_exactly_the_same_response_as_a_wrong_password(client, people):
     wrong_password = login(client, people.coordinator, "nope")
     unknown_email = login(client, "nobody@example.org", "nope")
     assert unknown_email.status_code == wrong_password.status_code == 401
-    assert unknown_email.json() == wrong_password.json()
+    assert without_id(unknown_email) == without_id(wrong_password)
 
 
 def test_inactive_user_cannot_log_in_and_gets_the_same_response(client, people):
     inactive = login(client, people.inactive)
     wrong = login(client, people.coordinator, "nope")
     assert inactive.status_code == 401
-    assert inactive.json() == wrong.json()
+    assert without_id(inactive) == without_id(wrong)
     assert "set-cookie" not in inactive.headers
 
 

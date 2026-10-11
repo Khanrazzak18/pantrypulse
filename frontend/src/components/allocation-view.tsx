@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { ApiRequestError, apiFetch } from "@/lib/api/client";
+import { ApiRequestError, apiFetch, LONG_TIMEOUT_MS } from "@/lib/api/client";
 import {
   type Allocation,
   type AllocationList,
@@ -18,6 +18,7 @@ import {
   validateEditLbs,
 } from "@/lib/allocations";
 import { CATEGORY_LABELS } from "@/lib/donations";
+import { controlCharError } from "@/lib/text";
 import { formatRunTime, weekLabel } from "@/lib/forecasts";
 
 type Notice = { kind: "info" | "success" | "error"; message: string } | null;
@@ -91,7 +92,7 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
   const runAllocation = () =>
     act("run", async () => {
       const started = performance.now();
-      const result = await apiFetch<AllocationRun>("/api/allocations/run", { method: "POST" });
+      const result = await apiFetch<AllocationRun>("/api/allocations/run", { method: "POST" }, LONG_TIMEOUT_MS);
       const seconds = ((performance.now() - started) / 1000).toFixed(1);
       return `Proposed ${result.rows.toLocaleString("en-US")} shipments for the week of ${weekLabel(result.week_start)} in ${seconds} s.`;
     });
@@ -111,7 +112,7 @@ export function AllocationView({ initial }: { initial: AllocationList }) {
   const moreReasons = () =>
     act("reasons", async () => {
       if (!run) return;
-      const result = await apiFetch<AllocationRun>(`/api/allocations/runs/${run.id}/reasons`, { method: "POST" });
+      const result = await apiFetch<AllocationRun>(`/api/allocations/runs/${run.id}/reasons`, { method: "POST" }, LONG_TIMEOUT_MS);
       return `${result.reasons_ai.toLocaleString("en-US")} of ${result.rows.toLocaleString("en-US")} reasons are now written by the AI.`;
     });
 
@@ -324,9 +325,10 @@ function AllocationRow({
     setTouched(false);
     setEditing(true);
   }
+  const noteError = controlCharError(note, true);
   function submit() {
     setTouched(true);
-    if (error) return;
+    if (error || noteError) return;
     onSaveEdit(row, Number(lbsText), note.trim());
     setEditing(false);
   }
@@ -399,7 +401,8 @@ function AllocationRow({
           </div>
           <div>
             <label htmlFor={`note-${row.id}`} className="mb-1 block text-xs font-medium">Note (optional)</label>
-            <input id={`note-${row.id}`} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} className={inputClass} />
+            <input id={`note-${row.id}`} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} aria-invalid={touched && noteError !== null} className={inputClass} />
+            <p role="alert" className="mt-1 min-h-4 text-xs text-red-700">{touched && noteError ? noteError : ""}</p>
           </div>
           <div className="flex gap-2 sm:pt-5">
             <button type="submit" disabled={busy !== null} className="rounded-md bg-green-700 px-3 py-1 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50">

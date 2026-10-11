@@ -2,12 +2,14 @@ import re
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.types import LineText
+
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class LoginRequest(BaseModel):
-    email: str = Field(max_length=254)
-    password: str = Field(min_length=1, max_length=200)
+    email: LineText = Field(max_length=254)
+    password: LineText = Field(min_length=1, max_length=200)
 
     @field_validator("email")
     @classmethod

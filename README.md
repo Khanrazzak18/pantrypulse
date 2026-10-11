@@ -186,7 +186,7 @@ refresh. A pantry manager sees only their own pantry.
 
 ## Testing
 
-`make test` runs ruff and the backend suite (840 tests against the separate test database), then
+`make test` runs ruff and the backend suite (1012 tests against the separate test database), then
 frontend lint, typecheck and the production build. It never calls AWS. Tests are written before the
 code they check; the suites cover constraints and migrations, auth and lockout, intake, forecasting
 and its leakage checks, the optimizer, allocation workflow, the pantry portal, dashboard numbers,
@@ -205,6 +205,26 @@ findings are in [docs/testing/a11y-report.md](docs/testing/a11y-report.md), and 
 yet fixed are in [docs/testing/bugs.md](docs/testing/bugs.md). A test marked `test.fail()` with a
 `[BUG-n]` in its title proves a known bug and flips to a failure the moment the bug is fixed.
 `make test` and `make e2e` share the test database, so run them one after the other.
+
+## Error handling
+
+- **One error envelope** for every API error: `{"error": {"code", "message", "details", "request_id"}}`. The
+  request id is also the `X-Request-ID` header and is in every log line, so a message a user quotes leads
+  straight to the full detail in the logs. Stack traces never reach a client.
+- **Outages are 503, not 500.** If the database cannot be reached, every route answers `503
+  service_unavailable` with `Retry-After`, and `/api/health` answers 503 with `details: {"database": "down"}`.
+  The web app shows "PantryPulse is temporarily unavailable" with a Try again button (and never treats an
+  outage as a logout); buttons show the same message.
+- **Input is checked once, at the API boundary,** with shared types in `backend/app/schemas/types.py`: ids
+  must fit the database (out of range is a 404), dates must be 2020 to 2100, months 2020-01 to 2100-12, and
+  text may not contain control characters. Text the AI writes is cleaned the same way. The forms check the
+  same rules inline.
+- **Browser:** every API call has a time limit (30 s, 120 s for uploads and AI calls), the app shows a banner
+  when the browser is offline, and an unhandled promise rejection shows a dismissible banner instead of failing
+  silently. Every route segment has an error and a not-found screen, plus a global one.
+- **Fuzz test:** `backend/tests/test_api_fuzz.py` sends hostile ids, dates, numbers, very long text and
+  control characters to every API route as a logged-out caller, a pantry manager and an admin, and fails on
+  any HTTP 500.
 
 ## Using the app, by role
 

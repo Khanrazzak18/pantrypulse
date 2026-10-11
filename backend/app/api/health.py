@@ -18,5 +18,11 @@ def health(request: Request) -> HealthResponse:
             conn.execute(text("SELECT 1"))
     except SQLAlchemyError:
         logger.exception("health_db_check_failed")
-        raise ApiError(503, "database_unavailable", "Database is not reachable.") from None
+        raise ApiError(
+            503,
+            "service_unavailable",
+            "The service is temporarily unavailable. Please try again in a moment.",
+            {"database": "down"},
+            {"Retry-After": "5"},
+        ) from None
     return HealthResponse(status="ok", database="ok")

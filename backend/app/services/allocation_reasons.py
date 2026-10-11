@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.ai.llm_provider import LLMError, LLMProvider
 from app.schemas.intake import inline_refs
+from app.schemas.types import has_control
 from app.services.number_check import numbers_in, unsupported_numbers
 
 logger = logging.getLogger("pantrypulse.allocation")
@@ -101,7 +102,7 @@ def _allowed_numbers(f: ReasonFacts) -> set[float]:
 
 def reason_is_valid(reason: str, f: ReasonFacts) -> bool:
     text = reason.strip()
-    if not text or "\n" in text or len(text) > MAX_REASON_CHARS:
+    if not text or len(text) > MAX_REASON_CHARS or has_control(text):
         return False
     if f.pantry_name.lower() not in text.lower():
         return False

@@ -6,6 +6,7 @@ from app.auth.dependencies import current_user, get_db, require_coordinator
 from app.errors import ApiError
 from app.models import Pantry, User
 from app.schemas.pantries import PantryOut
+from app.schemas.types import PathId
 
 router = APIRouter(prefix="/api/pantries", tags=["pantries"])
 
@@ -17,7 +18,7 @@ def list_pantries(db: Session = Depends(get_db)) -> list[Pantry]:
 
 @router.get("/{pantry_id}", response_model=PantryOut)
 def get_pantry(
-    pantry_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
+    pantry_id: PathId, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> Pantry:
     # A manager may only read their own pantry. They get 403 for every other id, existing or not,
     # so the response does not reveal which pantries exist.

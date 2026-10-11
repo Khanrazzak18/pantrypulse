@@ -52,11 +52,11 @@ SHELL-07|every page (under 768 px)|Coordinator|Menu button|Press the menu button
 SHELL-08|URLs of another role|All|Wrong-role URL|Coordinator opens /admin/dashboard and /pantry; manager opens /coordinator and /admin/dashboard|n/a|n/a|Redirected to their own home, never shown the page|test_pantry_managers_cannot_run_or_decide,test_only_admins_see_the_dashboard
 SHELL-09|every page (under 1024 px)|All|Tap targets|Measure buttons, links, inputs|n/a|n/a|Every control is at least 44 px tall|
 SHELL-10|/coordinator/donations/99999999|Coordinator|Missing record|Open a donation id that does not exist|n/a|id 0, -1, abc|A not-found page with a way back|test_unknown_and_malformed_ids
-SHELL-11|every page|All|Loading state|Navigate between pages|n/a|n/a|A loading indicator, no blank page|
-SHELL-12|every page|All|Error state|Make a page's server request fail|n/a|n/a|"Something went wrong" with Try again|
+SHELL-11|every page|All|Loading state|Open a page while the API is slow (the mock adds a delay)|n/a|n/a|A loading indicator, no blank page|
+SHELL-12|every page|All|Error state|Make a page's server request fail with a 500 (the mock switches this on)|n/a|n/a|"Something went wrong" with Try again|
 PANT-01|/coordinator|Coordinator|Pantry list|Open Pantries|n/a|n/a|85 pantries in 6 counties; table from 768 px, cards below|test_coordinator_and_admin_can_list_pantries
 PANT-02|/coordinator|Admin|Pantry list|Open Pantries as admin|n/a|n/a|Same list|test_coordinator_and_admin_can_list_pantries
-PANT-03|/coordinator|Coordinator|Empty state|Open Pantries with no pantries|n/a|n/a|"No pantries yet" message|
+PANT-03|/coordinator|Coordinator|Empty state|Open Pantries with no pantries (the mock switches the list to empty)|n/a|n/a|"No pantries yet" message|
 DON-01|/coordinator/donations|Coordinator|Donation list|Open Donations|n/a|n/a|Newest first with items, weight, status|test_the_list_shows_newest_first_with_counts_and_filters_by_status
 DON-02|/coordinator/donations|Coordinator|Filter links|Press All, Needs review, Confirmed, Rejected|n/a|n/a|List and the pressed filter change|test_the_list_shows_newest_first_with_counts_and_filters_by_status
 DON-03|/coordinator/donations?status=|Coordinator|Unknown status in the URL|Open ?status=bogus, ?status=<script>|n/a|SQL text|Treated as All; nothing executes|test_the_list_rejects_an_unknown_status_and_a_silly_limit
@@ -192,6 +192,16 @@ API-04|/api/dashboard/metrics|Admin|Dates in year 9999|GET ?start=9999-01-01&end
 API-05|/api/dashboard/summaries/{month}|Admin|Month 0000-01|GET /api/dashboard/summaries/0000-01|n/a|9999-12|404 or 422, never 500|
 API-06|note, summary and email fields|All|NUL character in text|Send a NUL (\\u0000) in a shortage note, edit note, summary text and login email|n/a|n/a|422 in the envelope, never 500|
 API-07|/api/* filters|Admin|SQL and HTML text in query parameters|Send ' OR 1=1 -- and <script> as category, status and week_start|n/a|n/a|422 or an empty result, never 500|
+DON-10|/coordinator/donations|Coordinator|Paging|Open Donations on data with more than 50 donations, press Next and Previous|3,626 donations|n/a|"Showing 1–50 of 3,626"; Next and Previous move by 50; filters reset to page 1|test_bug_09_the_list_reports_the_total_and_pages_with_offset
+DON-11|/coordinator/donations?page=|Coordinator|Page number in the URL|Open ?page=abc, 0, -3, 1.5, 99999999|n/a|<script>, SQL text|A sensible page (first, or the last with a link back); never an error page|
+OUT-01|every page|All|Database outage|Switch the database off (the mock does this), open a page|n/a|n/a|A "temporarily unavailable" page with Try again; not a login screen, not a crash|test_an_outage_is_a_503_service_unavailable_with_a_retry_hint,test_an_outage_is_not_a_logout
+OUT-02|/unavailable|All|Try again after an outage|Switch the database back on, press Try again|n/a|n/a|The page you were on loads and you are still signed in|
+OUT-03|/coordinator/forecasts|Coordinator|Button during an outage|Press Run forecast while the database is off|n/a|n/a|A message that the service is temporarily unavailable, with the page still usable|test_every_kind_of_request_reports_an_outage_the_same_way
+OUT-04|every page|All|Browser offline|Go offline, then press a button that calls the API|n/a|n/a|A red "You're offline" banner and a readable message; no crash|
+OUT-05|every page|All|Slow API call times out|Make a call never answer|n/a|n/a|After the time limit a readable message, not an endless spinner|
+OUT-06|every page|All|Unhandled promise rejection|Cause a rejected promise nobody caught|n/a|n/a|A dismissible banner, not a silent failure|
+OUT-07|/api/health|Logged out|Health during an outage|Call /api/health with the database off|n/a|n/a|503 in the envelope with details database: down|test_health_says_the_database_is_down,test_health_is_ok_when_the_database_is_up
+OUT-08|every API route|All|No raw 500 and no stack trace|Send hostile input to every route as each role|n/a|ids, dates, numbers, huge text, control characters|Never a 500; every error in the envelope with a request id|test_fuzz_as_an_admin,test_fuzz_as_a_pantry_manager,test_fuzz_logged_out,test_an_unexpected_error_is_a_500_envelope_with_a_request_id_and_no_trace
 A11Y-01|/login|Logged out|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
 A11Y-02|/coordinator|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|
 A11Y-03|/coordinator/donations|Coordinator|Accessibility scan|Scan the page with axe|n/a|n/a|Violations reported|

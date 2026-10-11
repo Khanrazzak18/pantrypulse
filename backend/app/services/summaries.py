@@ -15,6 +15,7 @@ from app.ai.prompts import load_prompt
 from app.errors import ApiError
 from app.models import MonthlySummary
 from app.schemas.intake import inline_refs
+from app.schemas.types import strip_controls
 from app.services import dashboard
 from app.services.number_check import unsupported_numbers
 
@@ -148,7 +149,9 @@ def draft(db: Session, llm: LLMProvider, month: str) -> MonthlySummary:
     try:
         if result.tool_input is None:
             raise ValueError("no tool call")
-        text = SummaryOutput.model_validate(result.tool_input).summary.strip()
+        text = strip_controls(
+            SummaryOutput.model_validate(result.tool_input).summary, keep_newlines=True
+        ).strip()
     except (ValidationError, ValueError) as exc:
         raise _failed(
             "The AI returned an unusable draft. Try again, or write it yourself."

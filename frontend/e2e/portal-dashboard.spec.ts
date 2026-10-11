@@ -210,24 +210,27 @@ test.describe("dashboard", () => {
     await page.getByLabel("To").fill("2026-09-07");
     await expect(page.getByText("The start date must not be after the end date.")).toBeVisible();
     await page.getByLabel("To").fill("2026-09-28");
-    await page.getByLabel("From").fill("2000-01-03");
+    await page.getByLabel("From").fill("2020-01-06");
     await expect(page.getByText(/at most 260 weeks/)).toBeVisible();
     expect(sent.count()).toBeLessThanOrEqual(2);
   });
 
-  test("[DASH-08][BUG-04] dates in year 9999 give an empty result, not a server error", async ({ page }) => {
-    test.fail(true, "BUG-04: the metrics API returns 500 for year 9999, so the page shows an error");
+  test("[DASH-08] dates outside 2020 to 2100 show an inline message and send nothing", async ({ page }) => {
     await open(page, "/admin/dashboard");
+    const sent = countRequests(page, "GET", /\/api\/dashboard\/metrics/);
     await page.getByLabel("To").fill("9999-12-31");
     await page.getByLabel("From").fill("9999-12-01");
-    await expect(page.getByText(/No distributions, shortage reports or lots/)).toBeVisible();
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByText("Dates must be between 2020 and 2100.")).toBeVisible();
+    await page.getByLabel("From").fill("1999-01-01");
+    await expect(page.getByText("Dates must be between 2020 and 2100.")).toBeVisible();
+    expect(sent.count()).toBe(0);
+    await expect(page.getByText(/Something went wrong/)).toHaveCount(0);
   });
 
   test("[DASH-08][DASH-09][DASH-10] far-past dates and a cleared date do not break the page", async ({ page }) => {
     await open(page, "/admin/dashboard");
-    await page.getByLabel("From").fill("1990-01-01");
-    await page.getByLabel("To").fill("1990-02-01");
+    await page.getByLabel("From").fill("2020-01-06");
+    await page.getByLabel("To").fill("2020-02-03");
     await expect(page.getByText(/No distributions, shortage reports or lots/)).toBeVisible();
     await page.getByLabel("From").fill("");
     await expect(page.getByRole("heading", { name: "Impact dashboard" })).toBeVisible();

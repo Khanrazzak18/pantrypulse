@@ -32,6 +32,7 @@ from app.ai.llm_provider import (
 from app.ai.prompts import load_prompt
 from app.errors import ApiError
 from app.schemas.intake import DonationExtraction, tool_input_schema
+from app.schemas.types import scrub
 
 logger = logging.getLogger("pantrypulse.intake")
 
@@ -366,12 +367,14 @@ def extract_items(llm: LLMProvider, prepared: PreparedUpload, today: date) -> Ex
             "We couldn't find any donation items in this file. Check that it's the right manifest.",
             {"notes": extraction.notes},
         )
-    raw = {
-        "tool_input": outcome.result.tool_input,
-        "parsed": extraction.model_dump(mode="json"),
-        "usage": {"input_tokens": outcome.input_tokens, "output_tokens": outcome.output_tokens},
-        "attempts": outcome.attempts,
-    }
+    raw = scrub(
+        {
+            "tool_input": outcome.result.tool_input,
+            "parsed": extraction.model_dump(mode="json"),
+            "usage": {"input_tokens": outcome.input_tokens, "output_tokens": outcome.output_tokens},
+            "attempts": outcome.attempts,
+        }
+    )
     logger.info(
         "donation_extracted",
         extra={

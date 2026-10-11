@@ -141,6 +141,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Pantry Id"
             }
           }
@@ -215,6 +217,7 @@
           "donations"
         ],
         "summary": "List Donations",
+        "description": "One page of donations, newest first. The X-Total-Count header says how many there are.",
         "operationId": "list_donations_api_donations_get",
         "parameters": [
           {
@@ -248,6 +251,18 @@
               "minimum": 1,
               "default": 100,
               "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
             }
           }
         ],
@@ -293,6 +308,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Donation Id"
             }
           }
@@ -336,6 +353,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Donation Id"
             }
           }
@@ -389,6 +408,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Donation Id"
             }
           }
@@ -500,7 +521,9 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer"
+                  "type": "integer",
+                  "maximum": 2147483647,
+                  "minimum": 1
                 },
                 {
                   "type": "null"
@@ -573,7 +596,9 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer"
+                  "type": "integer",
+                  "maximum": 2147483647,
+                  "minimum": 1
                 },
                 {
                   "type": "null"
@@ -638,6 +663,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Pantry Id"
             }
           },
@@ -754,6 +781,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Run Id"
             }
           }
@@ -904,6 +933,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Allocation Id"
             }
           }
@@ -946,6 +977,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Allocation Id"
             }
           }
@@ -998,6 +1031,8 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 1,
               "title": "Allocation Id"
             }
           }
@@ -1195,11 +1230,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
-              "description": "YYYY-MM",
+              "description": "YYYY-MM, 2020-01 to 2100-12",
               "title": "Month"
             },
-            "description": "YYYY-MM"
+            "description": "YYYY-MM, 2020-01 to 2100-12"
           }
         ],
         "responses": {
@@ -1240,11 +1274,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
-              "description": "YYYY-MM",
+              "description": "YYYY-MM, 2020-01 to 2100-12",
               "title": "Month"
             },
-            "description": "YYYY-MM"
+            "description": "YYYY-MM, 2020-01 to 2100-12"
           }
         ],
         "responses": {
@@ -1285,11 +1318,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
-              "description": "YYYY-MM",
+              "description": "YYYY-MM, 2020-01 to 2100-12",
               "title": "Month"
             },
-            "description": "YYYY-MM"
+            "description": "YYYY-MM, 2020-01 to 2100-12"
           }
         ],
         "requestBody": {

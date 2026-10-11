@@ -5,7 +5,7 @@ import uuid
 
 from fastapi import FastAPI, Request
 
-from app.errors import error_response
+from app.errors import OUTAGE, internal_response, unavailable_response
 from app.logging import request_id_var
 
 logger = logging.getLogger("pantrypulse.request")
@@ -23,10 +23,13 @@ def register_request_middleware(app: FastAPI) -> None:
         try:
             try:
                 response = await call_next(request)
+            except OUTAGE:
+                logger.exception("database_unavailable")
+                response = unavailable_response()
             except Exception:
                 # Log the real error; the client only ever sees a generic message.
                 logger.exception("unhandled_error")
-                response = error_response(500, "internal_error", "Something went wrong.")
+                response = internal_response()
             route = request.scope.get("route")
             response.headers["X-Request-ID"] = request_id
             logger.info(

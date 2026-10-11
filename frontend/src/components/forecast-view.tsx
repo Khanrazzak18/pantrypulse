@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { ApiRequestError, apiFetch, type Pantry } from "@/lib/api/client";
+import { ApiRequestError, apiFetch, LONG_TIMEOUT_MS, type Pantry } from "@/lib/api/client";
 import { CATEGORIES, CATEGORY_LABELS } from "@/lib/donations";
 import {
   type ForecastRun,
@@ -74,7 +74,7 @@ export function ForecastView({ pantries, initialRuns }: { pantries: Pantry[]; in
     setRun({ kind: "running" });
     const started = performance.now();
     try {
-      const result = await apiFetch<ForecastRun>("/api/forecasts/run", { method: "POST" });
+      const result = await apiFetch<ForecastRun>("/api/forecasts/run", { method: "POST" }, LONG_TIMEOUT_MS);
       const seconds = ((performance.now() - started) / 1000).toFixed(1);
       setRun({
         kind: "done",

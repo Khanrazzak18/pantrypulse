@@ -1,4 +1,5 @@
 import type { components } from "./api/schema";
+import { CONTROL_MESSAGE, controlCharError } from "./text";
 
 export type Deliveries = components["schemas"]["DeliveriesOut"];
 export type Delivery = components["schemas"]["DeliveryOut"];
@@ -28,6 +29,7 @@ export function validateReport(form: ReportForm): ReportErrors {
     else if (n > MAX_TURNED_AWAY) errors.turnedAway = `That is too many (the limit is ${MAX_TURNED_AWAY.toLocaleString("en-US")}).`;
   }
   if (form.note.length > MAX_NOTE) errors.note = `Keep the note under ${MAX_NOTE} characters.`;
+  else if (controlCharError(form.note, true)) errors.note = CONTROL_MESSAGE;
   return errors;
 }
 

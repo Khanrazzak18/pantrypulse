@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { ApiRequestError, apiFetch } from "@/lib/api/client";
+import { ApiRequestError, apiFetch, LONG_TIMEOUT_MS } from "@/lib/api/client";
+import { controlCharError } from "@/lib/text";
 import { monthLabel, monthsBetween, type Summary } from "@/lib/dashboard";
 
 const message = (err: unknown) => (err instanceof ApiRequestError || err instanceof Error ? err.message : "Something went wrong.");
@@ -43,7 +44,7 @@ export function SummaryEditor({ dataStart, dataEnd }: { dataStart: string; dataE
     setState("drafting");
     setError(null);
     try {
-      const out = await apiFetch<Summary>(`/api/dashboard/summaries/${month}/draft`, { method: "POST" });
+      const out = await apiFetch<Summary>(`/api/dashboard/summaries/${month}/draft`, { method: "POST" }, LONG_TIMEOUT_MS);
       setSummary(out);
       setText(out.ai_draft);
     } catch (err) {
@@ -56,6 +57,11 @@ export function SummaryEditor({ dataStart, dataEnd }: { dataStart: string; dataE
   async function approve() {
     if (!text.trim()) {
       setError("Write the summary text before approving.");
+      return;
+    }
+    const bad = controlCharError(text, true);
+    if (bad) {
+      setError(bad);
       return;
     }
     setState("approving");

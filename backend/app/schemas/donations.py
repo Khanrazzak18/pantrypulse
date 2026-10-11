@@ -3,6 +3,7 @@ from datetime import date, datetime
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.schemas.intake import Category, StorageType
+from app.schemas.types import LineText, SafeDate
 
 
 class ReviewItem(BaseModel):
@@ -47,12 +48,12 @@ class DonorOut(BaseModel):
 
 
 class ConfirmItem(BaseModel):
-    name: str = Field(min_length=1, max_length=200)
+    name: LineText = Field(min_length=1, max_length=200)
     category: Category
     quantity: float = Field(gt=0, le=1_000_000)
-    unit: str = Field(min_length=1, max_length=30)
+    unit: LineText = Field(min_length=1, max_length=30)
     estimated_weight_lbs: float = Field(gt=0, le=100_000)
-    expiry_date: date | None = None
+    expiry_date: SafeDate | None = None
     storage_type: StorageType
     # Which extracted row this came from (None for rows the coordinator added).
     source_index: int | None = Field(default=None, ge=0)
@@ -65,7 +66,7 @@ class ConfirmItem(BaseModel):
 
 class ConfirmRequest(BaseModel):
     donor_id: int | None = None
-    donor_name: str | None = Field(default=None, max_length=120)
+    donor_name: LineText | None = Field(default=None, max_length=120)
     items: list[ConfirmItem] = Field(min_length=1, max_length=100)
 
     @field_validator("donor_name", mode="before")

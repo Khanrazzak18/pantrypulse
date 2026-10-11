@@ -331,14 +331,17 @@ test.describe("review", () => {
     await expect(page).toHaveURL(/donations\/\d+$/);
   });
 
-  test("[REV-10] a far-future expiry date does not crash anything", async ({ page }) => {
+  test("[REV-10] an expiry date outside 2020 to 2100 shows an inline message", async ({ page }) => {
     await openReview(page);
-    await firstRow(page).getByLabel(/Expire/).fill("9999-12-31");
+    for (const far of ["9999-12-31", "2101-01-01"]) {
+      await firstRow(page).getByLabel(/Expire/).fill(far);
+      await page.getByRole("button", { name: /Confirm and add/ }).click();
+      await expect(page.getByText("Dates must be between 2020 and 2100.")).toBeVisible();
+    }
+    await expect(page).toHaveURL(/donations\/\d+$/);
+    await firstRow(page).getByLabel(/Expire/).fill("2100-12-31");
     await page.getByRole("button", { name: /Confirm and add/ }).click();
-    await expect(page.getByText("Something went wrong")).toHaveCount(0);
-    await expect(page).toHaveURL(/added=3|donations\/\d+$/);
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/Something went wrong|Internal/)).toHaveCount(0);
+    await expect(page).toHaveURL(/added=3/);
   });
 
   test("[REV-11] the unit is required", async ({ page }) => {
@@ -423,7 +426,7 @@ test.describe("review", () => {
     await login(page, "coordinator");
     for (const id of ["99999999", "0", "-1", "abc"]) {
       const res = await page.goto(`/coordinator/donations/${id}`);
-      expect(res?.ok()).toBeTruthy();
+      expect(res?.status()).toBe(404);
       await expect(page.getByRole("heading", { name: /find that/ })).toBeVisible();
     }
   });

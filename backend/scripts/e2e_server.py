@@ -10,14 +10,17 @@ database. The normal app (`app.main:create_app`) never imports this file.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
 from datetime import date
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import text
+from sqlalchemy import event, text
+from sqlalchemy.exc import OperationalError
 
 from app.config import ROOT, Settings
 from app.db import make_engine
@@ -60,6 +63,12 @@ class ModeIn(BaseModel):
     mode: str
 
 
+# Faults a test can switch on: the database is down, every request is slow, or the pantry list is
+# empty. They let the E2E tests reach states that are hard to make with real data.
+FAULTS = ("none", "db_down", "slow", "empty_pantries", "api_error")
+SLOW_SECONDS = 1.5
+
+
 def guard(settings: Settings) -> None:
     if os.environ.get("E2E_MODE") != "1":
         raise RuntimeError("scripts.e2e_server only runs for end-to-end tests (set E2E_MODE=1).")
@@ -74,13 +83,41 @@ def build_app() -> FastAPI:
     engine = make_engine(settings.test_database_url)  # never the app database
     shutil.rmtree(UPLOAD_DIR, ignore_errors=True)
     llm = MockLLM(today)
+    fault = {"mode": "none"}
+
+    @event.listens_for(engine, "engine_connect")
+    def _maybe_down(_connection):
+        if fault["mode"] == "db_down":
+            raise OperationalError("connect", {}, Exception("e2e fault: the database is down"))
+
     app = create_app(
         settings, engine, llm=llm, storage=LocalStorage(Path(UPLOAD_DIR)), forecast_config=FAST
     )
     app.state.today = lambda: today
 
+    @app.middleware("http")
+    async def faults(request: Request, call_next):
+        if request.url.path.startswith("/__e2e"):
+            return await call_next(request)
+        if fault["mode"] == "slow":
+            await asyncio.sleep(SLOW_SECONDS)
+        listing = request.method == "GET" and request.url.path == "/api/pantries"
+        if fault["mode"] == "empty_pantries" and listing:
+            return JSONResponse([])
+        if fault["mode"] == "api_error" and listing:
+            error = {"code": "internal_error", "message": "Something went wrong.", "details": None}
+            return JSONResponse({"error": {**error, "request_id": "e2e-fault"}}, status_code=500)
+        return await call_next(request)
+
+    @app.post("/__e2e/fault", status_code=204)
+    def set_fault(body: ModeIn) -> None:
+        if body.mode not in FAULTS:
+            raise ValueError(body.mode)
+        fault["mode"] = body.mode
+
     @app.post("/__e2e/reset", status_code=204)
     def reset() -> None:
+        fault["mode"] = "none"  # first, or a database fault would block the reset itself
         with engine.begin() as conn:
             for statement in RESET_SQL:
                 conn.execute(text(statement))
@@ -96,6 +133,6 @@ def build_app() -> FastAPI:
     @app.get("/__e2e/state")
     def state() -> dict:
         return {"today": today.isoformat(), "llm_mode": llm.mode, "llm_calls": llm.calls,
-                "database": engine.url.database}  # fmt: skip
+                "fault": fault["mode"], "database": engine.url.database}  # fmt: skip
 
     return app

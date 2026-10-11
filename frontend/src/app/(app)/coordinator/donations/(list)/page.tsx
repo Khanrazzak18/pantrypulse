@@ -6,7 +6,7 @@ import { UploadPanel } from "@/components/upload-panel";
 import type { DonationSummary } from "@/lib/api/client";
 import { requireRole } from "@/lib/auth";
 import { STATUS_LABELS } from "@/lib/donations";
-import { serverJson } from "@/lib/server-api";
+import { serverJsonWithHeaders } from "@/lib/server-api";
 
 export const metadata: Metadata = { title: "Donations · PantryPulse" };
 
@@ -28,16 +28,34 @@ const number = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits:
 const day = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-type Search = { status?: string; added?: string; lbs?: string; rejected?: string };
+const PAGE_SIZE = 50;
+
+type Search = { status?: string; added?: string; lbs?: string; rejected?: string; page?: string };
+
+const linkTo = (status: string | undefined, page: number) => {
+  const query = new URLSearchParams();
+  if (status) query.set("status", status);
+  if (page > 1) query.set("page", String(page));
+  const text = query.toString();
+  return `/coordinator/donations${text ? `?${text}` : ""}`;
+};
 
 export default async function DonationsPage({ searchParams }: { searchParams: Promise<Search> }) {
   await requireRole(["coordinator", "admin"], "/coordinator/donations");
   const params = await searchParams;
   const status = FILTERS.find((f) => f.value === params.status)?.value;
-  const donations = await serverJson<DonationSummary[]>(
-    `/api/donations${status ? `?status=${status}` : ""}`,
+  const requested = Number(params.page);
+  const page = Number.isInteger(requested) && requested >= 1 && requested <= 100_000 ? requested : 1;
+  const query = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String((page - 1) * PAGE_SIZE) });
+  if (status) query.set("status", status);
+  const { data: donations, headers } = await serverJsonWithHeaders<DonationSummary[]>(
+    `/api/donations?${query}`,
     "/coordinator/donations",
   );
+  const total = Number(headers.get("x-total-count")) || donations.length;
+  const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const first = donations.length ? (page - 1) * PAGE_SIZE + 1 : 0;
+  const last = (page - 1) * PAGE_SIZE + donations.length;
 
   const added = Number(params.added);
   return (
@@ -67,9 +85,9 @@ export default async function DonationsPage({ searchParams }: { searchParams: Pr
             return (
               <li key={f.label}>
                 <Link
-                  href={f.value ? `/coordinator/donations?status=${f.value}` : "/coordinator/donations"}
+                  href={linkTo(f.value, 1)}
                   aria-current={active ? "page" : undefined}
-                  className={`block whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ${
+                  className={`flex min-h-11 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium lg:min-h-0 lg:py-1.5 ${
                     active ? "bg-stone-800 text-white" : "text-stone-700 hover:bg-stone-100"
                   }`}
                 >
@@ -117,7 +135,7 @@ export default async function DonationsPage({ searchParams }: { searchParams: Pr
                     <td className="px-4 py-2 text-right tabular-nums">{number(d.total_lbs)}</td>
                     <td className="px-4 py-2"><StatusBadge status={d.status} /></td>
                     <td className="px-4 py-2 text-right">
-                      <Link href={`/coordinator/donations/${d.id}`} className="font-medium text-green-800 hover:underline">
+                      <Link href={`/coordinator/donations/${d.id}`} className="inline-flex min-h-11 items-center px-2 font-medium text-green-800 hover:underline lg:min-h-0">
                         {d.status === "pending_review" ? "Review" : "View"}
                       </Link>
                     </td>
@@ -141,13 +159,40 @@ export default async function DonationsPage({ searchParams }: { searchParams: Pr
                 <p className="mt-1 text-sm tabular-nums">
                   {d.item_count} items · {number(d.total_lbs)} lb
                 </p>
-                <Link href={`/coordinator/donations/${d.id}`} className="mt-2 inline-block text-sm font-medium text-green-800 hover:underline">
+                <Link href={`/coordinator/donations/${d.id}`} className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-green-800 hover:underline">
                   {d.status === "pending_review" ? "Review" : "View"}
                 </Link>
               </li>
             ))}
           </ul>
         </>
+      )}
+
+      {total > 0 && (
+        <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-3 text-sm text-stone-700">
+          <p role="status">
+            {donations.length > 0
+              ? `Showing ${number(first)}–${number(last)} of ${number(total)}`
+              : `No donations on this page (there are ${number(total)}).`}
+          </p>
+          <div className="flex gap-2">
+            {page > 1 && (
+              <Link href={linkTo(status, page - 1)} className="inline-flex min-h-11 items-center rounded-md border border-stone-300 bg-white px-4 font-medium hover:bg-stone-50">
+                Previous
+              </Link>
+            )}
+            {page < lastPage && (
+              <Link href={linkTo(status, page + 1)} className="inline-flex min-h-11 items-center rounded-md border border-stone-300 bg-white px-4 font-medium hover:bg-stone-50">
+                Next
+              </Link>
+            )}
+            {donations.length === 0 && page > lastPage && (
+              <Link href={linkTo(status, lastPage)} className="inline-flex min-h-11 items-center rounded-md border border-stone-300 bg-white px-4 font-medium hover:bg-stone-50">
+                Go to the last page
+              </Link>
+            )}
+          </div>
+        </nav>
       )}
     </div>
   );

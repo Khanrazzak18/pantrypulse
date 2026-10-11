@@ -27,6 +27,7 @@ from app.schemas.allocations import (
     LotRef,
     PantryRef,
 )
+from app.schemas.types import PathId, SafeDate
 from app.services import allocation_runs as svc
 from app.services.optimizer import haversine_miles
 
@@ -137,7 +138,9 @@ def latest_run(db: Session = Depends(get_db)) -> LatestAllocationRun:
 
 
 @router.post("/runs/{run_id}/reasons", response_model=AllocationRunOut)
-def more_reasons(run_id: int, request: Request, db: Session = Depends(get_db)) -> AllocationRunOut:
+def more_reasons(
+    run_id: PathId, request: Request, db: Session = Depends(get_db)
+) -> AllocationRunOut:
     run = svc.write_more_reasons(db, request.app.state.llm, run_id, _today(request))
     return run_out(db, run)
 
@@ -146,7 +149,7 @@ def more_reasons(run_id: int, request: Request, db: Session = Depends(get_db)) -
 def list_allocations(
     request: Request,
     status: str | None = Query(default=None, pattern="^(proposed|approved|edited|rejected)$"),
-    week_start: date | None = None,
+    week_start: SafeDate | None = None,
     db: Session = Depends(get_db),
 ) -> AllocationList:
     run = _latest_run(db)
@@ -200,7 +203,7 @@ def bulk_approve(
 
 @router.post("/{allocation_id}/approve", response_model=AllocationOut)
 def approve(
-    allocation_id: int,
+    allocation_id: PathId,
     request: Request,
     user: User = Depends(require_coordinator),
     db: Session = Depends(get_db),
@@ -211,7 +214,7 @@ def approve(
 
 @router.post("/{allocation_id}/edit", response_model=AllocationOut)
 def edit(
-    allocation_id: int,
+    allocation_id: PathId,
     body: EditIn,
     request: Request,
     user: User = Depends(require_coordinator),
@@ -223,7 +226,7 @@ def edit(
 
 @router.post("/{allocation_id}/reject", response_model=AllocationOut)
 def reject(
-    allocation_id: int,
+    allocation_id: PathId,
     request: Request,
     user: User = Depends(require_coordinator),
     db: Session = Depends(get_db),

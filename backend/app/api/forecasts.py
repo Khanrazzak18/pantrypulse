@@ -17,6 +17,7 @@ from app.schemas.forecasts import (
     SeriesAccuracy,
     SeriesPoint,
 )
+from app.schemas.types import PositiveId, SafeDate
 from app.services import forecast_runs, forecasting
 
 router = APIRouter(prefix="/api/forecasts", tags=["forecasts"])
@@ -71,11 +72,11 @@ def latest_runs(db: Session = Depends(get_db)) -> LatestRuns:
 
 @router.get("", response_model=list[ForecastRowOut], dependencies=[Depends(require_coordinator)])
 def list_forecasts(
-    pantry_id: int | None = None,
+    pantry_id: PositiveId | None = None,
     category: CategoryName | None = None,
-    week_start: date | None = None,
+    week_start: SafeDate | None = None,
     kind: Literal["forward", "backtest"] = "forward",
-    run_id: int | None = None,
+    run_id: PositiveId | None = None,
     limit: int = Query(default=1000, ge=1, le=5000),
     db: Session = Depends(get_db),
 ) -> list[ForecastRowOut]:
@@ -140,7 +141,7 @@ def list_forecasts(
 
 @router.get("/series", response_model=ForecastSeries, dependencies=[Depends(require_coordinator)])
 def forecast_series(
-    pantry_id: int,
+    pantry_id: PositiveId,
     category: CategoryName,
     history_weeks: int = Query(default=26, ge=4, le=104),
     db: Session = Depends(get_db),

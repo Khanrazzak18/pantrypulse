@@ -1,4 +1,5 @@
 import type { components } from "./api/schema";
+import { CONTROL_MESSAGE, controlCharError, DATE_RANGE_MESSAGE, dateRangeError } from "./text";
 
 type ConfirmItem = components["schemas"]["ConfirmItem"];
 
@@ -87,16 +88,19 @@ export function validateRow(row: RowDraft, today: string): RowErrors {
   const errors: RowErrors = {};
   if (!row.name.trim()) errors.name = "Enter the item name.";
   else if (row.name.trim().length > 200) errors.name = "Keep the name under 200 characters.";
+  else if (controlCharError(row.name)) errors.name = CONTROL_MESSAGE;
   const quantity = Number(row.quantity);
   if (row.quantity.trim() === "" || !Number.isFinite(quantity) || quantity <= 0) {
     errors.quantity = "Enter a quantity above 0.";
   }
   if (!row.unit.trim()) errors.unit = "Enter a unit.";
+  else if (controlCharError(row.unit)) errors.unit = CONTROL_MESSAGE;
   const weight = Number(row.weight);
   if (row.weight.trim() === "" || !Number.isFinite(weight) || weight <= 0) {
     errors.weight = "Enter a weight above 0.";
   } else if (weight > 100_000) errors.weight = "That weight looks too large.";
   if (row.expiry && row.expiry < today) errors.expiry = "This item has already expired.";
+  else if (dateRangeError(row.expiry)) errors.expiry = DATE_RANGE_MESSAGE;
   return errors;
 }
 

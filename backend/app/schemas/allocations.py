@@ -2,6 +2,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.types import BlockText
+
 MAX_NOTE_CHARS = 500
 MAX_BULK = 1000
 
@@ -76,7 +78,7 @@ class AllocationList(BaseModel):
 
 class EditIn(BaseModel):
     lbs: float = Field(gt=0, le=1_000_000, description="New amount to send, in pounds")
-    note: str | None = Field(default=None, max_length=MAX_NOTE_CHARS)
+    note: BlockText | None = Field(default=None, max_length=MAX_NOTE_CHARS)
 
     @field_validator("note")
     @classmethod

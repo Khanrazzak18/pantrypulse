@@ -1,4 +1,4 @@
-"""Every API route answers errors in the one envelope {"error": {"code", "message", "details"}},
+"""Every API route answers errors in the one envelope {"error": {"code", "message", "details", "request_id"}},
 whoever calls it and however badly."""
 
 import re
@@ -23,7 +23,7 @@ def fill(path):
 def assert_envelope(response):
     body = response.json()
     assert set(body) == {"error"}, body
-    assert set(body["error"]) == {"code", "message", "details"}
+    assert set(body["error"]) == {"code", "message", "details", "request_id"}
     assert isinstance(body["error"]["code"], str) and body["error"]["message"]
 
 
