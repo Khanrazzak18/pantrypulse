@@ -1,4 +1,4 @@
-# Bugs found in Stage 10 (testing) and fixed in Stage 11
+# Bugs found and fixed in assignment 5.4 (Stages 10 to 13)
 
 Found by the end-to-end tests (`make e2e`), by probing the API with out-of-range and odd input, and
 (BUG-10) by hand, by stopping the database. **All ten are fixed.** Each has a regression test that was
@@ -39,3 +39,43 @@ result for input a real user can type; **Low** needs an unusual request or is co
   decimal allocation amount such as 12.345 lb (rounded to hundredths by the server). Expiry dates are limited
   to 2020 to 2100 like every other date.
 - `make test` and `make e2e` share the test database and must run one after the other.
+
+
+## Bugs found in Stages 12 and 13
+
+Same severity scale as above, plus the **axe impact** in brackets for the four automated accessibility findings.
+Security findings that are missing protections (no token revocation, no CSRF check, no security headers, no rate limits and so
+on) have their own IDs, **SEC-01 to SEC-23**, and are listed with severity and status in
+[`docs/security/audit.md`](../security/audit.md); they are not repeated here. The numbering continues from BUG-10 across both tables.
+
+### (a) Defects in committed code
+
+| ID | Severity | Where | How found | Root cause | Fix | Regression tests |
+| --- | --- | --- | --- | --- | --- | --- |
+| BUG-11 | Medium | Application log, any database error | Stage 12: a log-hygiene test written during the security audit forced a database error and read the log | A failed statement's error text includes the offending row values (for example the email in "Key (email)=(...)"), and the engine passed them on | `hide_parameters=True` on the engine, and a log formatter that removes the database's DETAIL, CONTEXT and HINT lines | `test_a_database_error_does_not_put_the_values_in_the_log`, `test_the_engine_hides_parameters` |
+| BUG-12 | Low | `backend/scripts/seed.py` | Stage 12: bandit rule B608 flagged it | Table names were put into SQL with f-strings (from a fixed list, not user input, but the pattern is the one injection uses) | One `quote()` helper that quotes every identifier | `test_the_seed_script_quotes_every_table_name_it_puts_in_sql`, `make security` |
+| BUG-13 | High (only when stock is short) | Allocation optimizer | Stage 13: measuring the share of forecast demand met by group, including a half-stock stress test | Every pound toward a pantry's forecast earned the same reward, so the small per-mile penalty was the only tie-breaker and scarce stock filled the nearest pantries completely first. With half the stock the farthest third of pantries received 1.4% of their forecast (59 points below average) and one county was 25 points below | Tiered coverage: the forecast is split into ten slices, each worth 0.02 less per pound than the one before and always more than the biggest distance difference, so scarce stock is shared by share of demand | `test_scarce_stock_is_spread_by_share_of_demand_not_filled_nearest_first`, `test_distance_never_outweighs_unmet_demand_however_large_the_penalty`, `make fairness` |
+| BUG-14 | High (axe: critical) | Donation review, items grid | Stage 10 axe scan (`aria-required-children`), fixed in Stage 13 | The grid's rows were `role="row"` containers whose children had no cell roles, and its header row was hidden from screen readers | Column headers and `role="cell"` on every cell; a row label on each field ("Item (row 2)") | `A11Y-04`, `A11Y-28`, `A11Y-13` |
+| BUG-15 | Medium (axe: serious) | Impact dashboard, headline figures | Stage 10 axe scan (`definition-list`) | The explanatory note sat in a paragraph between the term and the value inside a definition list | Note moved inside the value | `A11Y-07`, `A11Y-14` |
+| BUG-16 | Low (axe: minor) | Donations list table | Stage 10 axe scan (`empty-table-header`) | The last column header was empty | Screen-reader-only text "Open", header scopes, caption | `A11Y-03`, `A11Y-28` |
+| BUG-17 | Low (axe: minor) | Forecasts accuracy table | Stage 10 axe scan (`empty-table-header`) | The first column header was empty | Screen-reader-only text "Measured on", header scopes, caption | `A11Y-05`, `A11Y-28` |
+
+### (b) Defects caught before commit (in work in progress, never shipped)
+
+| ID | Severity if shipped | Where | How found | Root cause | Fix | Regression tests |
+| --- | --- | --- | --- | --- | --- | --- |
+| BUG-18 | Medium | Streaming request-size limit (Stage 13a) | The new test for a chunked body returned 400, not 413 | FastAPI turns any exception raised while it reads the body into its own 400, so a limit that raised never reached the client | The middleware sends the 413 itself, ends the read and drops what the application sends afterwards | `test_a_chunked_json_body_over_the_limit_is_refused_without_a_content_length`, `test_a_request_that_lies_about_a_small_length_is_stopped_when_it_exceeds_the_limit` |
+| BUG-19 | Medium | Raw-output retention (Stage 13a) | The new check constraint rejected the clearing statement | Assigning `None` to a JSONB column through SQLAlchemy stores the JSON value `null`, not SQL `NULL` | The service writes SQL `NULL` explicitly | `test_output_reviewed_more_than_90_days_ago_is_cleared`, `test_the_database_refuses_a_cleared_marker_on_a_donation_that_still_has_output` |
+| BUG-20 | Medium | Modal dialog (Stage 13b) | Keyboard test `A11Y-27`: re-opening a dialog straight after Escape did nothing | The browser delivers a dialog's `close` event as a later task, after the next key press and click. The parent still thought the dialog was open, and the late event then closed the newly opened one | The dialog handles Escape itself and updates its parent at once, and ignores a late `close` event if it has been re-opened | `A11Y-27` (three tests) |
+| BUG-21 | Low | Donations list at 768 px (Stage 13b) | Existing test `DON-07` (no sideways scrolling) failed by 1 px | A screen-reader-only header cell is absolutely positioned, and in the last column it sat at the right edge and widened the page | The cell is made a positioning context | `DON-07`, `A11Y-32` |
+| BUG-22 | Medium (axe: serious) | Scrollable tables (Stage 13b) | Axe gate (`scrollable-region-focusable`) on the table view | A scrollable region had no way to be reached or scrolled with the keyboard | Table regions are focusable and named | `A11Y-14`, `A11Y-28` |
+| BUG-23 | Low | Skip link (Stage 13b) | Existing test `SHELL-09` (controls at least 44 px tall) counted it | The hidden skip link is 1 px tall, and was only a normal size by accident when shown | Shown at 44 px minimum; the test ignores the visually hidden form | `SHELL-09`, `A11Y-20` |
+
+### Found while building, in the tests and harness (not product defects)
+
+These cost time and are recorded so they are not repeated; none reached a user.
+- Playwright run by hand without `.env` loaded has empty demo passwords, so every login test fails (`make e2e` exports them).
+- WebKit's default is that Tab visits form fields only; links and buttons need Option+Tab, so keyboard tests use Alt+Tab there.
+- `Control+A` is not select-all on macOS (`ControlOrMeta+A`); a script-injected `<script>` through `page.evaluate` runs even under a strict policy, so the CSP test adds unnonced markup to the real response instead.
+- `ruff format` silently turned some scripted edits into no-ops; each replacement was checked.
+- A 55-minute E2E run (53 failures with 60-second timeouts) after the new markup changed what earlier tests counted: the items grid now has a header row, `getByLabel("To")` matched a chart, and the skip link was measured as a control.

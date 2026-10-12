@@ -89,6 +89,151 @@ def load_e2e() -> dict[str, list[dict]]:
     return by_id
 
 
+def load_runs() -> list[dict]:
+    """Every Playwright test result exactly once (a test that cites several checklist IDs is one run)."""
+    runs: list[dict] = []
+    if not RESULTS.exists():
+        return runs
+    data = json.loads(RESULTS.read_text())
+
+    def walk(suite: dict) -> None:
+        for spec in suite.get("specs", []):
+            for test in spec.get("tests", []):
+                outcome = test.get("status")
+                if outcome == "expected" and test.get("expectedStatus") == "failed":
+                    outcome = "known-bug"
+                runs.append(
+                    {"project": test["projectName"], "outcome": outcome, "title": spec["title"]}
+                )
+        for child in suite.get("suites", []):
+            walk(child)
+
+    for suite in data.get("suites", []):
+        walk(suite)
+    return runs
+
+
+def count_runs(runs: list[dict]) -> dict[str, dict[str, int]]:
+    """project -> {passed, failed, skipped} (a known-bug run that behaved as expected counts as passed)."""
+    out: dict[str, Counter] = defaultdict(Counter)
+    for r in runs:
+        key = {
+            "expected": "passed",
+            "known-bug": "passed",
+            "unexpected": "failed",
+            "flaky": "failed",
+            "skipped": "skipped",
+        }[r["outcome"]]
+        out[r["project"]][key] += 1
+    return {project: dict(c) for project, c in out.items()}
+
+
+def row_status(row: Row, e2e: dict[str, list[dict]], known_pytest: set[str]) -> str:
+    """pass | FAIL | known bug | skipped | manual, for one checklist row."""
+    results = e2e.get(row.id, [])
+    ran = [r for r in results if r["outcome"] != "skipped"]
+    if any(r["outcome"] in ("unexpected", "flaky") for r in ran):
+        return "FAIL"
+    if any(r["outcome"] == "known-bug" for r in ran):
+        return "known bug"
+    if row.pytest and all(t in known_pytest for t in row.pytest):
+        return "pass"
+    if ran:
+        return "pass"
+    if results:
+        return "skipped"
+    return "manual"
+
+
+def group_status(
+    table: list[Row], e2e: dict[str, list[dict]], known_pytest: set[str], by: str
+) -> dict[str, Counter]:
+    """{group -> {status -> rows}}, grouped by `role` (a row counts under each role it names) or `page`."""
+    groups: dict[str, Counter] = defaultdict(Counter)
+    for row in table:
+        status = row_status(row, e2e, known_pytest)
+        keys = [r.strip() for r in row.role.split(",")] if by == "role" else [row.page]
+        for key in keys:
+            groups[key][status] += 1
+    return {k: dict(v) for k, v in groups.items()}
+
+
+def status_table(groups: dict[str, dict[str, int]], heading: str) -> str:
+    lines = [
+        f"| {heading} | Items | Passing | Failing | Known bug | Not run |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    total = Counter()
+    for name in sorted(groups):
+        c = groups[name]
+        items = sum(c.values())
+        other = c.get("manual", 0) + c.get("skipped", 0)
+        lines.append(
+            f"| {cell(name)} | {items} | {c.get('pass', 0)} | {c.get('FAIL', 0)} | {c.get('known bug', 0)} | {other} |"
+        )
+        total.update(c)
+    other = total.get("manual", 0) + total.get("skipped", 0)
+    lines.append(
+        f"| **Total** | **{sum(total.values())}** | **{total.get('pass', 0)}** | **{total.get('FAIL', 0)}** | **{total.get('known bug', 0)}** | **{other}** |"
+    )
+    return "\n".join(lines)
+
+
+def replace_block(text: str, name: str, body: str) -> str:
+    start, end = f"<!-- GENERATED:{name} -->", f"<!-- /GENERATED:{name} -->"
+    if start not in text or end not in text:
+        return text
+    head, rest = text.split(start, 1)
+    _, tail = rest.split(end, 1)
+    return f"{head}{start}\n{body}\n{end}{tail}"
+
+
+def write_report_tables(summary: dict) -> None:
+    """Fill the generated blocks of docs/testing/report.md (the rest of the file is hand-written)."""
+    path = OUT_DIR / "report.md"
+    if not path.exists():
+        return
+    table = rows()
+    e2e = load_e2e()
+    known = pytest_function_names()
+    runs = count_runs(load_runs())
+    functions, collected = count_pytest()
+    totals = Counter()
+    for counts in runs.values():
+        totals.update(counts)
+    counts_md = "\n".join(
+        [
+            f"_Generated {datetime.now():%Y-%m-%d %H:%M} by `make e2e` from the last run._",
+            "",
+            "| Measure | Count |",
+            "| --- | --- |",
+            f"| pytest test functions | {functions} |",
+            f"| pytest test cases (parametrized tests run once per parameter) | {collected} |",
+            f"| End-to-end test runs (all projects) | {sum(totals.values())} |",
+            f"| of which passed / failed / skipped by design | {totals['passed']} / {totals['failed']} / {totals['skipped']} |",
+            f"| Checklist items | {summary['items']} |",
+            f"| of which automated | {summary.get('automated', 0)} ({summary.get('pytest_only', 0)} pytest only, {summary.get('e2e_only', 0)} end-to-end only, {summary.get('both', 0)} both) |",
+            f"| Accessibility scans (axe) | {summary.get('scans', 0)} |",
+            "",
+            "| Browser project | Passed | Failed | Skipped by design |",
+            "| --- | --- | --- | --- |",
+            *[
+                f"| {p} | {c.get('passed', 0)} | {c.get('failed', 0)} | {c.get('skipped', 0)} |"
+                for p, c in sorted(runs.items())
+            ],
+        ]
+    )
+    text = path.read_text()
+    text = replace_block(text, "counts", counts_md)
+    text = replace_block(
+        text, "by-role", status_table(group_status(table, e2e, known, "role"), "Role")
+    )
+    text = replace_block(
+        text, "by-page", status_table(group_status(table, e2e, known, "page"), "Page")
+    )
+    path.write_text(text)
+
+
 def e2e_cell(results: list[dict]) -> tuple[str, str]:
     """(how tested, result) for the end-to-end part of a row."""
     if not results:
@@ -285,6 +430,7 @@ def write_a11y() -> dict:
 def main() -> None:
     summary = write_checklist()
     a11y = write_a11y()
+    write_report_tables({**summary, "scans": a11y["scans"]})
     print("Checklist:", json.dumps(summary))
     print("Accessibility:", json.dumps(a11y))
 

@@ -1,6 +1,6 @@
 # Accessibility scan (axe-core)
 
-Generated 2026-10-11 18:42 from 108 scans (every page, per role, at 375, 768 and 1280 px in Chromium and 1280 px in WebKit, including error, dialog and table-view states) with WCAG 2.0 and 2.1 A and AA rules plus axe best practices. **Any WCAG violation fails the end-to-end run**; best-practice findings are listed as advisory and do not. Target: zero violations.
+Generated 2026-10-11 22:04 from 108 scans (every page, per role, at 375, 768 and 1280 px in Chromium and 1280 px in WebKit, including error, dialog and table-view states) with WCAG 2.0 and 2.1 A and AA rules plus axe best practices. **Any WCAG violation fails the end-to-end run**; best-practice findings are listed as advisory and do not. Target: zero violations.
 
 ## WCAG violations by severity
 

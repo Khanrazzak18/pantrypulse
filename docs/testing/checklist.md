@@ -1,6 +1,6 @@
 # Testing checklist
 
-Generated 2026-10-11 18:42 by `make e2e` (`python -m scripts.testing_report`) from `backend/scripts/testing_checklist.py` and Playwright's results. Do not edit by hand.
+Generated 2026-10-11 22:04 by `make e2e` (`python -m scripts.testing_report`) from `backend/scripts/testing_checklist.py` and Playwright's results. Do not edit by hand.
 
 ## Summary
 
@@ -9,7 +9,7 @@ Generated 2026-10-11 18:42 by `make e2e` (`python -m scripts.testing_report`) fr
 - Not automated (manual): **0**
 - Items whose end-to-end test is a known bug (`test.fail`): **0**
 - Items whose end-to-end test currently fails: **0**
-- pytest: **711** test functions, **1163** collected test cases. Cases outnumber functions because a parametrized test runs once per parameter.
+- pytest: **724** test functions, **1176** collected test cases. Cases outnumber functions because a parametrized test runs once per parameter.
 
 
 How to read the last column: `pass (pytest)` means the cited pytest tests passed in `make test`; `pass (n/n)` is the number of Playwright projects (Chromium 375, 768, 1280 and WebKit 1280) that ran the test and passed; `known bug BUG-n` means the E2E test is marked `test.fail()` because the bug in `docs/testing/bugs.md` is not fixed yet.

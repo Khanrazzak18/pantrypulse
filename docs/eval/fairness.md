@@ -85,8 +85,8 @@ Pound-miles is pounds delivered times miles from the warehouse; miles per lb is 
 | Half stock, before | 60.8% | 0.0% | 53,127,368 | 19.0 | 26,301 | 3.8% | 87.3% | 2,792,530 |
 | Half stock, after | 60.8% | 54.5% | 63,632,393 | 22.8 | 47,839 | 0.0% | 100.0% | 2,792,480 |
 | Half stock, manual rule | 60.7% | 58.2% | 64,645,504 | 23.1 | 47,839 | 0.0% | 100.0% | 2,792,535 |
-| Latest run, before | 100.0% | 100.0% | 9,676,955 | 22.8 | n/a | n/a | n/a | 423,803 |
-| Latest run, after | 100.0% | 100.0% | 9,676,955 | 22.8 | n/a | n/a | n/a | 423,803 |
+| Latest run, before | 100.0% | 100.0% | 9,640,263 | 22.9 | n/a | n/a | n/a | 421,681 |
+| Latest run, after | 100.0% | 100.0% | 9,640,263 | 22.9 | n/a | n/a | n/a | 421,681 |
 
 **Reading the trade-off honestly.**
 

@@ -189,13 +189,15 @@ refresh. A pantry manager sees only their own pantry.
 
 ## Testing
 
-`make test` runs ruff and the backend suite (1,163 tests against the separate test database), then
+`make test` runs ruff and the backend suite (1,176 tests against the separate test database), then
 frontend lint, typecheck and the production build. It never calls AWS. Tests are written before the
 code they check; the suites cover constraints and migrations, auth and lockout, intake, forecasting
 and its leakage checks, the optimizer, allocation workflow, the pantry portal, dashboard numbers,
 summaries, error envelopes and input validation.
 
 ### End-to-end tests and the testing checklist
+
+The whole testing story (approach, final counts, every bug, the security measures, accessibility and fairness) is in [docs/testing/report.md](docs/testing/report.md); the tick-list of security measures, each with the test that proves it, is [docs/security/checklist.md](docs/security/checklist.md).
 
 `make e2e` drives the real pages with Playwright at 375, 768 and 1280 px in Chromium and 1280 px in
 WebKit (Safari's engine), signed in as each role. It starts its own API on port 8101 (the real app,

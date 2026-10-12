@@ -61,7 +61,7 @@ SECURITY_TESTS := tests/test_authorization_matrix.py tests/test_api_fuzz.py test
 	tests/test_security_headers.py tests/test_csrf_origin.py tests/test_rate_limits.py \
 	tests/test_llm_safety.py tests/test_sql_hygiene.py tests/test_log_hygiene.py \
 	tests/test_data_handling.py tests/test_precommit_hook.py tests/test_audit_gate.py \
-	tests/test_body_stream_limit.py tests/test_trusted_proxies.py tests/test_raw_output_retention.py tests/test_iam_policy.py
+	tests/test_body_stream_limit.py tests/test_trusted_proxies.py tests/test_raw_output_retention.py tests/test_iam_policy.py tests/test_security_checklist.py
 security: check-env security-tools
 	.tools/bin/gitleaks git --config .gitleaks.toml --redact --no-banner .
 	.tools/bin/gitleaks dir --config .gitleaks.toml --redact --no-banner .
