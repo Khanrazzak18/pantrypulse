@@ -29,7 +29,7 @@ from app.security.http import (
     register_security_headers,
 )
 from app.services.forecasting import ForecastConfig
-from app.storage import LocalStorage, StorageBackend
+from app.storage import StorageBackend, make_storage
 
 MIN_JWT_SECRET_LENGTH = 32
 
@@ -69,7 +69,7 @@ def create_app(
     app.state.engine = engine
     # The running app always uses real Bedrock; tests pass a scripted fake instead.
     app.state.llm = llm or BedrockProvider(settings)
-    app.state.storage = storage or LocalStorage(settings.storage_path)
+    app.state.storage = storage or make_storage(settings)
     app.state.forecast_config = forecast_config or ForecastConfig()
     app.state.today = date.today  # tests pin this to a fixed day
     register_exception_handlers(app)

@@ -1,23 +1,57 @@
+"""Uploads in a private, encrypted S3 bucket.
+
+Credentials come from the environment (the task role in AWS); no keys are read from settings."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import boto3
+from botocore.exceptions import ClientError
+
+from app.storage.base import check_key
+
+_MISSING = {"NoSuchKey", "404", "NotFound"}
+
+
 class S3Storage:
-    """Production storage. Not built yet: the local build uses LocalStorage."""
+    """The same four operations as LocalStorage, one object per key."""
 
-    def __init__(self, bucket: str):
+    def __init__(self, bucket: str, client: Any | None = None, region: str | None = None):
+        if not bucket:
+            raise ValueError("S3Storage needs a bucket name.")
         self.bucket = bucket
-
-    def _todo(self):
-        raise NotImplementedError(
-            "S3 storage is not implemented yet. Local development uses LocalStorage; "
-            "implement put/get/delete/exists here with boto3 when deploying."
-        )
+        self._client = client or boto3.client("s3", region_name=region)
 
     def put(self, key: str, data: bytes, content_type: str) -> None:
-        self._todo()
+        check_key(key)  # before the client is touched
+        self._client.put_object(
+            Bucket=self.bucket,
+            Key=key,
+            Body=data,
+            ContentType=content_type,
+            ServerSideEncryption="AES256",  # the bucket also requires it
+        )
 
     def get(self, key: str) -> bytes:
-        self._todo()
+        check_key(key)
+        try:
+            return self._client.get_object(Bucket=self.bucket, Key=key)["Body"].read()
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] in _MISSING:
+                raise FileNotFoundError(key) from exc
+            raise
 
     def delete(self, key: str) -> None:
-        self._todo()
+        check_key(key)
+        self._client.delete_object(Bucket=self.bucket, Key=key)  # an absent key is not an error
 
     def exists(self, key: str) -> bool:
-        self._todo()
+        check_key(key)
+        try:
+            self._client.head_object(Bucket=self.bucket, Key=key)
+            return True
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] in _MISSING:
+                return False
+            raise

@@ -1,11 +1,8 @@
 import os
-import re
 import tempfile
 from pathlib import Path
 
-# Slash-separated segments of letters, digits, `_`, `.` and `-`. A segment cannot start with a
-# dot, which rules out `.`, `..` and hidden files; no backslashes, spaces, NULs or empty segments.
-_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]*(/[A-Za-z0-9][A-Za-z0-9_.\-]*)*$")
+from app.storage.base import check_key
 
 
 class LocalStorage:
@@ -15,8 +12,7 @@ class LocalStorage:
         self.root = Path(root)
 
     def _path(self, key: str) -> Path:
-        if not _KEY.match(key):
-            raise ValueError(f"Invalid storage key: {key!r}")
+        check_key(key)
         path = (self.root / key).resolve()
         if not path.is_relative_to(self.root.resolve()):
             raise ValueError(f"Storage key escapes the storage folder: {key!r}")

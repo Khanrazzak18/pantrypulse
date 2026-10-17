@@ -31,6 +31,7 @@ dev = [
     "bandit>=1.8",  # make security
     "pip-audit>=2.7",  # make security
     "reportlab>=4.0",  # builds the PDF golden manifests
+    "moto[s3]>=5.0",  # S3Storage tests run against a fake S3, never real AWS
 ]
 
 [build-system]

@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -33,18 +34,39 @@ def engine(settings, migrated_engine):
     engine.dispose()
 
 
+_REAL_BOTO3: tuple = ()
+
+
 @pytest.fixture(autouse=True, scope="session")
 def no_aws_calls():
-    """Tests never talk to AWS. Any attempt to build a boto3 session or client fails loudly."""
+    """Tests never talk to AWS. Any attempt to build a boto3 session or client fails loudly.
+
+    The one exception is `fake_aws()` below: inside moto's in-memory mock nothing leaves the process."""
     import boto3
 
     def refuse(*args, **kwargs):
         raise AssertionError("a test tried to create a boto3 session or client")
 
-    original = (boto3.Session, boto3.client, boto3.setup_default_session)
+    global _REAL_BOTO3
+    original = _REAL_BOTO3 = (boto3.Session, boto3.client, boto3.setup_default_session)
     boto3.Session = boto3.client = boto3.setup_default_session = refuse
     yield
     boto3.Session, boto3.client, boto3.setup_default_session = original
+
+
+@contextmanager
+def fake_aws():
+    """boto3 works only inside this block, and only against moto's fake AWS (fake credentials)."""
+    import boto3
+    from moto import mock_aws
+
+    guard = (boto3.Session, boto3.client, boto3.setup_default_session)
+    boto3.Session, boto3.client, boto3.setup_default_session = _REAL_BOTO3
+    try:
+        with mock_aws():
+            yield
+    finally:
+        boto3.Session, boto3.client, boto3.setup_default_session = guard
 
 
 @pytest.fixture

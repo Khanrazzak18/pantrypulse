@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     postgres_port: int
     postgres_db: str
     postgres_test_db: str
+    postgres_sslmode: str = ""  # "require" for RDS, which refuses unencrypted connections
 
     jwt_secret: str = ""
     session_hours: int = 8
@@ -30,6 +31,8 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     bedrock_model_id: str = ""  # an inference profile ID such as us.anthropic.claude-haiku-4-5-...
     storage_dir: str = "backend/var/uploads"  # relative paths are resolved from the repo root
+    storage_backend: str = "local"  # "local" folder, or "s3" when deployed
+    s3_bucket: str = ""  # the private uploads bucket, when STORAGE_BACKEND=s3
     # The interactive docs and OpenAPI document list every route: off unless asked for.
     expose_api_docs: bool = False
     # Hourly limits per user (database-backed): uploads, each AI or heavy endpoint, the weekly job.
@@ -61,6 +64,7 @@ class Settings(BaseSettings):
             host=self.postgres_host,
             port=self.postgres_port,
             database=database,
+            query={"sslmode": self.postgres_sslmode} if self.postgres_sslmode else {},
         )
 
     @property
