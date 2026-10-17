@@ -14,6 +14,8 @@ const staticHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The weekly refresh retrains the model and can take over a minute; the proxy default cuts requests at 30 s.
+  experimental: { proxyTimeout: 120_000 },
   poweredByHeader: false, // do not announce the framework
   // End-to-end tests build into their own folder so they never disturb a running dev server.
   distDir: process.env.E2E_DIST_DIR || ".next",

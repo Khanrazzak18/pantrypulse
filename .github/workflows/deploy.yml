@@ -126,8 +126,8 @@ jobs:
           infrastructure-role-arn: arn:aws:iam::${{ env.ACCOUNT }}:role/ecsInfrastructureRoleForExpressServices
           container-port: "8080"
           health-check-path: /api/health
-          cpu: "512"
-          memory: "1024"
+          cpu: "1024"
+          memory: "2048"
           log-group: /pantrypulse/service
           log-stream-prefix: ecs
           min-task-count: "1"
