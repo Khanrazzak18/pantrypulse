@@ -6,6 +6,7 @@ Parameters:
   SubnetIds: {Type: List<AWS::EC2::Subnet::Id>}
   AlbSecurityGroupId: {Type: AWS::EC2::SecurityGroup::Id, Description: Security group of the shared Express Mode load balancer}
   GithubRepo: {Type: String, Default: Khanrazzak18/pantrypulse}
+  GithubSubject: {Type: String, Default: "repo:Khanrazzak18@118880045/pantrypulse@1422695467:ref:refs/heads/main", Description: "The exact OIDC subject GitHub issues for this repository's main branch (it now includes the numeric owner and repository IDs)"}
   InfrastructureRoleArn: {Type: String, Description: The existing ECS Express infrastructure role}
   BedrockModelId: {Type: String, Default: us.anthropic.claude-haiku-4-5-20251001-v1:0}
 
@@ -181,7 +182,7 @@ Resources:
             Condition:
               StringEquals:
                 "token.actions.githubusercontent.com:aud": sts.amazonaws.com
-                "token.actions.githubusercontent.com:sub": !Sub repo:${GithubRepo}:ref:refs/heads/main
+                "token.actions.githubusercontent.com:sub": !Ref GithubSubject
       Policies:
         - PolicyName: deploy-pantrypulse-only
           PolicyDocument:
