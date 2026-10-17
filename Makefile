@@ -6,7 +6,7 @@ BACKEND := backend
 FRONTEND := frontend
 VENV := $(BACKEND)/.venv
 
-.PHONY: setup db db-down migrate seed dev test security security-tools hooks e2e e2e-report eval backtest golden refresh check-env api-types simulate fairness
+.PHONY: setup db db-down migrate seed dev test security security-tools hooks e2e e2e-report eval backtest golden refresh check-env api-types simulate fairness aws-bootstrap aws-down
 
 check-env:
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' and fill it in."; exit 1; }
@@ -112,3 +112,10 @@ golden:
 # Calls POST /api/admin/jobs/weekly-refresh (needs `make dev` running): forecast, then allocation.
 refresh: check-env
 	cd $(BACKEND) && .venv/bin/python -m scripts.refresh
+
+# --- AWS deployment (see README, Deployment). Uses the AWS CLI profile `default` unless AWS_PROFILE is set.
+aws-bootstrap:
+	deploy/aws-bootstrap.sh
+
+aws-down:
+	deploy/aws-down.sh

@@ -1,0 +1,224 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: PantryPulse base infrastructure (everything except the ECS Express service, which deploy/aws-up.sh creates)
+
+Parameters:
+  VpcId: {Type: AWS::EC2::VPC::Id}
+  SubnetIds: {Type: List<AWS::EC2::Subnet::Id>}
+  AlbSecurityGroupId: {Type: AWS::EC2::SecurityGroup::Id, Description: Security group of the shared Express Mode load balancer}
+  GithubRepo: {Type: String, Default: Khanrazzak18/pantrypulse}
+  InfrastructureRoleArn: {Type: String, Description: The existing ECS Express infrastructure role}
+  BedrockModelId: {Type: String, Default: us.anthropic.claude-haiku-4-5-20251001-v1:0}
+
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: pantrypulse
+      ImageScanningConfiguration: {ScanOnPush: true}
+      EncryptionConfiguration: {EncryptionType: AES256}
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: '{"rules":[{"rulePriority":1,"description":"keep the last 10","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}'
+
+  ServiceLogs:
+    Type: AWS::Logs::LogGroup
+    Properties: {LogGroupName: /pantrypulse/service, RetentionInDays: 14}
+  BootstrapLogs:
+    Type: AWS::Logs::LogGroup
+    Properties: {LogGroupName: /pantrypulse/bootstrap, RetentionInDays: 14}
+
+  Uploads:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub pantrypulse-uploads-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration: {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}}]
+      OwnershipControls: {Rules: [{ObjectOwnership: BucketOwnerEnforced}]}
+  UploadsTls:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Uploads
+      PolicyDocument:
+        Statement:
+          - Sid: TlsOnly
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt Uploads.Arn, !Sub "${Uploads.Arn}/*"]
+            Condition: {Bool: {"aws:SecureTransport": "false"}}
+
+  ServiceSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PantryPulse tasks (only the shared load balancer may reach port 8080)
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 8080, ToPort: 8080, SourceSecurityGroupId: !Ref AlbSecurityGroupId}
+  DbSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PantryPulse database (only the service security group may connect)
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 5432, ToPort: 5432, SourceSecurityGroupId: !Ref ServiceSg}
+  DbSubnets:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: {DBSubnetGroupDescription: PantryPulse, SubnetIds: !Ref SubnetIds}
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    Properties:
+      DBInstanceIdentifier: pantrypulse
+      Engine: postgres
+      EngineVersion: "16.13"
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: "20"
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: pantrypulse
+      MasterUsername: pantrypulse
+      MasterUserPassword: "{{resolve:ssm-secure:/pantrypulse/DB_PASSWORD}}"
+      PubliclyAccessible: false
+      MultiAZ: false
+      BackupRetentionPeriod: 1  # Free plan maximum; raise after upgrading the plan
+      DBSubnetGroupName: !Ref DbSubnets
+      VPCSecurityGroups: [!Ref DbSg]
+      CopyTagsToSnapshot: true
+      AutoMinorVersionUpgrade: true
+
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: pantrypulse-execution
+      AssumeRolePolicyDocument:
+        Statement: [{Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: "sts:AssumeRole"}]
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy]
+      Policies:
+        - PolicyName: read-pantrypulse-secrets
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameters
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/pantrypulse/*
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: pantrypulse-task
+      AssumeRolePolicyDocument:
+        Statement: [{Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: "sts:AssumeRole"}]
+      Policies:
+        - PolicyName: bedrock-haiku-and-uploads
+          PolicyDocument:
+            Statement:
+              - Sid: InvokeClaudeHaiku45ForPantryPulse
+                Effect: Allow
+                Action: bedrock:InvokeModel
+                Resource:
+                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0
+                  - arn:aws:bedrock:us-*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0
+              - Sid: UploadsReadWrite
+                Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+                Resource: !Sub "${Uploads.Arn}/*"
+              - Sid: UploadsHead
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt Uploads.Arn
+
+  BootstrapTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: pantrypulse-bootstrap
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "2048"
+      Memory: "4096"
+      RuntimePlatform: {CpuArchitecture: ARM64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: bootstrap
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/pantrypulse:latest
+          Command: [python, -m, scripts.bootstrap, all]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options: {awslogs-group: !Ref BootstrapLogs, awslogs-region: !Ref "AWS::Region", awslogs-stream-prefix: bootstrap}
+          Environment:
+            - {Name: POSTGRES_HOST, Value: !GetAtt Database.Endpoint.Address}
+            - {Name: POSTGRES_PORT, Value: "5432"}
+            - {Name: POSTGRES_USER, Value: pantrypulse}
+            - {Name: POSTGRES_DB, Value: pantrypulse}
+            - {Name: POSTGRES_TEST_DB, Value: unused}
+            - {Name: POSTGRES_SSLMODE, Value: require}
+            - {Name: COOKIE_SECURE, Value: "true"}
+            - {Name: STORAGE_BACKEND, Value: s3}
+            - {Name: S3_BUCKET, Value: !Ref Uploads}
+            - {Name: AWS_REGION, Value: !Ref "AWS::Region"}
+            - {Name: BEDROCK_MODEL_ID, Value: !Ref BedrockModelId}
+          Secrets:
+            - {Name: POSTGRES_PASSWORD, ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/pantrypulse/DB_PASSWORD"}
+            - {Name: JWT_SECRET, ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/pantrypulse/JWT_SECRET"}
+            - {Name: DEMO_COORDINATOR_PASSWORD, ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/pantrypulse/DEMO_COORDINATOR_PASSWORD"}
+            - {Name: DEMO_ADMIN_PASSWORD, ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/pantrypulse/DEMO_ADMIN_PASSWORD"}
+            - {Name: DEMO_PANTRY_MANAGER_PASSWORD, ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/pantrypulse/DEMO_PANTRY_MANAGER_PASSWORD"}
+
+  GithubProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: pantrypulse-github-deploy
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: {Federated: !Ref GithubProvider}
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                "token.actions.githubusercontent.com:aud": sts.amazonaws.com
+                "token.actions.githubusercontent.com:sub": !Sub repo:${GithubRepo}:ref:refs/heads/main
+      Policies:
+        - PolicyName: deploy-pantrypulse-only
+          PolicyDocument:
+            Statement:
+              - {Sid: EcrLogin, Effect: Allow, Action: "ecr:GetAuthorizationToken", Resource: "*"}
+              - Sid: EcrPush
+                Effect: Allow
+                Action: [ecr:BatchCheckLayerAvailability, ecr:InitiateLayerUpload, ecr:UploadLayerPart, ecr:CompleteLayerUpload, ecr:PutImage, ecr:BatchGetImage, ecr:GetDownloadUrlForLayer, ecr:DescribeImages]
+                Resource: !GetAtt Repository.Arn
+              - Sid: EcsDeploy
+                Effect: Allow
+                Action: [ecs:DescribeExpressGatewayService, ecs:UpdateExpressGatewayService, ecs:DescribeServices, ecs:DescribeTaskDefinition, ecs:RegisterTaskDefinition, ecs:DescribeClusters, ecs:ListTasks, ecs:DescribeTasks, ecs:DescribeServiceRevisions, ecs:DescribeServiceDeployments]
+                Resource: "*"
+              - Sid: Bootstrap
+                Effect: Allow
+                Action: ecs:RunTask
+                Resource: !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/pantrypulse-bootstrap:*
+              - Sid: PassOnlyOurRoles
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: [!GetAtt ExecutionRole.Arn, !GetAtt TaskRole.Arn, !Ref InfrastructureRoleArn]
+                Condition: {StringEquals: {"iam:PassedToService": ecs.amazonaws.com}}
+              - Sid: PassToTasks
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: [!GetAtt ExecutionRole.Arn, !GetAtt TaskRole.Arn]
+                Condition: {StringEquals: {"iam:PassedToService": ecs-tasks.amazonaws.com}}
+              - Sid: ReadLogs
+                Effect: Allow
+                Action: [logs:GetLogEvents, logs:DescribeLogStreams]
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/pantrypulse/*:*
+
+Outputs:
+  ServiceSecurityGroup: {Value: !Ref ServiceSg}
+  DbEndpoint: {Value: !GetAtt Database.Endpoint.Address}
+  Bucket: {Value: !Ref Uploads}
+  ExecutionRoleArn: {Value: !GetAtt ExecutionRole.Arn}
+  TaskRoleArn: {Value: !GetAtt TaskRole.Arn}
+  DeployRoleArn: {Value: !GetAtt DeployRole.Arn}
+  RepositoryUri: {Value: !GetAtt Repository.RepositoryUri}

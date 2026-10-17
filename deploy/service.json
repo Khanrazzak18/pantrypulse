@@ -1,0 +1,43 @@
+{
+  "serviceName": "pantrypulse",
+  "cluster": "default",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/pantrypulse-execution",
+  "infrastructureRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsInfrastructureRoleForExpressServices",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/pantrypulse-task",
+  "healthCheckPath": "/api/health",
+  "cpu": "512",
+  "memory": "1024",
+  "cpuArchitecture": "ARM64",
+  "scalingTarget": {"minTaskCount": 1, "maxTaskCount": 2, "autoScalingMetric": "AVERAGE_CPU", "autoScalingTargetValue": 70},
+  "networkConfiguration": {"securityGroups": ["<SERVICE_SG>"], "subnets": <SUBNETS>},
+  "primaryContainer": {
+    "image": "<IMAGE>",
+    "containerPort": 8080,
+    "awsLogsConfiguration": {"logGroup": "/pantrypulse/service", "logStreamPrefix": "ecs"},
+    "environment": [
+      {"name": "POSTGRES_HOST", "value": "<DB_HOST>"},
+      {"name": "POSTGRES_PORT", "value": "5432"},
+      {"name": "POSTGRES_USER", "value": "pantrypulse"},
+      {"name": "POSTGRES_DB", "value": "pantrypulse"},
+      {"name": "POSTGRES_TEST_DB", "value": "unused"},
+      {"name": "POSTGRES_SSLMODE", "value": "require"},
+      {"name": "COOKIE_SECURE", "value": "true"},
+      {"name": "EXPOSE_API_DOCS", "value": "false"},
+      {"name": "TRUSTED_PROXIES", "value": "127.0.0.1,::1,172.31.0.0/16"},
+      {"name": "ALLOWED_ORIGINS", "value": "<ORIGIN>"},
+      {"name": "STORAGE_BACKEND", "value": "s3"},
+      {"name": "S3_BUCKET", "value": "<BUCKET>"},
+      {"name": "AWS_REGION", "value": "us-east-1"},
+      {"name": "BEDROCK_MODEL_ID", "value": "us.anthropic.claude-haiku-4-5-20251001-v1:0"},
+      {"name": "LOG_LEVEL", "value": "INFO"}
+    ],
+    "secrets": [
+      {"name": "POSTGRES_PASSWORD", "valueFrom": "arn:aws:ssm:us-east-1:<ACCOUNT_ID>:parameter/pantrypulse/DB_PASSWORD"},
+      {"name": "JWT_SECRET", "valueFrom": "arn:aws:ssm:us-east-1:<ACCOUNT_ID>:parameter/pantrypulse/JWT_SECRET"},
+      {"name": "DEMO_COORDINATOR_PASSWORD", "valueFrom": "arn:aws:ssm:us-east-1:<ACCOUNT_ID>:parameter/pantrypulse/DEMO_COORDINATOR_PASSWORD"},
+      {"name": "DEMO_ADMIN_PASSWORD", "valueFrom": "arn:aws:ssm:us-east-1:<ACCOUNT_ID>:parameter/pantrypulse/DEMO_ADMIN_PASSWORD"},
+      {"name": "DEMO_PANTRY_MANAGER_PASSWORD", "valueFrom": "arn:aws:ssm:us-east-1:<ACCOUNT_ID>:parameter/pantrypulse/DEMO_PANTRY_MANAGER_PASSWORD"}
+    ]
+  },
+  "tags": [{"key": "app", "value": "pantrypulse"}]
+}

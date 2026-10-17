@@ -1,0 +1,153 @@
+# On every push to main: scan for secrets, run the tests, build the ARM64 image, push it to ECR and
+# roll it out to the ECS Express Mode service. AWS access is a short-lived GitHub OIDC role that only
+# this repository's main branch may assume. There are no AWS keys in GitHub.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ACCOUNT: "253413685161"
+  SERVICE: pantrypulse
+  CLUSTER: default
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - run: tools/install-gitleaks.sh
+      - run: .tools/bin/gitleaks git --config .gitleaks.toml --redact --no-banner .
+      - run: .tools/bin/gitleaks dir --config .gitleaks.toml --redact --no-banner .
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pantrypulse
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: pantrypulse
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pantrypulse" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      POSTGRES_USER: pantrypulse
+      POSTGRES_PASSWORD: ci-only-password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5433"
+      POSTGRES_DB: pantrypulse
+      POSTGRES_TEST_DB: pantrypulse_test
+      JWT_SECRET: ci-only-jwt-secret-not-used-anywhere-else-0123456789
+      API_PORT: "8000"
+      DEMO_COORDINATOR_PASSWORD: ci-only-coordinator-1
+      DEMO_ADMIN_PASSWORD: ci-only-admin-1
+      DEMO_PANTRY_MANAGER_PASSWORD: ci-only-manager-1
+      AWS_REGION: us-east-1
+      BEDROCK_MODEL_ID: us.anthropic.claude-haiku-4-5-20251001-v1:0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - run: |
+          PGPASSWORD=ci-only-password psql -h localhost -p 5433 -U pantrypulse -d pantrypulse \
+            -c 'CREATE DATABASE pantrypulse_test'
+      - run: pip install -e "backend[dev]"
+      - run: ruff check .
+        working-directory: backend
+      - run: pytest -q
+        working-directory: backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    env:
+      API_PORT: "8000"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run lint && npm run typecheck && npm run build
+        working-directory: frontend
+
+  deploy:
+    needs: [gitleaks, backend, frontend]
+    runs-on: ubuntu-24.04-arm # builds the ARM64 image natively
+    timeout-minutes: 40
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT }}:role/pantrypulse-github-deploy
+          aws-region: ${{ env.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2.1.7
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/pantrypulse:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/pantrypulse:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - uses: aws-actions/amazon-ecs-deploy-express-service@v1.2.2
+        with:
+          service-name: ${{ env.SERVICE }}
+          cluster: ${{ env.CLUSTER }}
+          image: ${{ steps.ecr.outputs.registry }}/pantrypulse:${{ github.sha }}
+          execution-role-arn: arn:aws:iam::${{ env.ACCOUNT }}:role/pantrypulse-execution
+          task-role-arn: arn:aws:iam::${{ env.ACCOUNT }}:role/pantrypulse-task
+          infrastructure-role-arn: arn:aws:iam::${{ env.ACCOUNT }}:role/ecsInfrastructureRoleForExpressServices
+          container-port: "8080"
+          health-check-path: /api/health
+          cpu: "512"
+          memory: "1024"
+          log-group: /pantrypulse/service
+          log-stream-prefix: ecs
+          min-task-count: "1"
+          max-task-count: "2"
+          environment-variables: |
+            [{"name":"POSTGRES_HOST","value":"pantrypulse.cm9k8ai0w47h.us-east-1.rds.amazonaws.com"},
+             {"name":"POSTGRES_PORT","value":"5432"},{"name":"POSTGRES_USER","value":"pantrypulse"},
+             {"name":"POSTGRES_DB","value":"pantrypulse"},{"name":"POSTGRES_TEST_DB","value":"unused"},
+             {"name":"POSTGRES_SSLMODE","value":"require"},{"name":"COOKIE_SECURE","value":"true"},
+             {"name":"EXPOSE_API_DOCS","value":"false"},
+             {"name":"TRUSTED_PROXIES","value":"127.0.0.1,::1,172.31.0.0/16"},
+             {"name":"ALLOWED_ORIGINS","value":"https://pa-e3d5d533f4da4f94b6dfd715bea0b319.ecs.us-east-1.on.aws"},
+             {"name":"STORAGE_BACKEND","value":"s3"},
+             {"name":"S3_BUCKET","value":"pantrypulse-uploads-253413685161-us-east-1"},
+             {"name":"AWS_REGION","value":"us-east-1"},
+             {"name":"BEDROCK_MODEL_ID","value":"us.anthropic.claude-haiku-4-5-20251001-v1:0"},
+             {"name":"LOG_LEVEL","value":"INFO"}]
+          secrets: |
+            [{"name":"POSTGRES_PASSWORD","valueFrom":"arn:aws:ssm:us-east-1:253413685161:parameter/pantrypulse/DB_PASSWORD"},
+             {"name":"JWT_SECRET","valueFrom":"arn:aws:ssm:us-east-1:253413685161:parameter/pantrypulse/JWT_SECRET"},
+             {"name":"DEMO_COORDINATOR_PASSWORD","valueFrom":"arn:aws:ssm:us-east-1:253413685161:parameter/pantrypulse/DEMO_COORDINATOR_PASSWORD"},
+             {"name":"DEMO_ADMIN_PASSWORD","valueFrom":"arn:aws:ssm:us-east-1:253413685161:parameter/pantrypulse/DEMO_ADMIN_PASSWORD"},
+             {"name":"DEMO_PANTRY_MANAGER_PASSWORD","valueFrom":"arn:aws:ssm:us-east-1:253413685161:parameter/pantrypulse/DEMO_PANTRY_MANAGER_PASSWORD"}]
