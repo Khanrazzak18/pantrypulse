@@ -7,7 +7,7 @@ if [ "$#" -gt 0 ]; then exec "$@"; fi
 cd /app/backend
 python -m scripts.bootstrap migrate
 
-python -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port "${API_PORT}" \
+python -m uvicorn app.main:create_app --factory --no-proxy-headers --host 127.0.0.1 --port "${API_PORT}" \
   --timeout-graceful-shutdown 20 &
 api=$!
 (cd /app/frontend && exec node node_modules/next/dist/bin/next start -H 0.0.0.0 -p "${WEB_PORT}") &

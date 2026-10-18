@@ -318,6 +318,55 @@ fuzz test. A pre-commit hook (installed by `make setup`) blocks secrets and `.en
 - One accepted npm risk: a dev-only advisory (braces, via eslint-config-next) with no patched
   release; production dependencies audit clean.
 
+## Deployment (AWS)
+
+Live: https://pa-e3d5d533f4da4f94b6dfd715bea0b319.ecs.us-east-1.on.aws (Amazon ECS Express Mode, us-east-1). AWS App Runner is closed to new
+customers, so Express Mode, its replacement, runs this app. The first app (ClauseCompass) is a separate Amplify app and ECS service in
+the same cluster and is not touched by anything here. Every step and fix-up, with real times, is in
+[`docs/deploy/deploy-log.md`](docs/deploy/deploy-log.md).
+
+**Architecture**
+
+```
+browser --HTTPS--> shared Application Load Balancer (ACM certificate, host rule + own target group)
+                     --> ECS Express service "pantrypulse" (Fargate ARM64, 1 vCPU / 2 GB, 1 to 2 tasks)
+                           one container: Next.js :8080  --/api rewrite-->  FastAPI 127.0.0.1:8000
+                              |                                                |
+                              |                          RDS PostgreSQL 16 db.t4g.micro (private, only the service security group)
+                              |                          S3 uploads bucket (private, encrypted, TLS only)  <- S3Storage
+                              |                          Bedrock Claude Haiku 4.5 (task role, InvokeModel on that model only)
+                         secrets: SSM Parameter Store SecureStrings (/pantrypulse/*)    logs: CloudWatch, 14 days
+```
+
+- **One image** (`Dockerfile`): the entrypoint (`deploy/entrypoint.sh`) runs migrations, starts both servers and stops both cleanly on SIGTERM.
+  Health check: `/api/health`.
+- **Base infrastructure** is one CloudFormation stack (`deploy/infra.yml`): ECR, log groups, S3, security groups, RDS, IAM roles, the GitHub OIDC
+  provider and the deploy role, and the one-off bootstrap task. The Express service itself is created and updated by the deploy action.
+- **Bootstrap** (`make aws-bootstrap`): a one-off ECS task from the same image (2 vCPU / 4 GB) that migrates, then seeds, backtests,
+  forecasts and allocates, each only when its data is missing, one runner at a time (a Postgres advisory lock). It took about 3 minutes.
+  The web service only runs migrations on start.
+- **Protections kept in production:** `COOKIE_SECURE=true`, HSTS and the CSP and security headers, the Origin check (`ALLOWED_ORIGINS` is the
+  service URL), rate limits, API docs off, `TRUSTED_PROXIES` limited to loopback and the VPC range, demo passwords from SSM (the app refuses the
+  public example ones when `COOKIE_SECURE=true`), and `--no-proxy-headers`.
+
+**Auto-deploy.** `.github/workflows/deploy.yml` runs on every push to `main`: gitleaks (history and tree), backend tests against a Postgres
+service container, frontend lint, typecheck and build; then it builds the ARM64 image, pushes it to ECR (tagged with the commit and `latest`) and rolls
+it out with `aws-actions/amazon-ecs-deploy-express-service`. GitHub gets AWS access through OIDC: the role `pantrypulse-github-deploy` trusts
+only this repository's `main` branch and can only push to the one ECR repository, update the one service, run the bootstrap task and pass three
+roles. There are no AWS keys in GitHub. A one-line change was live 10 minutes after the push (tests, ARM64 build, rollout); the workflow run itself reports done after about 21 minutes because it waits for the rollout to settle.
+
+**Logs.** `aws logs tail /pantrypulse/service --follow` (application, JSON lines with request id) and `/pantrypulse/bootstrap`; the
+Actions tab shows each run. Per-app graphs are on the CloudWatch dashboard `portfolio-apps`.
+
+**Cost** (us-east-1, on-demand; PantryPulse alone, the shared load balancer excluded): Fargate ARM 1 vCPU / 2 GB about $36 a month, RDS
+db.t4g.micro with 20 GB about $15, a public IPv4 address for the task about $4, ECR, S3, logs and Bedrock a few dollars. About $57 a month, under $2 a day.
+The shared load balancer (about $22 a month with its IPv4 addresses) is the other large item. The account is on the AWS Free plan with credits;
+the Free plan limits RDS backup retention to one day (raise it after upgrading).
+
+**Teardown.** `make aws-down CONFIRM=yes` deletes the PantryPulse service, empties and deletes the bucket and ECR images, deletes the CloudFormation
+stack (database, roles, security groups, log groups, deploy role) and the SSM parameters. It never touches the other service, the cluster or the load
+balancer. (The database is deleted without a final snapshot.)
+
 ## Known limitations
 
 - **Login lockout counts one address per proxy hop.** Five failures for one email, or 20 from one

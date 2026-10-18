@@ -149,3 +149,19 @@ Settings that differ per environment and cannot be proved by a test in this repo
 - [ ] Any new raw SQL statement is parameterised and added to the inventory in `test_sql_hygiene.py`.
 - [ ] Any new model call passes a token cap and a timeout and uses a forced tool that only returns data.
 - [ ] `docs/security/accepted-risks.json` is reviewed; each item still has no patched release.
+
+## Production on AWS (verified on the live site, 2026-10-17 and 2026-10-18)
+
+Facts about the deployed environment that no test in this repository can prove. Evidence is in `docs/deploy/deploy-log.md`.
+
+- [x] HTTPS only, with `Strict-Transport-Security`, the CSP (per-request nonce), `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` and the cross-origin headers on the live URL (checked with `curl -I`).
+- [x] `COOKIE_SECURE=true`; a foreign `Origin` on a login gets 403 and the site's own origin gets 200; `/api/docs` is 404.
+- [x] All three logins work with strong, generated passwords stored as SSM SecureStrings (`/pantrypulse/*`); the public example passwords are not used and the app refuses them when `COOKIE_SECURE=true`.
+- [x] The database is not publicly accessible; its security group allows port 5432 only from the service security group; storage is encrypted; automated backups are on (1-day retention, the Free plan maximum).
+- [x] The uploads bucket blocks all public access, is encrypted (AES-256) and refuses non-TLS requests.
+- [x] The task role can only `bedrock:InvokeModel` on Claude Haiku 4.5 plus read, write and delete on the uploads bucket; real intake of an email and a PDF worked with it.
+- [x] No AWS keys anywhere: the service uses its task role; GitHub Actions uses OIDC; the deploy role trusts only this repository's `main` branch (by owner and repository ID) and can only push the one ECR repository, update the one service, run the bootstrap task and pass three roles.
+- [x] `TRUSTED_PROXIES` is loopback plus the VPC range `172.31.0.0/16`; uvicorn runs with `--no-proxy-headers`.
+- [x] The service log group has 14-day retention; no error or warning lines in the service log during verification.
+- [ ] Accepted for the demo: the shared load balancer's security group also allows port 80 (it is the other app's load balancer and was not modified, and what it does with plain HTTP was not tested; the app's own HSTS applies once a browser has used HTTPS); backups keep one day; one database in one zone.
+
